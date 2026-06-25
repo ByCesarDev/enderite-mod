@@ -1,0 +1,44 @@
+{
+	"format_version": 2,
+	"metadata": {
+		"authors": [
+			"ByCesarKun"
+		]
+	},
+	"header": {
+		"name": "pack.name",
+		"description": "pack.description",
+		"min_engine_version": [
+			1,
+			20,
+			80
+		],
+		"uuid": "1dc138ad-0c82-4ca2-b1c6-60fdbe072981",
+		"version": [
+			1,
+			0,
+			0
+		]
+	},
+	"modules": [
+		{
+			"type": "resources",
+			"uuid": "2cebc8bc-3fc8-462e-bc63-2c67dfaefef4",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	],
+	"dependencies": [
+		{
+			"uuid": "ab63999c-45d8-44ff-b253-f7f51a05c36e",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	]
+}

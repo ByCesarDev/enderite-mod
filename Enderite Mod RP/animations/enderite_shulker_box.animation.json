@@ -1,0 +1,45 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.enderite_shulker_box.closed": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"top": { "rotation": [0, 0, 0] }
+			}
+		},
+		"animation.enderite_shulker_box.opening": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 0.3,
+			"bones": {
+				"top": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.1": [20, 0, 0],
+						"0.25": [60, 0, 0],
+						"0.3": [90, 0, 0]
+					}
+				}
+			}
+		},
+		"animation.enderite_shulker_box.opened": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"top": { "rotation": [90, 0, 0] }
+			}
+		},
+		"animation.enderite_shulker_box.closing": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 0.3,
+			"bones": {
+				"top": {
+					"rotation": {
+						"0.0": [90, 0, 0],
+						"0.1": [60, 0, 0],
+						"0.25": [20, 0, 0],
+						"0.3": [0, 0, 0]
+					}
+				}
+			}
+		}
+	}
+}

@@ -1,0 +1,28 @@
+{
+	"format_version": "1.26.10",
+	"minecraft:client_entity": {
+		"description": {
+			"identifier": "ed:enderite_shulker_box_entity",
+			"materials": {
+				"default": "entity_alphatest"
+			},
+			"geometry": {
+				"default": "geometry.enderite_shulker_box"
+			},
+			"textures": {
+				"default": "textures/entity/shulker/enderite_shulker"
+			},
+			"animations": {
+				"closed": "animation.enderite_shulker_box.closed",
+				"opened": "animation.enderite_shulker_box.opened",
+				"opening": "animation.enderite_shulker_box.opening",
+				"closing": "animation.enderite_shulker_box.closing",
+				"controller": "controller.animation.enderite_shulker_box"
+			},
+			"scripts": {
+				"animate": ["controller"]
+			},
+			"render_controllers": ["controller.render.enderite_shulker_box"]
+		}
+	}
+}

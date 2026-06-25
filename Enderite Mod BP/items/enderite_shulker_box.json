@@ -1,0 +1,19 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:item": {
+		"description": {
+			"identifier": "ed:enderite_shulker_box",
+			"menu_category": {
+				"category": "items",
+				"group": "itemGroup.name.shulker_box"
+			}
+		},
+		"components": {
+			"minecraft:icon": "enderite_shulker_box",
+			"minecraft:max_stack_size": 1,
+			"minecraft:block_placer": {
+				"block": "ed:enderite_shulker_box"
+			}
+		}
+	}
+}

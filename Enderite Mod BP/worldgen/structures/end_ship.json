@@ -1,0 +1,37 @@
+{
+	"format_version": "1.21.100",
+	"minecraft:jigsaw": {
+		"description": {
+			"identifier": "ed:end_ship"
+		},
+		"biome_filters": [
+			{
+				"all_of": [
+					{
+						"test": "has_biome_tag",
+						"value": "the_end"
+					}
+				]
+			}
+		],
+		"step": "surface_structures",
+		"terrain_adaptation": "none",
+		"start_pool": "ed:end_ship_pool",
+		"max_depth": 1,
+		"start_height": {
+			"type": "uniform",
+			"min": {
+				"below_top": 60
+			},
+			"max": {
+				"below_top": 80
+			}
+		},
+		"heightmap_projection": "world_surface",
+		"max_distance_from_center": {
+			"horizontal": 80,
+			"vertical": 80
+		},
+		"liquid_settings": "apply_waterlogging"
+	}
+}

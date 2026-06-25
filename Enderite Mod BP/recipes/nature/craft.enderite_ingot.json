@@ -1,0 +1,28 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:craft_enderite_ingot"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"###",
+			"#DD",
+			"DD "
+		],
+		"key": {
+			"#": {
+				"item": "ed:enderite_scrap"
+			},
+			"D": {
+				"item": "minecraft:diamond"
+			}
+		},
+		"result": {
+			"item": "ed:enderite_ingot",
+			"count": 1
+		}
+	}
+}

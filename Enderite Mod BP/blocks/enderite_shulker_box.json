@@ -1,0 +1,33 @@
+{
+	"format_version": "1.21.50",
+	"minecraft:block": {
+		"description": {
+			"identifier": "ed:enderite_shulker_box",
+			"menu_category": {
+				"category": "items",
+				"group": "itemGroup.name.shulker_box"
+			}
+		},
+		"components": {
+			"minecraft:destructible_by_explosion": false,
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 2.5
+			},
+			"minecraft:flammable": false,
+			"minecraft:material_instances": {
+				"*": {
+					"texture": "enderite_shulker_box",
+					"render_method": "alpha_test"
+				}
+			},
+			"minecraft:geometry": {
+				"identifier": "geometry.enderite_shulker_box"
+			},
+			"minecraft:selection_box": {
+				"origin": [-8, 0, -8],
+				"size": [16, 16, 16]
+			},
+			"tag:ed:shulker_box": {}
+		}
+	}
+}

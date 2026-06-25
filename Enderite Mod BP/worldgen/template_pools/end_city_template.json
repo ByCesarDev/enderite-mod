@@ -1,0 +1,19 @@
+{
+	"format_version" : "1.21.100",
+	"minecraft:template_pool" : {
+		"description" : {
+			"identifier" : "ed:end_ship_pool"
+		},
+		"elements" : [
+			{
+				"element" : {
+					"element_type" : "minecraft:single_pool_element",
+					"location" : "ed/end_boat",
+					"processors" : "ed:end_chest_processors",
+					"projection" : "rigid"
+				},
+				"weight" : 1
+			}
+		]
+	}
+}

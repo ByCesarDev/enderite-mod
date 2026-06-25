@@ -1,0 +1,63 @@
+{
+	"format_version": 2,
+	"metadata": {
+		"authors": [
+			"ByCesarKun"
+		],
+		"product_type": "addon"
+	},
+	"header": {
+		"name": "pack.name",
+		"description": "pack.description",
+		"min_engine_version": [
+			1,
+			20,
+			0
+		],
+		"uuid": "ab63999c-45d8-44ff-b253-f7f51a05c36e",
+		"version": [
+			1,
+			0,
+			0
+		]
+	},
+	"modules": [
+		{
+			"type": "data",
+			"uuid": "1b4d2ac8-b610-471e-a6d5-96ffdd5657d2",
+			"version": [
+				1,
+				0,
+				0
+			]
+		},
+		{
+			"type": "script",
+			"entry": "scripts/main.js",
+			"uuid": "65f3dd07-4e48-43d5-a723-0eac81027078",
+			"version": [
+				1,
+				0,
+				0
+			]
+		}
+	],
+	"dependencies": [
+		{
+			"uuid": "1dc138ad-0c82-4ca2-b1c6-60fdbe072981",
+			"version": [
+				1,
+				0,
+				0
+			]
+		},
+		{
+			"module_name": "@minecraft/server",
+			"version": [
+				1,
+				10,
+				0
+			]
+		}
+	]
+}

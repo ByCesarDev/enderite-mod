@@ -1,0 +1,38 @@
+{
+	"format_version": "1.8.0",
+	"render_controllers": {
+		"controller.render.shield_entity_3d": {
+			"uv_anim": {
+				"offset": [
+					0,
+					"math.mod(math.floor(query.life_time),2)/2"
+				],
+				"scale": [
+					1,
+					"0.5"
+				]
+			},
+			"materials": [
+				{
+					"*": "material.default"
+				}
+			],
+			"textures": [
+				"array.skins[query.property('multimc:shield_skin')]"
+			],
+			"arrays": {
+				"textures": {
+					"Array.skins": [
+						"Texture.enderite_shield"
+					]
+				},
+				"geometries": {
+					"Array.geos": [
+						"Geometry.enderite_shield"
+					]
+				}
+			},
+			"geometry": "array.geos[query.property('multimc:shield_skin')]"
+		}
+	}
+}

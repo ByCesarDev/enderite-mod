@@ -1,0 +1,21 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:item": {
+		"description": {
+			"identifier": "ed:enderite_ingot",
+			"menu_category": {
+				"category": "items",
+				"group": "itemGroup.name.ore"
+			}
+		},
+		"components": {
+			"minecraft:icon": "enderite_ingot",
+			"tags": {
+				"tags": [
+					"minecraft:smithing_template",
+					"minecraft:transform_materials"
+				]
+			}
+		}
+	}
+}

@@ -1,0 +1,31 @@
+{
+	"format_version": "1.21.50",
+	"minecraft:block": {
+		"description": {
+			"identifier": "ed:enderite_block",
+			"menu_category": {
+				"category": "construction"
+			}
+		},
+		"components": {
+			"minecraft:destructible_by_explosion": false,
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 180,
+				"item_specific_speeds": [
+					{
+						"item": {
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'minecraft:netherite_tier')"
+						},
+						"destroy_speed": 1.0
+					},
+					{
+						"item": {
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'ed:enderite_tier_destructible')"
+						},
+						"destroy_speed": 2.0
+					}
+				]
+			}
+		}
+	}
+}

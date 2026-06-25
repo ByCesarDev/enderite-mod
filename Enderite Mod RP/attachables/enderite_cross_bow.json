@@ -1,0 +1,52 @@
+{
+	"format_version": "1.10.0",
+	"minecraft:attachable": {
+		"description": {
+			"identifier": "ed:enderite_cross_bow",
+			"materials": {
+				"default": "entity_alphatest",
+				"enchanted": "entity_alphatest_glint"
+			},
+			"textures": {
+				"default": "textures/items/enderite_crossbow_standby",
+				"crossbow_pulling_0": "textures/items/enderite_crossbow_pulling_0",
+				"crossbow_pulling_1": "textures/items/enderite_crossbow_pulling_1",
+				"crossbow_pulling_2": "textures/items/enderite_crossbow_pulling_2",
+				"crossbow_arrow": "textures/items/enderite_crossbow_arrow",
+				"enchanted": "textures/misc/enchanted_item_glint"
+			},
+			"geometry": {
+				"default": "geometry.crossbow_standby",
+				"crossbow_pulling_0": "geometry.crossbow_pulling_0",
+				"crossbow_pulling_1": "geometry.crossbow_pulling_1",
+				"crossbow_pulling_2": "geometry.crossbow_pulling_2",
+				"crossbow_arrow": "geometry.crossbow_arrow"
+			},
+			"animations": {
+				"wield": "animation.crossbow.wield",
+				"thierd": "animation.player.bow_custom",
+				"wield_first_person_pull": "animation.crossbow.wield_first_person_pull"
+			},
+			"scripts": {
+				"pre_animation": [
+					"variable.charge_time = query.is_using_item ? variable.charge_time + 1 : 0;",
+					"variable.charge_amount = (variable.charge_time >= 80) ? 4 : (variable.charge_time >= 60 ? 3 : (variable.charge_time >= 40 ? 2 : (variable.charge_time >= 20 ? 1 : 0)));"
+				],
+				"animate": [
+					{
+						"wield": "c.is_first_person"
+					},
+					{
+						"thierd": "!c.is_first_person"
+					},
+					{
+						"wield_first_person_pull": "query.is_using_item && c.is_first_person && (temp.value = 0; temp.index = 0; loop(27, {temp.value = (query.is_item_name_any('slot.inventory', temp.index, 'ed:enderite_arrow') || (query.is_item_name_any('slot.hotbar', temp.index, 'ed:enderite_arrow'))); temp.value ? {return temp.value;}; temp.index = temp.index+1;}););"
+					}
+				]
+			},
+			"render_controllers": [
+				"controller.render.crossbow_custom"
+			]
+		}
+	}
+}

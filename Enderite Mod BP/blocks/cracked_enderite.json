@@ -1,0 +1,47 @@
+{
+	"format_version": "1.21.50",
+	"minecraft:block": {
+		"description": {
+			"identifier": "ed:cracked_enderite",
+			"menu_category": {
+				"category": "nature",
+				"group": "itemGroup.name.ore"
+			}
+		},
+		"components": {
+			"minecraft:geometry": "geometry.cracked_enderite_ore",
+			"minecraft:destructible_by_explosion": false,
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 180,
+				"item_specific_speeds": [
+					{
+						"item": {
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'minecraft:netherite_tier')"
+						},
+						"destroy_speed": 1.0
+					},
+					{
+						"item": {
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'ed:enderite_tier_destructible')"
+						},
+						"destroy_speed": 2.0
+					}
+				]
+			},
+			"minecraft:material_instances": {
+				"*": {
+					"texture": "cracked_enderite_ore_side",
+					"render_method": "opaque"
+				},
+				"up": {
+					"texture": "cracked_enderite_ore_top",
+					"render_method": "opaque"
+				},
+				"down": {
+					"texture": "cracked_enderite_ore_top",
+					"render_method": "opaque"
+				}
+			}
+		}
+	}
+}

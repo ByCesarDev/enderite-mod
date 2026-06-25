@@ -1,0 +1,38 @@
+{
+	"format_version": "1.10.0",
+	"animation_controllers": {
+		"controller.animation.enderite_shulker_box": {
+			"initial_state": "closed",
+			"states": {
+				"closed": {
+					"animations": ["closed"],
+					"transitions": [
+						{"opening": "query.property('ed:is_opened')"}
+					]
+				},
+				"opening": {
+					"animations": ["opening"],
+					"blend_transition": 0.1,
+					"transitions": [
+						{"opened": "query.property('ed:is_opened') && query.any_animation_finished"},
+						{"closing": "!query.property('ed:is_opened')"}
+					]
+				},
+				"opened": {
+					"animations": ["opened"],
+					"transitions": [
+						{"closing": "!query.property('ed:is_opened')"}
+					]
+				},
+				"closing": {
+					"animations": ["closing"],
+					"blend_transition": 0.1,
+					"transitions": [
+						{"closed": "!query.property('ed:is_opened') && query.any_animation_finished"},
+						{"opening": "query.property('ed:is_opened')"}
+					]
+				}
+			}
+		}
+	}
+}

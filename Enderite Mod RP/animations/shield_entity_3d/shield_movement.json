@@ -1,0 +1,23 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.shield_item.rotate": {
+			"loop": true,
+			"bones": {
+				"shield": {
+					"rotation": [
+						0,
+						"query.anim_time*54",
+						0
+					],
+					"position": [
+						0,
+						"(math.cos(query.anim_time*-112)*3)-1",
+						0
+					],
+					"scale": 0.6
+				}
+			}
+		}
+	}
+}

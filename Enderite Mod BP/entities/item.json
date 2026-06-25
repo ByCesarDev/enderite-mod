@@ -1,0 +1,47 @@
+{
+	"format_version": "1.19.0",
+	"minecraft:entity": {
+		"description": {
+			"identifier": "minecraft:item",
+			"is_summonable": true,
+			"is_spawnable": true
+		},
+		"component_groups": {
+			"enderite": {
+				"minecraft:fire_immune": true
+			},
+			"fire_immune": {
+				"minecraft:fire_immune": true
+			}
+		},
+		"components": {
+			"minecraft:collision_box": {
+				"width": 0,
+				"height": 0
+			}
+		},
+		"events": {
+			"ed:enderite": {
+				"add": {
+					"component_groups": [
+						"enderite"
+					]
+				}
+			},
+			"multimc:enderite": {
+				"add": {
+					"component_groups": [
+						"enderite_shield"
+					]
+				}
+			},
+			"become_fire_immune": {
+				"add": {
+					"component_groups": [
+						"fire_immune"
+					]
+				}
+			}
+		}
+	}
+}

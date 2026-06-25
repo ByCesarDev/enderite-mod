@@ -1,0 +1,43 @@
+{
+	"format_version": "1.10.0",
+	"minecraft:attachable": {
+		"description": {
+			"identifier": "elytra:chesplate_broken",
+			"materials": {
+				"default": "elytra",
+				"enderite_chesplate": "armor",
+				"enchanted": "elytra_glint"
+			},
+			"textures": {
+				"default": "textures/entity/elytra/enderite_elytra",
+				"enchanted": "textures/misc/enchanted_item_glint",
+				"enderite_chesplate": "textures/models/armor/enderite_1"
+			},
+			"geometry": {
+				"default": "geometry.elytra",
+				"enderite_chesplate": "geometry.humanoid.armor.chestplate"
+			},
+			"animations": {
+				"default_controller": "controller.animation.elytra.default",
+				"default": "animation.elytra.default",
+				"gliding": "animation.elytra.gliding",
+				"sneaking": "animation.elytra.sneaking",
+				"sleeping": "animation.elytra.sleeping",
+				"swimming": "animation.elytra.swimming"
+			},
+			"scripts": {
+				"parent_setup": "variable.chest_layer_visible = 0.0;",
+				"animate": [
+					"default_controller"
+				]
+			},
+			"render_controllers": [
+				"controller.render.armor",
+				"controller.render.enderite_chesplate"
+			],
+			"item": {
+				"elytra:chesplate_broken": "query.owner_identifier == 'minecraft:player'"
+			}
+		}
+	}
+}

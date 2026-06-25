@@ -1,0 +1,50 @@
+{
+	"num_mip_levels": 4,
+	"padding": 8,
+	"resource_pack_name": "Enderite Mod V2",
+	"texture_name": "atlas.terrain",
+	"texture_data": {
+		"enderite_block": {
+			"textures": "textures/blocks/enderite_block"
+		},
+		"enderite_1": {
+			"textures": "textures/blocks/enderite_1"
+		},
+		"enderite_2": {
+			"textures": "textures/blocks/enderite_2"
+		},
+		"cracked_enderite_ore_side": {
+			"textures": "textures/blocks/cracked_enderite_ore_side"
+		},
+		"cracked_enderite_ore_top": {
+			"textures": "textures/blocks/cracked_enderite_ore_top"
+		},
+		"enderite_respawn_anchor_top_off": {
+			"textures": "textures/blocks/enderite_respawn_anchor_top_off"
+		},
+		"enderite_respawn_anchor_bottom": {
+			"textures": "textures/blocks/enderite_respawn_anchor_bottom"
+		},
+		"enderite_respawn_anchor_side0": {
+			"textures": "textures/blocks/enderite_respawn_anchor_side0"
+		},
+		"enderite_respawn_anchor_top": {
+			"textures": "textures/blocks/enderite_respawn_anchor_top"
+		},
+		"enderite_respawn_anchor_side1": {
+			"textures": "textures/blocks/enderite_respawn_anchor_side1"
+		},
+		"enderite_respawn_anchor_side2": {
+			"textures": "textures/blocks/enderite_respawn_anchor_side2"
+		},
+		"enderite_respawn_anchor_side3": {
+			"textures": "textures/blocks/enderite_respawn_anchor_side3"
+		},
+		"enderite_respawn_anchor_side4": {
+			"textures": "textures/blocks/enderite_respawn_anchor_side4"
+		},
+		"enderite_shulker_box": {
+			"textures": "textures/blocks/enderite_shulker_box"
+		}
+	}
+}

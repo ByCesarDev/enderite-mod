@@ -1,0 +1,20 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shapeless": {
+		"description": {
+			"identifier": "ed:enderite_ingot"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"ingredients": [
+			{
+				"item": "ed:enderite_block"
+			}
+		],
+		"result": {
+			"item": "ed:enderite_ingot",
+			"count": 9
+		}
+	}
+}

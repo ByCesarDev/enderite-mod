@@ -1,0 +1,23 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shapeless": {
+		"description": {
+			"identifier": "ed:enderite_sword_tp_l4"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"ingredients": [
+			{
+				"item": "ed:enderite_sword_tp_l3"
+			},
+			{
+				"item": "minecraft:ender_pearl"
+			}
+		],
+		"result": {
+			"item": "ed:enderite_sword_tp_l4",
+			"count": 1
+		}
+	}
+}

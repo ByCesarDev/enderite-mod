@@ -1,0 +1,163 @@
+{
+	"format_version": "1.19.10",
+	"minecraft:entity": {
+		"description": {
+			"identifier": "multimc:shield_item",
+			"is_summonable": true,
+			"is_spawnable": true,
+			"animations": {},
+			"properties": {
+				"multimc:shield_skin": {
+					"type": "int",
+					"range": [
+						0,
+						100
+					],
+					"client_sync": true,
+					"default": 0
+				}
+			},
+			"runtime_identifier": "minecraft:egg"
+		},
+		"components": {
+			"minecraft:physics": {
+				"has_collision": true,
+				"has_gravity": true
+			},
+			"minecraft:scale": {
+				"value": 0.4
+			},
+			"minecraft:type_family": {
+				"family": [
+					"shield_item"
+				]
+			},
+			"minecraft:collision_box": {
+				"width": 1,
+				"height": 1
+			},
+			"minecraft:damage_sensor": {
+				"triggers": [
+					{
+						"cause": "all",
+						"deals_damage": false
+					}
+				]
+			},
+			"minecraft:on_ignite": {
+				"event": "multimc:item_despawn",
+				"target": "self"
+			},
+			"minecraft:buoyant": {
+				"apply_gravity": true,
+				"base_buoyancy": 1,
+				"simulate_waves": false,
+				"liquid_blocks": [
+					"minecraft:lava",
+					"minecraft:flowing_lava",
+					"minecraft:water",
+					"minecraft:flowing_water"
+				]
+			},
+			"minecraft:projectile": {
+				"on_hit": {
+					"stick_in_ground": {}
+				},
+				"power": 0.5,
+				"gravity": 0.05,
+				"angle_offset": 0,
+				"angleoffset": 0,
+				"offset": [
+					0,
+					-0.3,
+					0
+				]
+			},
+			"minecraft:conditional_bandwidth_optimization": {
+				"default_values": {
+					"max_optimized_distance": 80,
+					"max_dropped_ticks": 10,
+					"use_motion_prediction_hints": true
+				}
+			},
+			"minecraft:pushable": {
+				"is_pushable": true,
+				"is_pushable_by_piston": true
+			},
+			"minecraft:timer": {
+				"looping": true,
+				"time": [
+					2,
+					2
+				],
+				"time_down_event": {
+					"event": "tag",
+					"target": "self"
+				}
+			},
+			"minecraft:inventory": {
+				"container_type": "container",
+				"private": false,
+				"inventory_size": 1,
+				"restrict_to_owner": false
+			}
+		},
+		"events": {
+			"multimc:item_despawn": {
+				"sequence": [
+					{
+						"filters": {
+							"none_of": [
+								{
+									"test": "has_tag",
+									"operator": "==",
+									"subject": "self",
+									"value": "enderite_shield"
+								}
+							]
+						},
+						"add": {
+							"component_groups": [
+								"multimc:item_despawn"
+							]
+						}
+					}
+				]
+			},
+			"multimc:turn_into_item": {
+				"sequence": [
+					{
+						"filters": {
+							"all_of": [
+								{
+									"test": "distance_to_nearest_player",
+									"operator": "<=",
+									"subject": "self",
+									"value": 2
+								}
+							]
+						},
+						"queue_command": {
+							"command": [
+								"event entity @s multimc:trigger_item"
+							]
+						}
+					}
+				]
+			},
+			"multimc:trigger_item": {},
+			"tag": {
+				"queue_command": {
+					"command": [
+						"tag @s add multimc:ground"
+					]
+				}
+			}
+		},
+		"component_groups": {
+			"multimc:item_despawn": {
+				"minecraft:instant_despawn": {}
+			}
+		}
+	}
+}

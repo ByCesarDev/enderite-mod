@@ -1,0 +1,21 @@
+{
+  "format_version": "1.21.100",
+  "minecraft:structure_set": {
+    "description": {
+      "identifier": "ed:end_ship_set"
+    },
+    "placement": {
+      "type": "minecraft:random_spread",
+      "salt": 11111111,
+      "separation": 18,
+      "spacing": 54,
+      "spread_type": "linear"
+    },
+    "structures": [
+      {
+        "structure": "ed:end_ship",
+        "weight": 1
+      }
+    ]
+  }
+}

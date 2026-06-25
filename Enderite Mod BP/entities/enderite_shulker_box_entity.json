@@ -1,0 +1,73 @@
+{
+	"format_version": "1.16.0",
+	"minecraft:entity": {
+		"description": {
+			"identifier": "ed:enderite_shulker_box_entity",
+			"is_spawnable": false,
+			"is_summonable": true,
+			"is_experimental": false,
+			"properties": {
+				"ed:is_opened": {
+					"type": "bool",
+					"default": false,
+					"client_sync": true
+				}
+			}
+		},
+		"component_groups": {
+			"despawn": {
+				"minecraft:instant_despawn": {}
+			}
+		},
+		"components": {
+			"minecraft:type_family": {
+				"family": ["enderite", "inanimate"]
+			},
+			"minecraft:health": {
+				"value": 1,
+				"max": 1,
+				"min": 1
+			},
+			"minecraft:collision_box": {
+				"width": 0.98,
+				"height": 0.98
+			},
+			"minecraft:fire_immune": true,
+		"minecraft:damage_sensor": {
+				"triggers": [
+					{
+						"cause": "all",
+						"deals_damage": false
+					}
+				]
+			},
+			"minecraft:inventory": {
+				"inventory_size": 27,
+				"container_type": "container"
+			},
+			"minecraft:spell_effects": {
+				"effects": [
+					{
+						"effect": "invisibility",
+						"duration": 999999,
+						"ambient": false,
+						"show_particles": false
+					}
+				]
+			},
+			"minecraft:persistent": {},
+			"minecraft:pushable": {
+				"is_pushable": false,
+				"is_pushable_by_piston": false
+			},
+			"minecraft:is_hidden_when_invisible": {}
+		},
+		"events": {
+			"despawn": {
+				"add": {
+					"component_groups": ["despawn"]
+				}
+			}
+		}
+	}
+}

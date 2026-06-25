@@ -1,0 +1,21 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:item": {
+		"description": {
+			"identifier": "ed:enderite_upgrade_smithing_template",
+			"menu_category": {
+				"category": "items",
+				"group": "itemGroup.name.smithing_templates"
+			}
+		},
+		"components": {
+			"minecraft:icon": "ed_enderite_upgrade_smithing_template",
+			"tags": {
+				"tags": [
+					"minecraft:smithing_template",
+					"minecraft:transform_materials"
+				]
+			}
+		}
+	}
+}

@@ -1,0 +1,14 @@
+{
+	"entity_sounds": {
+		"entities": {
+			"ed:enderite_shulker_box_entity": {
+				"events": {
+					"death": "",
+					"hurt": "",
+					"step": ""
+				},
+				"volume": 0.0
+			}
+		}
+	}
+}

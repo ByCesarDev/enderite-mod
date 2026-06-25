@@ -1,0 +1,76 @@
+pack.name=Enderite Mod V2 RP
+pack.description=
+item.ed:enderite_axe=Enderite Axe
+item.ed:enderite_pickaxe=Enderite Pickaxe
+item.ed:enderite_hoe=Enderite Hoe
+item.ed:enderite_shovel=Enderite Shovel
+item.ed:enderite_sword=Enderite Sword\n§3Charge: 0\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport with sneaking + right click!
+item.ed:enderite_helmet=Enderite Helmet
+item.ed:enderite_chestplate=Enderite Chestplate
+item.ed:enderite_leggings=Enderite Leggings
+item.ed:enderite_boots=Enderite Boots
+item.ed:enderite_scrap=Enderite Scrap
+item.ed:enderite_ingot=Enderite Ingot
+tile.ed:cracked_enderite.name=Cracked Enderite Ore
+tile.ed:enderite_block.name=Block of Enderite
+tile.ed:enderite.name=Enderite Ore
+item.ed:enderite_bow.name=Enderite Bow
+item.ed:enderite_arrow.name=Arrow
+
+item.ed:diamond_boots=Diamond Boots §d| §6Void
+item.ed:diamond_chestplate=Diamond Chestplate §d| §6Void
+item.ed:diamond_helmet=Diamond Helmet §d| §6Void
+item.ed:diamond_leggings=Diamond Leggings §d| §6Void
+
+
+item.ed:netherite_boots=Netherite Boots §d| §6Void
+item.ed:netherite_chestplate=Netherite Chestplate §d| §6Void
+item.ed:netherite_helmet=Netherite Helmet §d| §6Void
+item.ed:netherite_leggings=Netherite Leggings §d| §6Void
+
+
+item.ed:iron_boots=Iron Boots §d| §6Void
+item.ed:iron_chestplate=Iron Chestplate §d| §6Void
+item.ed:iron_helmet=Iron Helmet §d| §6Void
+item.ed:iron_leggings=Iron Leggings §d| §6Void
+
+
+item.ed:gold_boots=Golden Boots §d| §6Void
+item.ed:gold_chestplate=Golden Chestplate §d| §6Void
+item.ed:gold_helmet=Golden Helmet §d| §6Void
+item.ed:gold_leggings=Golden Leggings §d| §6Void
+item.ed:enderite_upgrade_smithing_template=Enderite Upgrade
+tile.ed:anchor_end_spawn.name=Enderite Respawn Anchor
+item.ed:enderite_shears=Enderite Shears
+
+tile.ed:enderite_shulker_box.name=Enderite Shulker Box
+item.ed:enderite_shulker_box=Enderite Shulker Box
+
+## Custom Items Display Names
+item.ed:enderite_cross_bow.name=Enderite Crossbow
+item.ed:floating_void.name=§eEnchanted Book\n§7Void floating ability
+item.ed:enderite_arrow.name=Enderite Arrow
+item.ed:enderite_bow.name=Enderite Bow
+
+item.enderite:shield.name=Enderite Shield\n§3Charge: 0\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!
+
+item.enderite:shield_tp.name=Enderite Shield\n§3Charge: 16\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!
+
+item.enderite:shield_tp_lv2.name=Enderite Shield\n§3Charge: 32\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!
+
+item.enderite:shield_tp_lv3.name=Enderite Shield\n§3Charge: 48\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!
+
+item.enderite:shield_tp_lv4.name=Enderite Shield\n§3Charge: 64\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!
+
+item.ed:enderite_sword_tp.name=Enderite Sword\n§3Charge: 16\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport with sneaking + right click!
+
+item.ed:enderite_sword_tp_l2.name=Enderite Sword\n§3Charge: 32\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport with sneaking + right click!
+
+item.ed:enderite_sword_tp_l3.name=Enderite Sword\n§3Charge: 48\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport with sneaking + right click!
+
+item.ed:enderite_sword_tp_l4.name=Enderite Sword\n§3Charge: 64\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport with sneaking + right click!
+
+item.elytra:chesplate_broken.name=Enderite Elytra Chestplate
+item.elytra:chesplate.name=Enderite Elytra Chestplate
+item.elytra:enderite.name=Enderite Elytra
+item.elytra:enderite_broken.name=Enderite Elytra

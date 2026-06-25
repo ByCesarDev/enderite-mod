@@ -1,0 +1,74 @@
+pack.name=Enderite Mod V2 RP
+pack.description=
+item.ed:enderite_axe=Hacha de Enderita
+item.ed:enderite_pickaxe=Pico de Enderita
+item.ed:enderite_hoe=Azadón de Enderita
+item.ed:enderite_shovel=Pala de Enderita
+item.ed:enderite_sword=Espada de Enderita\n§3Carga: 0\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletranspórtate agachándote + click derecho!
+item.ed:enderite_helmet=Casco de Enderita
+item.ed:enderite_chestplate=Pechera de Enderita
+item.ed:enderite_leggings=Pantalones de Enderita
+item.ed:enderite_boots=Botas de Enderita
+item.ed:enderite_scrap=Fragmento de Enderita
+item.ed:enderite_ingot=Lingote de Enderita
+tile.ed:cracked_enderite.name=Mena de enderita cuarteada
+tile.ed:enderite_block.name=Bloque de enderita
+tile.ed:enderite.name=Mena de enderita
+item.ed:enderite_bow.name=Arco de Enderita
+item.ed:enderite_arrow.name=Flecha
+
+item.ed:diamond_boots=Botas de Diamante §d| §6Vacío
+item.ed:diamond_chestplate=Pechera de Diamante §d| §6Vacío
+item.ed:diamond_helmet=Casco de Diamante §d| §6Vacío
+item.ed:diamond_leggings=Pantalones de Diamante §d| §6Vacío
+
+item.ed:netherite_boots=Botas de Netherita §d| §6Vacío
+item.ed:netherite_chestplate=Pechera de Netherita §d| §6Vacío
+item.ed:netherite_helmet=Casco de Netherita §d| §6Vacío
+item.ed:netherite_leggings=Pantalones de Netherita §d| §6Vacío
+
+item.ed:iron_boots=Botas de Hierro §d| §6Vacío
+item.ed:iron_chestplate=Pechera de Hierro §d| §6Vacío
+item.ed:iron_helmet=Casco de Hierro §d| §6Vacío
+item.ed:iron_leggings=Pantalones de Hierro §d| §6Vacío
+
+item.ed:gold_boots=Botas de Oro §d| §6Vacío
+item.ed:gold_chestplate=Pechera de Oro §d| §6Vacío
+item.ed:gold_helmet=Casco de Oro §d| §6Vacío
+item.ed:gold_leggings=Pantalones de Oro §d| §6Vacío
+item.ed:enderite_upgrade_smithing_template=Plantilla de mejora de enderita
+tile.ed:anchor_end_spawn.name=Ancla de Reaparición de Enderita
+item.ed:enderite_shears=Tijeras de Enderita
+
+## Custom Items Display Names
+item.ed:enderite_cross_bow.name=Ballesta de Enderita
+item.ed:floating_void.name=§eLibro Encantado\n§7Habilidad de flotación de vacío
+item.ed:enderite_arrow.name=Flecha de Enderita
+item.ed:enderite_bow.name=Arco de Enderita
+
+item.enderite:shield.name=Escudo de Enderita\n§3Carga: 0\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletransporta atacantes agachándote + click derecho!
+
+item.enderite:shield_tp.name=Escudo de Enderita\n§3Carga: 16\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletransporta atacantes agachándote + click derecho!
+
+item.enderite:shield_tp_lv2.name=Escudo de Enderita\n§3Carga: 32\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletransporta atacantes agachándote + click derecho!
+
+item.enderite:shield_tp_lv3.name=Escudo de Enderita\n§3Carga: 48\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletransporta atacantes agachándote + click derecho!
+
+item.enderite:shield_tp_lv4.name=Escudo de Enderita\n§3Carga: 64\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletransporta atacantes agachándote + click derecho!
+
+item.ed:enderite_sword_tp.name=Espada de Enderita\n§3Carga: 16\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletranspórtate agachándote + click derecho!
+
+item.ed:enderite_sword_tp_l2.name=Espada de Enderita\n§3Carga: 32\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletranspórtate agachándote + click derecho!
+
+item.ed:enderite_sword_tp_l3.name=Espada de Enderita\n§3Carga: 48\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletranspórtate agachándote + click derecho!
+
+item.ed:enderite_sword_tp_l4.name=Espada de Enderita\n§3Carga: 64\n§7Mejora en Herramientas de Crafteo de Enderita con\nperlas de ender para cargar usos de teletransporte.\n¡Teletranspórtate agachándote + click derecho!
+
+item.elytra:chesplate_broken.name=Pechera con Élitros de Enderita
+item.elytra:chesplate.name=Pechera con Élitros de Enderita
+item.elytra:enderite.name=Élitros de Enderita
+item.elytra:enderite_broken.name=Élitros de Enderita
+
+## Missing translations sync
+tile.ed:enderite_shulker_box.name=Caja de Shulker de Enderita
+item.ed:enderite_shulker_box=Caja de Shulker de Enderita

@@ -1,0 +1,152 @@
+{
+	"format_version": "1.21.50",
+	"minecraft:block": {
+		"description": {
+			"identifier": "ed:anchor_end_spawn",
+			"menu_category": {
+				"category": "items"
+			},
+			"states": {
+				"ed:filling_level": [
+					0,
+					1,
+					2,
+					3,
+					4
+				]
+			}
+		},
+		"components": {
+			"minecraft:custom_components": [
+				"ed:anchor_interact"
+			],
+			"minecraft:collision_box": true,
+			"minecraft:selection_box": true,
+			"minecraft:destructible_by_mining": {
+				"seconds_to_destroy": 180,
+				"item_specific_speeds": [
+					{
+						"item": {
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'minecraft:netherite_tier')"
+						},
+						"destroy_speed": 1.0
+					},
+					{
+						"item": {
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'ed:enderite_tier_destructible')"
+						},
+						"destroy_speed": 2.0
+					}
+				]
+			},
+			"minecraft:destructible_by_explosion": {
+				"explosion_resistance": 0
+			},
+			"minecraft:geometry": "geometry.anchor_end_spawn",
+			"minecraft:map_color": "#05920d"
+		},
+		"permutations": [
+			{
+				"condition": "q.block_state('ed:filling_level') == 4",
+				"components": {
+					"minecraft:material_instances": {
+						"*": {
+							"texture": "enderite_respawn_anchor_side4",
+							"render_method": "opaque"
+						},
+						"up": {
+							"texture": "enderite_respawn_anchor_top",
+							"render_method": "opaque"
+						},
+						"down": {
+							"texture": "enderite_respawn_anchor_bottom",
+							"render_method": "opaque"
+						}
+					},
+					"minecraft:light_emission": 4
+				}
+			},
+			{
+				"condition": "q.block_state('ed:filling_level') == 3",
+				"components": {
+					"minecraft:material_instances": {
+						"*": {
+							"texture": "enderite_respawn_anchor_side3",
+							"render_method": "opaque"
+						},
+						"up": {
+							"texture": "enderite_respawn_anchor_top",
+							"render_method": "opaque"
+						},
+						"down": {
+							"texture": "enderite_respawn_anchor_bottom",
+							"render_method": "opaque"
+						}
+					},
+					"minecraft:light_emission": 3
+				}
+			},
+			{
+				"condition": "q.block_state('ed:filling_level') == 2",
+				"components": {
+					"minecraft:material_instances": {
+						"*": {
+							"texture": "enderite_respawn_anchor_side2",
+							"render_method": "opaque"
+						},
+						"up": {
+							"texture": "enderite_respawn_anchor_top",
+							"render_method": "opaque"
+						},
+						"down": {
+							"texture": "enderite_respawn_anchor_bottom",
+							"render_method": "opaque"
+						}
+					},
+					"minecraft:light_emission": 2
+				}
+			},
+			{
+				"condition": "q.block_state('ed:filling_level') == 1",
+				"components": {
+					"minecraft:material_instances": {
+						"*": {
+							"texture": "enderite_respawn_anchor_side1",
+							"render_method": "opaque"
+						},
+						"up": {
+							"texture": "enderite_respawn_anchor_top",
+							"render_method": "opaque"
+						},
+						"down": {
+							"texture": "enderite_respawn_anchor_bottom",
+							"render_method": "opaque"
+						}
+					},
+					"minecraft:light_emission": 1
+				}
+			},
+			{
+				"condition": "q.block_state('ed:filling_level') == 0",
+				"components": {
+					"minecraft:material_instances": {
+						"*": {
+							"texture": "enderite_respawn_anchor_side0",
+							"render_method": "opaque"
+						},
+						"up": {
+							"texture": "enderite_respawn_anchor_top_off",
+							"render_method": "opaque"
+						},
+						"down": {
+							"texture": "enderite_respawn_anchor_bottom",
+							"render_method": "opaque"
+						}
+					},
+					"minecraft:light_dampening": 15,
+					"minecraft:light_emission": 0
+				}
+			}
+		]
+	}
+}

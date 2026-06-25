@@ -1,0 +1,26 @@
+{
+	"format_version": [
+		1,
+		1,
+		0
+	],
+	"ed:cracked_enderite": {
+		"sound": "ancient_debris"
+	},
+	"ed:enderite_block": {
+		"sound": "stone",
+		"textures": "enderite_block"
+	},
+	"ed:enderite": {
+		"sound": "ancient_debris",
+		"textures": {
+			"up": "enderite_1",
+			"down": "enderite_1",
+			"side": "enderite_2"
+		}
+	},
+	"ed:enderite_shulker_box": {
+		"sound": "shulker_box",
+		"textures": "enderite_shulker_box"
+	}
+}

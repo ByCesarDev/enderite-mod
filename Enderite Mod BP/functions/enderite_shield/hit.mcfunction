@@ -1,0 +1,1 @@
+playsound item.trident.hit_ground @a[r=6] ~ ~ ~ 0.5 0.5

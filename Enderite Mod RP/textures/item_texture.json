@@ -1,0 +1,134 @@
+{
+	"resource_pack_name": "Enderite Mod V2",
+	"texture_name": "atlas.items",
+	"texture_data": {
+		"enderite_axe": {
+			"textures": "textures/items/enderite_axe"
+		},
+		"enderite_pickaxe": {
+			"textures": "textures/items/enderite_pickaxe"
+		},
+		"enderite_hoe": {
+			"textures": "textures/items/enderite_hoe"
+		},
+		"enderite_shovel": {
+			"textures": "textures/items/enderite_shovel"
+		},
+		"enderite_sword": {
+			"textures": "textures/items/enderite_sword"
+		},
+		"enderite_shield": {
+			"textures": "textures/items/enderite_shield"
+		},
+		"enderite_helmet": {
+			"textures": "textures/items/enderite_helmet"
+		},
+		"enderite_chestplate": {
+			"textures": "textures/items/enderite_chestplate"
+		},
+		"enderite_leggings": {
+			"textures": "textures/items/enderite_leggings"
+		},
+		"enderite_boots": {
+			"textures": "textures/items/enderite_boots"
+		},
+		"enderite_scrap": {
+			"textures": "textures/items/enderite_scrap"
+		},
+		"enderite_ingot": {
+			"textures": "textures/items/enderite_ingot"
+		},
+		"enderite_shears": {
+			"textures": "textures/items/enderite_shears"
+		},
+		"ed_iron_helmet": {
+			"textures": "textures/items/iron_helmet"
+		},
+		"ed_iron_chestplate": {
+			"textures": "textures/items/iron_chestplate"
+		},
+		"ed_iron_leggings": {
+			"textures": "textures/items/iron_leggings"
+		},
+		"ed_iron_boots": {
+			"textures": "textures/items/iron_boots"
+		},
+		"ed_diamond_helmet": {
+			"textures": "textures/items/diamond_helmet"
+		},
+		"ed_diamond_chestplate": {
+			"textures": "textures/items/diamond_chestplate"
+		},
+		"ed_diamond_leggings": {
+			"textures": "textures/items/diamond_leggings"
+		},
+		"ed_diamond_boots": {
+			"textures": "textures/items/diamond_boots"
+		},
+		"ed_gold_helmet": {
+			"textures": "textures/items/gold_helmet"
+		},
+		"ed_gold_chestplate": {
+			"textures": "textures/items/gold_chestplate"
+		},
+		"ed_gold_leggings": {
+			"textures": "textures/items/gold_leggings"
+		},
+		"ed_gold_boots": {
+			"textures": "textures/items/gold_boots"
+		},
+		"ed_netherite_helmet": {
+			"textures": "textures/items/netherite_helmet"
+		},
+		"ed_netherite_chestplate": {
+			"textures": "textures/items/netherite_chestplate"
+		},
+		"ed_netherite_leggings": {
+			"textures": "textures/items/netherite_leggings"
+		},
+		"ed_netherite_boots": {
+			"textures": "textures/items/netherite_boots"
+		},
+		"floating_void": {
+			"textures": "textures/items/book_enchanted"
+		},
+		"ed_enderite_upgrade_smithing_template": {
+			"textures": "textures/items/enderite_upgrade_smithing_template"
+		},
+		"enderite_elytra_seperated": {
+			"textures": [
+				"textures/items/elytra/enderite_elytra_seperated"
+			]
+		},
+		"enderite_elytra_seperated_broken": {
+			"textures": [
+				"textures/items/elytra/enderite_elytra_seperated_broken"
+			]
+		},
+		"enderite_elytra": {
+			"textures": [
+				"textures/items/elytra/enderite_elytra"
+			]
+		},
+		"enderite_elytra_broken": {
+			"textures": [
+				"textures/items/elytra/enderite_elytra_broken"
+			]
+		},
+"enderite_arrow": {
+			"textures": "textures/items/arrow"
+		},
+		"enderite_bow": {
+			"textures": "textures/items/enderite_bow"
+		},
+		"enderite_crossbow": {
+			"textures": "textures/items/enderite_crossbow_standby"
+		},
+		"enderite_shulkeritem": {
+			"textures": "textures/items/shulker/enderite_shulker"
+		},
+		"enderite_shulker_box": {
+			"textures": "textures/items/shulker/enderite_shulker"
+		}
+	}
+}
