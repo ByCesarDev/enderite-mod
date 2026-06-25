@@ -1,9 +1,3 @@
-Tienes toda la razón, disculpa el despiste. Un repositorio de código en GitHub no es una tienda como CurseForge o MCPEDL; necesita un enfoque **técnico** para desarrolladores, colaboradores o para ti mismo en el futuro.
-
-Debe incluir la arquitectura del proyecto, cómo compilarlo o probarlo, y separar el contenido del juego de los detalles técnicos.
-
-Aquí tienes un `README.md` de nivel ingeniería, optimizado para un repositorio de un AddOn de Bedrock:
-
 # Enderite Mod — Minecraft Bedrock Edition AddOn
 
 [![Minecraft Bedrock](https://img.shields.io/badge/Minecraft-Bedrock%20Edition-green?logo=minecraft)](https://minecraft.net)
