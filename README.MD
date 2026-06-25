@@ -4,22 +4,20 @@ Debe incluir la arquitectura del proyecto, cómo compilarlo o probarlo, y separa
 
 Aquí tienes un `README.md` de nivel ingeniería, optimizado para un repositorio de un AddOn de Bedrock:
 
-```markdown
 # Enderite Mod — Minecraft Bedrock Edition AddOn
 
 [![Minecraft Bedrock](https://img.shields.io/badge/Minecraft-Bedrock%20Edition-green?logo=minecraft)](https://minecraft.net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Discord](https://img.shields.io/discord/544322432243224322?color=7289da&label=Discord&logo=discord)](https://discord.com/invite/z5wshN7Xgm)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289da?logo=discord)](https://discord.com/invite/z5wshN7Xgm)
 
 Repositorio oficial de desarrollo del AddOn **Enderite Mod** para Minecraft Bedrock Edition. Este proyecto implementa un tier tecnológico superior al Netherite (Enderite) utilizando el framework nativo de Bedrock (`development_behavior_packs` y `development_resource_packs`).
-
-
 
 ## 🛠️ Project Structure & Architecture
 
 El proyecto está estructurado dividiendo limpiamente las mecánicas lógicas de los componentes visuales:
 
-```text
+```markdown
+
 Enderite Mod/
 ├── Enderite Mod BP/            # Behavior Pack (Lógica, Recetas, Componentes de Ítems)
 │   ├── animation_controllers/  # Controladores de estado (ej. Teletransporte/Carga de espada)
@@ -96,12 +94,9 @@ New-Item -ItemType SymbolicLink -Path "$env:LOCALAPPDATA\Packages\Microsoft.Mine
 
 💬 **Soporte y Feedback:** Si encuentras algún bug en los esquemas JSON o en las animaciones, abre un *Issue* en este repositorio o repórtalo en el [Servidor de Discord](https://discord.com/invite/z5wshN7Xgm).
 
-```
 
 ### Cambios clave que lo hacen mejor para el repositorio:
 1. **Badges técnicos:** Se añaden etiquetas visuales arriba que le dan estilo técnico (Versión de Bedrock, Licencia, Discord).
 2. **Estructura de árbol de archivos:** Explica qué hace cada subcarpeta dentro del `BP` y del `RP` (ideal para entender el proyecto en un vistazo).
 3. **Lenguaje de desarrollo:** Cambia descripciones comerciales por descripciones de ingeniería (ej. *"teletransportaciones vectoriales"*, *"acumulando cargas en memoria"*, *"esquemas JSON"*).
 4. **Guía de entornos:** Explica exactamente cómo clonar el repositorio y cómo levantar los enlaces simbólicos de Windows usando variables de entorno globales (`$env:LOCALAPPDATA`), lo que hace que tu comando le sirva a cualquier programador que descargue tu proyecto.
-
-```
