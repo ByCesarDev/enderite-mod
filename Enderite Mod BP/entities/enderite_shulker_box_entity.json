@@ -42,7 +42,7 @@
 				]
 			},
 			"minecraft:inventory": {
-				"inventory_size": 27,
+				"inventory_size": 45,
 				"container_type": "container"
 			},
 			"minecraft:spell_effects": {
