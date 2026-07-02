@@ -1,5 +1,5 @@
 {
-	"format_version": "1.16.0",
+	"format_version": "1.21.50",
 	"minecraft:entity": {
 		"description": {
 			"identifier": "ed:enderite_shulker_box_entity",
@@ -20,47 +20,47 @@
 			}
 		},
 		"components": {
-			"minecraft:type_family": {
-				"family": ["enderite", "inanimate"]
-			},
-			"minecraft:health": {
-				"value": 1,
-				"max": 1,
-				"min": 1
-			},
-			"minecraft:collision_box": {
-				"width": 0.98,
-				"height": 0.98
-			},
-			"minecraft:fire_immune": true,
-		"minecraft:damage_sensor": {
-				"triggers": [
-					{
-						"cause": "all",
-						"deals_damage": false
-					}
-				]
-			},
-			"minecraft:inventory": {
-				"inventory_size": 45,
-				"container_type": "container"
-			},
-			"minecraft:spell_effects": {
-				"effects": [
-					{
-						"effect": "invisibility",
-						"duration": 999999,
-						"ambient": false,
-						"show_particles": false
-					}
-				]
-			},
-			"minecraft:persistent": {},
-			"minecraft:pushable": {
-				"is_pushable": false,
-				"is_pushable_by_piston": false
-			},
-			"minecraft:is_hidden_when_invisible": {}
+    		"minecraft:type_family": {
+        		"family": ["enderite", "inanimate", "chest"]
+    		},
+    		"minecraft:health": {
+        		"value": 1,
+        		"max": 1,
+        		"min": 1
+    		},
+    		"minecraft:collision_box": {
+        		"width": 0.98,
+        		"height": 0.98
+    		},
+    		"minecraft:fire_immune": true,
+    		"minecraft:damage_sensor": {
+        		"triggers": [
+            		{
+                		"cause": "all",
+                		"deals_damage": "no"
+            		}
+        		]
+    		},
+    		"minecraft:inventory": {
+        		"container_type": "container",
+        		"inventory_size": 45
+    		},
+    		"minecraft:spell_effects": {
+        		"effects": [
+            		{
+                		"effect": "invisibility",
+                		"duration": 999999,
+                		"ambient": false,
+                		"show_particles": false
+            		}
+        		]
+    		},
+    		"minecraft:persistent": {},
+    		"minecraft:pushable": {
+        		"is_pushable": false,
+        		"is_pushable_by_piston": false
+    		},
+    		"minecraft:is_hidden_when_invisible": {}
 		},
 		"events": {
 			"despawn": {
