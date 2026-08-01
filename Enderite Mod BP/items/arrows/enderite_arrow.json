@@ -1,18 +1,16 @@
-{
-	"format_version": "1.20.50",
+﻿{
+	"format_version": "1.20.80",
 	"minecraft:item": {
 		"description": {
 			"identifier": "ed:enderite_arrow",
-			"category": "Equipment"
+			"menu_category": { "category": "equipment" }
 		},
 		"components": {
 			"minecraft:allow_off_hand": true,
 			"minecraft:display_name": {
 				"value": "item.ed:enderite_arrow.name"
 			},
-			"minecraft:icon": {
-				"texture": "enderite_arrow"
-			},
+			"minecraft:icon": "enderite_arrow",
 			"minecraft:projectile": {
 				"projectile_entity": "ed:arrow_enderite"
 			},

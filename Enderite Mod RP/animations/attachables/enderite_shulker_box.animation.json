@@ -1,23 +1,23 @@
 {
 	"format_version": "1.8.0",
 	"animations": {
-		"animation.enderite_shulkeritem.first_person_hold": {
+		"animation.enderite_shulker_box.first_person_hold": {
 			"loop": true,
 			"bones": {
 				"root_item": {
-					"rotation": [90, 56, -32],
-					"position": [9, 18, 5],
-					"scale": 0.3
+					"rotation": [41.3642, 32.2013, -96.8631],
+					"position": [9, 20, 13],
+					"scale": 0.7
 				}
 			}
 		},
-		"animation.enderite_shulkeritem.third_person_hold": {
+		"animation.enderite_shulker_box.third_person_hold": {
 			"loop": true,
 			"bones": {
 				"root_item": {
 					"rotation": [25, 0, 0],
 					"position": [0.5, 19, -2.5],
-					"scale": 0.3
+					"scale": 0.4
 				}
 			}
 		}

@@ -1,4 +1,4 @@
-{
+﻿{
 	"format_version": "1.20.80",
 	"minecraft:item": {
 		"description": {
@@ -43,8 +43,7 @@
 				]
 			},
 			"minecraft:glint": true,
-			"tags": {
-				"tags": [
+			"minecraft:tags": { "tags": [
 					"minecraft:is_armor",
 					"minecraft:transformable_items",
 					"minecraft:trimmable_armors"

@@ -1,5 +1,5 @@
-{
-	"format_version": "1.20.80",
+﻿{
+	"format_version": "1.26.30",
 	"minecraft:attachable": {
 		"description": {
 			"identifier": "ed:gold_helmet",
@@ -9,16 +9,21 @@
 			},
 			"textures": {
 				"default": "textures/models/armor/gold_1",
-				"enchanted": "textures/misc/enchanted_item_glint"
+				"enchanted": "textures/misc/enchanted_actor_glint",
+				"baby": "textures/models/armor/gold_baby"
 			},
 			"geometry": {
-				"default": "geometry.humanoid.armor.helmet"
+				"default": "geometry.humanoid.armor.helmet",
+				"baby": "geometry.humanoid.baby.armor.helmet"
 			},
 			"scripts": {
-				"parent_setup": "variable.helmet_layer_visible = 0.0;"
+				"parent_setup": "v.helmet_layer_visible = false;",
+				"pre_animation": [
+					"v.use_baby_geo = q.is_baby && c.owning_entity->v.use_dedicated_baby_armor;"
+				]
 			},
 			"render_controllers": [
-				"controller.render.armor"
+				"controller.render.armor.v2"
 			]
 		}
 	}

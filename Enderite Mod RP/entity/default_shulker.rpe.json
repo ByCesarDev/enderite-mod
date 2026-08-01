@@ -1,0 +1,32 @@
+{
+  "format_version": "1.26.10",
+  "minecraft:client_entity": {
+    "description": {
+      "identifier": "ed:default_shulker",
+      "materials": {
+        "default": "entity_alphatest"
+      },
+      "geometry": {
+        "default": "geometry.ed.shulker"
+      },
+      "textures": {
+        "enderite_shulker_box": "textures/blocks/enderite_shulker_box"
+      },
+      "animations": {
+        "rotation": "animation.enderiteShulker.rotation",
+        "closed": "animation.enderiteShulker.closed",
+        "opened": "animation.enderiteShulker.opened",
+        "opening": "animation.enderiteShulker.opening",
+        "closing": "animation.enderiteShulker.closing",
+        "controller": "controller.animation.enderiteShulker"
+      },
+      "scripts": {
+        "animate": ["rotation", "controller"]
+      },
+      "enable_attachables": true,
+      "held_item_ignores_lighting": true,
+      "hide_armor": false,
+      "render_controllers": ["controller.render.ed.shulkers"]
+    }
+  }
+}

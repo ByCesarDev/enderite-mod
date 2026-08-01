@@ -1,0 +1,10 @@
+{
+  "format_version": "1.8.0",
+  "render_controllers": {
+    "controller.render.ed.shulkers": {
+      "materials": [{ "*": "material.default" }],
+      "textures": ["texture.enderite_shulker_box"],
+      "geometry": "geometry.default"
+    }
+  }
+}

@@ -20,7 +20,6 @@
 		}
 	},
 	"ed:enderite_shulker_box": {
-		"sound": "shulker_box",
-		"textures": "enderite_shulker_box"
+		"sound": "metal"
 	}
 }

@@ -1,4 +1,4 @@
-pack.name=Enderite Mod V2 RP
+﻿pack.name=Enderite Mod V2 RP
 pack.description=
 item.ed:enderite_axe=Enderite Axe
 item.ed:enderite_pickaxe=Enderite Pickaxe
@@ -16,6 +16,7 @@ tile.ed:enderite_block.name=Block of Enderite
 tile.ed:enderite.name=Enderite Ore
 item.ed:enderite_bow.name=Enderite Bow
 item.ed:enderite_arrow.name=Arrow
+tile.ed:enderite_shulker_box.name=Enderite Shulker Box
 
 item.ed:diamond_boots=Diamond Boots §d| §6Void
 item.ed:diamond_chestplate=Diamond Chestplate §d| §6Void
@@ -43,8 +44,6 @@ item.ed:enderite_upgrade_smithing_template=Enderite Upgrade
 tile.ed:anchor_end_spawn.name=Enderite Respawn Anchor
 item.ed:enderite_shears=Enderite Shears
 
-tile.ed:enderite_shulker_box.name=Enderite Shulker Box
-item.ed:enderite_shulker_box=Enderite Shulker Box
 
 ## Custom Items Display Names
 item.ed:enderite_cross_bow.name=Enderite Crossbow
@@ -74,3 +73,8 @@ item.elytra:chesplate_broken.name=Enderite Elytra Chestplate
 item.elytra:chesplate.name=Enderite Elytra Chestplate
 item.elytra:enderite.name=Enderite Elytra
 item.elytra:enderite_broken.name=Enderite Elytra
+
+
+## SUBTITLES
+ed:subtitle.shulker.open=Enderite shulker opening
+ed:subtitle.shulker.close=Enderite shulker closing

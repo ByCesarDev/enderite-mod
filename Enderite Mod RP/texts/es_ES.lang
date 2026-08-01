@@ -16,6 +16,8 @@ tile.ed:enderite_block.name=Bloque de enderita
 tile.ed:enderite.name=Mena de enderita
 item.ed:enderite_bow.name=Arco de Enderita
 item.ed:enderite_arrow.name=Flecha
+tile.ed:enderite_shulker_box.name=Caja de Shulker de Enderita
+item.ed:enderite_shulker_box=Caja de Shulker de Enderita
 
 item.ed:diamond_boots=Botas de Diamante §d| §6Vacío
 item.ed:diamond_chestplate=Coraza de Diamante §d| §6Vacío
@@ -70,5 +72,3 @@ item.elytra:enderite.name=Élitros de Enderita
 item.elytra:enderite_broken.name=Élitros de Enderita
 
 ## Missing translations sync
-tile.ed:enderite_shulker_box.name=Caja de Shulker de Enderita
-item.ed:enderite_shulker_box=Caja de Shulker de Enderita

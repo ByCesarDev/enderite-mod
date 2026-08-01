@@ -43,8 +43,11 @@
 		"enderite_respawn_anchor_side4": {
 			"textures": "textures/blocks/enderite_respawn_anchor_side4"
 		},
-		"enderite_shulker_box": {
-			"textures": "textures/blocks/enderite_shulker_box"
-		}
+		"ed:enderite_shulker_box": {
+      		"textures": "textures/blocks/enderite_shulker_box"
+    		},
+    	"ed:empty": {
+      		"textures": "textures/blocks/empty"
+    	}
 	}
 }

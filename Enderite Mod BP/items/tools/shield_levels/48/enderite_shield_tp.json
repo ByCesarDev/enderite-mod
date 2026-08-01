@@ -1,5 +1,5 @@
-{
-	"format_version": "1.20.30",
+﻿{
+	"format_version": "1.20.80",
 	"minecraft:item": {
 		"description": {
 			"identifier": "enderite:shield_tp_lv3",
@@ -18,9 +18,7 @@
 			"minecraft:durability": {
 				"max_durability": 768
 			},
-			"minecraft:icon": {
-				"texture": "enderite_shield"
-			},
+			"minecraft:icon": "enderite_shield",
 			"minecraft:display_name": {
 				"value": "item.enderite:shield_tp_lv3.name"
 			},
@@ -38,7 +36,6 @@
 					}
 				]
 			}
-		},
-		"events": {}
+		}
 	}
 }

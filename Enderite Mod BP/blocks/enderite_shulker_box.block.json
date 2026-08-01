@@ -1,0 +1,106 @@
+{
+  "format_version": "1.21.70",
+  "minecraft:block": {
+    "description": {
+      "identifier": "ed:enderite_shulker_box",
+      "menu_category": {
+        "category": "items"
+      },
+      "traits": {
+        "minecraft:placement_direction": {
+          "enabled_states": ["minecraft:cardinal_direction"],
+          "y_rotation_offset": 0
+        }
+      },
+      "states": {
+        "ed:collision_mode": [true, false],
+        "ed:was_placed": [false, true]
+      }
+    },
+    "components": {
+      "minecraft:material_instances": {
+        "*": {
+          "texture": "ed:enderite_shulker_box",
+          "render_method": "alpha_test"
+        }
+      },
+      "minecraft:geometry": {
+        "identifier": "geometry.ed.shulker"
+      },
+      "minecraft:destruction_particles": {
+        "texture": "ed:enderite_shulker_box"
+      },
+      "minecraft:custom_components": [
+        "ed:on_place",
+        "ed:spawn_block_entity"
+      ],
+      "minecraft:selection_box": {
+        "origin": [-7, 0, -7],
+        "size": [14, 14, 14]
+      },
+      "minecraft:collision_box": {
+        "origin": [-7.5, 0, -7.5],
+        "size": [15, 15, 15]
+      },
+      "tag:minecraft:is_pickaxe_item_destructible": {},
+      "tag:ed:is_shulker": {},
+      "minecraft:destructible_by_explosion": {
+        "explosion_resistance": 6
+      },
+      "minecraft:destructible_by_mining": {
+        "seconds_to_destroy": 25,
+        "item_specific_speeds": [
+          {
+            "item": "minecraft:wooden_pickaxe",
+            "destroy_speed": 4
+          },
+          {
+            "item": "minecraft:stone_pickaxe",
+            "destroy_speed": 8
+          },
+          {
+            "item": "minecraft:iron_pickaxe",
+            "destroy_speed": 12
+          },
+          {
+            "item": "minecraft:golden_pickaxe",
+            "destroy_speed": 14
+          },
+          {
+            "item": "minecraft:diamond_pickaxe",
+            "destroy_speed": 16
+          },
+          {
+            "item": "minecraft:netherite_pickaxe",
+            "destroy_speed": 18
+          }
+        ]
+      }
+    },
+    "permutations": [
+      {
+        "condition": "q.block_state('ed:collision_mode')",
+        "components": {
+          "minecraft:selection_box": {
+            "origin": [-7.5, 0, -7.5],
+            "size": [15, 15, 15]
+          }
+        }
+      },
+      {
+        "condition": "q.block_state('ed:was_placed')",
+        "components": {
+          "minecraft:material_instances": {
+            "*": {
+              "texture": "ed:empty",
+              "render_method": "blend"
+            }
+          },
+          "minecraft:geometry": {
+            "identifier": "geometry.ed.shulker_destruction"
+          }
+        }
+      }
+    ]
+  }
+}

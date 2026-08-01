@@ -115,7 +115,7 @@
 				"textures/items/elytra/enderite_elytra_broken"
 			]
 		},
-"enderite_arrow": {
+		"enderite_arrow": {
 			"textures": "textures/items/arrow"
 		},
 		"enderite_bow": {
@@ -124,11 +124,9 @@
 		"enderite_crossbow": {
 			"textures": "textures/items/enderite_crossbow_standby"
 		},
-		"enderite_shulkeritem": {
-			"textures": "textures/items/shulker/enderite_shulker"
-		},
 		"enderite_shulker_box": {
-			"textures": "textures/items/shulker/enderite_shulker"
+			"textures": "textures/items/enderite_shulker_box"
 		}
+
 	}
 }

@@ -1,11 +1,10 @@
 {
-	"format_version": "1.20.80",
+	"format_version": "1.21.70",
 	"minecraft:item": {
 		"description": {
 			"identifier": "ed:enderite_shulker_box",
 			"menu_category": {
-				"category": "items",
-				"group": "itemGroup.name.shulker_box"
+				"category": "items"
 			}
 		},
 		"components": {
