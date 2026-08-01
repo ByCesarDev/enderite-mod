@@ -1,0 +1,12 @@
+{
+	"format_version": "1.20.80",
+	"minecraft:recipe_smithing_transform": {
+		"description": {
+			"identifier": "ed:enderite_shulker_box"
+		},
+		"template": "ed:enderite_upgrade_smithing_template",
+		"base": "minecraft:shulker_box",
+		"addition": "ed:enderite_ingot",
+		"result": "ed:enderite_shulker_box"
+	}
+}
