@@ -1,9 +1,0 @@
-{
-  "type": "minecraft:smithing_transform",
-  "template": "enderitemod:enderite_upgrade_smithing_template",
-  "base": "minecraft:shears",
-  "addition": "enderitemod:enderite_ingot",
-  "result": {
-    "id": "enderitemod:enderite_shears"
-  }
-}
