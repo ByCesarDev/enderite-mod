@@ -1,0 +1,9 @@
+{
+  "type": "minecraft:smithing_transform",
+  "template": "minecraft:ender_pearl",
+  "base": "enderitemod:enderite_sword",
+  "addition": "minecraft:ender_pearl",
+  "result": {
+    "id": "enderitemod:enderite_sword"
+  }
+}

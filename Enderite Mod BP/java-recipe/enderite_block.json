@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    "###",
+    "###",
+    "###"
+  ],
+  "key": {
+    "#": "#c:ingots/enderite"
+  },
+  "result": {
+    "id": "enderitemod:enderite_block",
+    "count": 1
+  }
+}
