@@ -14,15 +14,15 @@
 				"item_specific_speeds": [
 					{
 						"item": {
-							"tags": "query.all_tags('minecraft:is_pickaxe', 'ed:enderite_tier_destructible')"
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'minecraft:netherite_tier')"
 						},
-						"destroy_speed": 180.0
+						"destroy_speed": 1.0
 					},
 					{
 						"item": {
-							"tags": "query.all_tags('minecraft:is_pickaxe', 'minecraft:netherite_tier')"
+							"tags": "query.all_tags('minecraft:is_pickaxe', 'ed:enderite_tier_destructible')"
 						},
-						"destroy_speed": 90.0
+						"destroy_speed": 2.0
 					}
 				]
 			}

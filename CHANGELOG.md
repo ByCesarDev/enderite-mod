@@ -31,5 +31,7 @@ All notable changes to the **Enderite Mod** Minecraft Bedrock AddOn will be docu
 - **Complete Crafting & Smithing Recipes**:
   - Added missing Smithing Table recipes for **Enderite Shulker Box** (`ed:enderite_shulker_box`) and **Enderite Crossbow** (`ed:enderite_cross_bow`).
   - Added Ender Pearl charging recipes for **Enderite Shield** levels 16, 32, 48, and 64 (`enderite:shield_tp_level_*`).
+- **Mining Speed Balancing**:
+  - Adjusted `minecraft:destructible_by_mining` speed values for `cracked_enderite`, `enderite_block`, and `enderite_shulker_box` for Netherite and Enderite tier pickaxes.
 - **Refactored Modular Architecture**:
   - Organized script components under `scripts/components/` with dedicated asset modules.
