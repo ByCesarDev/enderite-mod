@@ -6,3 +6,5 @@ import './components/anchor.js';
 import './components/swords_tp.js';
 import './components/bow.js';
 import './components/enderman.js';
+import './components/void_armor.js';
+import './components/void_floating.js';

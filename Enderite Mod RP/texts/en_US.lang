@@ -1,4 +1,4 @@
-﻿pack.name=Enderite Mod V2 RP
+pack.name=Enderite Mod V2 RP
 pack.description=
 item.ed:enderite_axe=Enderite Axe
 item.ed:enderite_pickaxe=Enderite Pickaxe
@@ -18,28 +18,30 @@ item.ed:enderite_bow.name=Enderite Bow
 item.ed:enderite_arrow.name=Arrow
 tile.ed:enderite_shulker_box.name=Enderite Shulker Box
 
-item.ed:diamond_boots=Diamond Boots §d| §6Void
-item.ed:diamond_chestplate=Diamond Chestplate §d| §6Void
-item.ed:diamond_helmet=Diamond Helmet §d| §6Void
-item.ed:diamond_leggings=Diamond Leggings §d| §6Void
+enchantment.enderitemod.void_floating=Void Floating
+
+item.ed:diamond_boots=Diamond Boots
+item.ed:diamond_chestplate=Diamond Chestplate
+item.ed:diamond_helmet=Diamond Helmet
+item.ed:diamond_leggings=Diamond Leggings
 
 
-item.ed:netherite_boots=Netherite Boots §d| §6Void
-item.ed:netherite_chestplate=Netherite Chestplate §d| §6Void
-item.ed:netherite_helmet=Netherite Helmet §d| §6Void
-item.ed:netherite_leggings=Netherite Leggings §d| §6Void
+item.ed:netherite_boots=Netherite Boots
+item.ed:netherite_chestplate=Netherite Chestplate
+item.ed:netherite_helmet=Netherite Helmet
+item.ed:netherite_leggings=Netherite Leggings
 
 
-item.ed:iron_boots=Iron Boots §d| §6Void
-item.ed:iron_chestplate=Iron Chestplate §d| §6Void
-item.ed:iron_helmet=Iron Helmet §d| §6Void
-item.ed:iron_leggings=Iron Leggings §d| §6Void
+item.ed:iron_boots=Iron Boots
+item.ed:iron_chestplate=Iron Chestplate
+item.ed:iron_helmet=Iron Helmet
+item.ed:iron_leggings=Iron Leggings
 
 
-item.ed:gold_boots=Golden Boots §d| §6Void
-item.ed:gold_chestplate=Golden Chestplate §d| §6Void
-item.ed:gold_helmet=Golden Helmet §d| §6Void
-item.ed:gold_leggings=Golden Leggings §d| §6Void
+item.ed:gold_boots=Golden Boots
+item.ed:gold_chestplate=Golden Chestplate
+item.ed:gold_helmet=Golden Helmet
+item.ed:gold_leggings=Golden Leggings
 item.ed:enderite_upgrade_smithing_template=Enderite Upgrade
 tile.ed:anchor_end_spawn.name=Enderite Respawn Anchor
 item.ed:enderite_shears=Enderite Shears

@@ -23,5 +23,10 @@ All notable changes to the **Enderite Mod** Minecraft Bedrock AddOn will be docu
   - Migrated custom block and item component registrations from deprecated `world.beforeEvents.worldInitialize` to `system.beforeEvents.startup`.
   - Replaced deprecated `player.getViewDirection()` calls with `player.getViewVector()` for accurate 3D vector calculations.
   - Replaced deprecated `player.runCommandAsync(...)` calls with `player.runCommand(...)` across `swords_tp.js`, `shield.js`, and `bow.js`.
+- **Translatable Void Armor Lore (`void_armor.js`)**:
+  - Automatically assigns `{ translate: "enchantment.enderitemod.void_floating" }` lore to all Void armor pieces (`ed:diamond_*`, `ed:netherite_*`, `ed:iron_*`, `ed:gold_*`) via Script API, adapting cleanly to any client language.
+- **Pure Script API Void Floating Engine (`void_floating.js`)**:
+  - Replaced legacy `.mcfunction` 64-command tick loop with a lightweight Script API engine.
+  - Provides smooth upward levitation (`+0.06` Y/tick) and native fire immunity for all Enderite and Void items with 0 server lag.
 - **Refactored Modular Architecture**:
   - Organized script components under `scripts/components/` with dedicated asset modules.
