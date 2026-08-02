@@ -1,136 +1,185 @@
-# Enderite Mod — Minecraft Bedrock Edition AddOn
+<div align="center">
 
-[![Minecraft Bedrock](https://img.shields.io/badge/Minecraft-Bedrock%20Edition-green?logo=minecraft)](https://minecraft.net)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289da?logo=discord)](https://discord.com/invite/z5wshN7Xgm)
+# 🟣 ENDERITE MOD
+### *The Ultimate End-Game Tech Tier for Minecraft Bedrock Edition*
 
-Repositorio oficial de desarrollo del AddOn **Enderite Mod** para Minecraft Bedrock Edition. Este proyecto implementa un tier tecnológico superior al Netherite (Enderite) utilizando el framework nativo de Bedrock (`development_behavior_packs` y `development_resource_packs`).
+[![Minecraft Bedrock](https://img.shields.io/badge/Minecraft-Bedrock%201.21%2B-55FF55?style=for-the-badge&logo=minecraft&logoColor=white)](https://minecraft.net)
+[![Version](https://img.shields.io/badge/Version-v1.1.0-9933FF?style=for-the-badge)](https://github.com/ByCesarDev/Enderite-Mod/releases)
+[![Script API](https://img.shields.io/badge/Script%20API-v2.8.0-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://learn.microsoft.com/en-us/minecraft/creator/scriptapi/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-F1C40F?style=for-the-badge)](https://opensource.org/licenses/MIT)
+[![Discord](https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/z5wshN7Xgm)
 
-## 🛠️ Project Structure & Architecture
+---
 
-El proyecto está estructurado dividiendo limpiamente las mecánicas lógicas de los componentes visuales:
+<p align="center">
+  <b>Enderite Mod</b> elevates your Minecraft Bedrock survival experience by introducing a tier superior to Netherite.<br>
+  Engineered natively using Bedrock's <code>Behavior Pack</code> and <code>Resource Pack</code> frameworks with zero compromise on performance.
+</p>
+
+[✨ Key Features](#-key-features--mechanics) • [🏗️ Architecture](#%EF%B8%8F-project-structure--architecture) • [💻 Dev Setup](#-local-development-setup) • [📜 Terms](#-terms-of-use--licensing)
+
+---
+
+</div>
+
+<br>
+
+## ✨ Key Features & Mechanics
+
+### 📦 Enderite Shulker Box System
+* **Custom 3D Geometry & UI**: Features exclusive 3D models, smooth opening/closing animations, custom sound effects, and a dedicated chest interface.
+* **100% Item State Preservation**: Breaking and relocating your Shulker Box preserves:
+  * 🗡️ Item durability and damage data (`ItemDurabilityComponent`).
+  * ✨ All enchantments (`ItemEnchantableComponent`).
+  * 🏷️ Custom anvil names displayed directly in tooltips.
+  * 📦 Dynamic container properties for nested items.
+
+---
+
+### 🌌 Void Floating Engine & Fire Protection
+* **Anti-Loss Gravitational Engine**: Items dropped in the void ($y < 0$) or lava smoothly levitate upwards back to safety.
+* **Zero Server Lag**: Powered entirely by the light-weight Script API engine, eliminating heavy function tick loops.
+* **Native Fire Immunity**: Full fire and lava resistance for all Enderite tools, weapons, armor, and void items.
+
+---
+
+### ⚔️ Advanced Teleportation & Pearl Charging
+* **Enderite Sword Teleportation**: Consume Ender Pearls via `Sneak + Right-Click` to store up to 64 charges for directional vector teleportation.
+* **Enderite Shield Recharge**: Replenish shield teleportation charges at the Crafting Table using Ender Pearls across 4 distinct power levels (16, 32, 48, 64).
+
+---
+
+### 🛡️ Hybrid Enderite Elytra Chestplate
+* **Armor + Flight Synergy**: Combines heavy Enderite Chestplate defense values with native Elytra gliding mechanics into a single attachable item.
+
+---
+
+### 💥 Explosion-Triggered Mining
+* **Cracked Enderite Ore**: Enderite Ore possesses supreme blast resistance. Detonate explosives (TNT, Ender Crystals, Beds) to convert raw ore into Cracked Enderite before mining with Netherite/Enderite pickaxes.
+
+<br>
+
+---
+
+## 🏗️ Project Structure & Architecture
+
+The repository enforces a strict modular boundary between logical execution (**Behavior Pack**) and visual rendering (**Resource Pack**):
 
 ```
 Enderite Mod/
-├── Enderite Mod BP/            # Behavior Pack (Lógica, Recetas, Componentes de Ítems)
-│   ├── animation_controllers/  # Controladores de estado (ej. Teletransporte/Carga de espada)
-│   ├── blocks/                 # Definición de bloques personalizados (Enderite Ore, Shulker Box)
-│   ├── entities/               # Entidades personalizadas (ej. Enderite Shulker Box entity)
-│   ├── feature_rules/          # Reglas de generación de características en el mundo
-│   ├── features/               # Características de generación (venas de mineral, estructuras)
-│   ├── functions/              # Funciones mcfunction para lógica de comandos
-│   ├── items/                  # JSONs de definición de ítems (Enderite Tools, Armor, Bow)
-│   ├── loot_tables/            # Tablas de botín para bloques, entidades y cofres
-│   ├── recipes/                # Recetas de crafteo y horno de fusión (Blast Furnace)
-│   ├── scripts/                # Scripts de GameTest/Scripting API (TypeScript/JS)
-│   ├── structures/             # Estructuras NBT exportadas
-│   ├── texts/                  # Traducciones y cadenas de texto localizadas
-│   ├── trading/                # Tablas de comercio de aldeanos
-│   ├── worldgen/               # Configuración de generación del mundo
-│   └── manifest.json           # Identificadores únicos (UUID) y dependencias del pack
+├── 📁 Enderite Mod BP/             # Behavior Pack (Logic, Scripts, Recipes, Entities)
+│   ├── 📁 animation_controllers/  # State controllers (Teleportation, Charging logic)
+│   ├── 📁 blocks/                 # Custom block definitions (Enderite Ore, Shulker Box)
+│   ├── 📁 entities/               # Entity handlers (Enderite Shulker Box entity)
+│   ├── 📁 feature_rules/          # Overworld & End generation rules
+│   ├── 📁 features/               # Ore vein generation features
+│   ├── 📁 functions/              # Utility commands and legacy fallback functions
+│   ├── 📁 items/                  # Item components (Tools, Armor, Weapons, Elytra)
+│   ├── 📁 loot_tables/            # Drop tables for ores, mobs, and chests
+│   ├── 📁 recipes/                # Crafting, Blast Furnace & Charging recipes
+│   ├── 📁 scripts/                # GameTest / Script API engine (JS/TS modules)
+│   │   └── 📁 components/         # Modular script components (Void Floating, Armor Lore)
+│   ├── 📁 structures/             # Pre-built NBT structure files
+│   ├── 📁 texts/                  # Localization strings (EN, ES, etc.)
+│   └── 📄 manifest.json           # BP UUID, versioning & dependencies (@minecraft/server 2.8.0)
 │
-├── Enderite Mod RP/            # Resource Pack (Texturas, Modelos, Renderizado)
-│   ├── animation_controllers/  # Controladores de animación del lado cliente
-│   ├── animations/             # Definiciones de animaciones de entidades/ítems
-│   ├── attachables/            # Modelos 3D de ítems equipados (Armaduras, Elytra, Escudo)
-│   ├── entity/                 # Definiciones de renderizado de entidades (cliente)
-│   ├── models/                 # Geometrías 3D (formato bedrock geo)
-│   ├── render_controllers/     # Controladores de renderizado y materiales
-│   ├── textures/               # Sprites, texturas de bloques (Enderite Ore) y UI
-│   ├── texts/                  # Traducciones del lado de recursos
-│   ├── blocks.json             # Registro de sonidos y texturas de bloques
-│   ├── sounds.json             # Registro de efectos de sonido personalizados
-│   └── manifest.json           # Identificadores únicos (UUID) del pack de recursos
+├── 📁 Enderite Mod RP/             # Resource Pack (Models, Textures, Sound Registers)
+│   ├── 📁 animation_controllers/  # Client-side state transitions
+│   ├── 📁 animations/             # Entity & item animation keyframes
+│   ├── 📁 attachables/            # 3D models for equipped gear (Armor, Elytra, Shield)
+│   ├── 📁 entity/                 # Client render definitions
+│   ├── 📁 models/                 # Bedrock 3D geometry JSONs
+│   ├── 📁 render_controllers/     # Material and texture binding rules
+│   ├── 📁 textures/               # Item sprites, block textures, and UI assets
+│   ├── 📁 texts/                  # Client-side translation strings
+│   ├── 📄 blocks.json             # Block texture & sound registry
+│   ├── 📄 sounds.json             # Custom sound definitions
+│   └── 📄 manifest.json           # RP UUID and client manifest metadata
 │
-└── Enderite Mod.code-workspace # Entorno de trabajo unificado para VS Code
+└── 📄 Enderite Mod.code-workspace # VS Code unified multi-root workspace
 ```
+
+<br>
 
 ---
 
-## 🔬 Core Mechanics Implemented
+## 💻 Local Development Setup
 
-* **Void Floating Engine:** Simulación de gravedad cero y flotación para entidades de ítems caídos en el vacío ($y < 0$), con persistencia tras la muerte del jugador.
-* **Explosion-Triggered Mining:** Bloque de mineral (`Enderite Ore`) con alta resistencia que requiere un estado de "agrietado" detonado por explosivos (TNT/Camas) antes de permitir el minado con herramientas de Netherite.
-* **Enderite Shulker Box System:** Implementación completa del bloque e interfaz de Shulker Box de Enderite (`ed:enderite_shulker_box`), con compatibilidad de tolvas y renderizado 3D.
-* **Full Item State Preservation:** Persistencia total de durabilidad/daño, encantamientos (`enchantable`), nombres personalizados de yunque (`nameTag`) y lore dinámico al romper y volver a colocar cajas de Shulker.
-* **Item State Custom Charging:** Mecánica interactiva en la Espada de Enderite que consume Ender Pearls al usar `Sneak + Right-click`, acumulando cargas en memoria (Max: 64) para ejecutar teletransportaciones vectoriales.
-* **Dynamic Attachables:** Integración híbrida en el pecho (`Enderite Elytra Chestplate`) que combina propiedades de armadura pesada y propiedades de planeo dinámico nativo.
+To develop and test live changes in Minecraft Bedrock without manual file copying:
+
+### ⚙️ Prerequisites
+* Windows 10/11 with **Minecraft Bedrock Edition** installed.
+* [Visual Studio Code](https://code.visualstudio.com/) (recommended with Bedrock development extensions).
+* **PowerShell** executed as **Administrator** (required to initialize symbolic links).
 
 ---
 
-## 💻 Local Development Setup (Workflow)
+### 🔄 Symlink Workflow Architecture
 
-Para desarrollar, testear o colaborar en este repositorio sin romper las rutas internas de Minecraft Bedrock:
-
-### Requisitos previos
-
-* Windows 10/11 con Minecraft Bedrock instalado.
-* [Visual Studio Code](https://code.visualstudio.com/).
-* PowerShell ejecutado **como Administrador** (necesario para crear symlinks).
-
-### ¿Cómo funciona el entorno en espejo?
-
-Este repositorio utiliza **Enlaces Simbólicos (Symlinks)** — punteros a nivel del sistema operativo que hacen que una carpeta en `com.mojang` **sea físicamente la misma** que la carpeta del repo, sin duplicar archivos.
+This environment maps folders directly inside `com.mojang` to your local repository via **OS Symbolic Links**:
 
 ```
-Minecraft carga los packs desde com.mojang\...
-        │
-        ▼
-com.mojang\development_behavior_packs\Enderite Mod BP  ──(symlink)──► Desktop\...\Enderite Mod BP
-com.mojang\development_resource_packs\Enderite Mod RP  ──(symlink)──► Desktop\...\Enderite Mod RP
-                                                                               ▲
-                                                              Tú editas aquí en VS Code
+Minecraft engine loads packs from com.mojang:
+                  │
+                  ▼
+com.mojang\development_behavior_packs\Enderite Mod BP  ──(Symlink)──► Local Repo\Enderite Mod BP
+com.mojang\development_resource_packs\Enderite Mod RP  ──(Symlink)──► Local Repo\Enderite Mod RP
+                                                                            ▲
+                                                                  You edit here in VS Code!
 ```
 
-**Ventaja:** editas un archivo en VS Code → guardas → Minecraft ya tiene el cambio. Sin copiar, sin sincronizar.
+> **Benefit**: Every save in VS Code updates Minecraft instantly. No export/import needed!
 
-### Instalación
+---
 
-1. Clona este repositorio en tu carpeta local de proyectos:
+### 🚀 Setup Instructions
 
-```bash
-git clone https://github.com/ByCesarDev/Enderite-Mod.git
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/ByCesarDev/Enderite-Mod.git
+   ```
 
-2. Ejecuta **PowerShell como Administrador** y crea los symlinks, ajustando la ruta del repo a donde lo clonaste:
+2. **Open PowerShell as Administrator** and create symlinks:
+   ```powershell
+   # Set the path to your cloned repository folder
+   $repo = "C:\Users\TuUsuario\Desktop\Proyectos\Personales\Minecraft\AddOns\Enderite Mod"
 
-```powershell
-# Reemplaza <RUTA_DEL_REPO> con la ruta donde clonaste el repositorio
-# Ejemplo: C:\Users\TuUsuario\Desktop\Proyectos\Minecraft\Enderite Mod
-$repo = "<RUTA_DEL_REPO>"
+   # Auto-detect com.mojang folder for Minecraft Bedrock (UWP)
+   $comMojang = "$env:LOCALAPPDATA\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"
 
-# Detectar la carpeta com.mojang automáticamente según la instalación
-# Opción A — Minecraft Bedrock estándar (Microsoft Store / UWP)
-$comMojang = "$env:LOCALAPPDATA\Packages\Microsoft.MinecraftUWP_8wekyb3d8bbwe\LocalState\games\com.mojang"
+   # Create Behavior Pack Symlink
+   New-Item -ItemType SymbolicLink `
+     -Path "$comMojang\development_behavior_packs\Enderite Mod BP" `
+     -Value "$repo\Enderite Mod BP"
 
-# Opción B — Minecraft Bedrock Preview / instalación alternativa
-# $comMojang = "$env:APPDATA\Minecraft Bedrock\Users\Shared\games\com.mojang"
+   # Create Resource Pack Symlink
+   New-Item -ItemType SymbolicLink `
+     -Path "$comMojang\development_resource_packs\Enderite Mod RP" `
+     -Value "$repo\Enderite Mod RP"
+   ```
 
-# Crear symlink del Behavior Pack
-New-Item -ItemType SymbolicLink `
-  -Path "$comMojang\development_behavior_packs\Enderite Mod BP" `
-  -Value "$repo\Enderite Mod BP"
+3. Open `Enderite Mod.code-workspace` in VS Code and start coding!
 
-# Crear symlink del Resource Pack
-New-Item -ItemType SymbolicLink `
-  -Path "$comMojang\development_resource_packs\Enderite Mod RP" `
-  -Value "$repo\Enderite Mod RP"
-```
-
-> **Nota:** Si ves un error de acceso denegado, asegúrate de abrir PowerShell como Administrador.  
-> Si ya existe la carpeta en `com.mojang`, bórrala antes de ejecutar el comando.
-
-3. Abre el archivo `Enderite Mod.code-workspace` en VS Code para empezar a programar.
+<br>
 
 ---
 
 ## 🛑 Terms of Use & Licensing
 
-* **Código Fuente:** Distribuido bajo la licencia [MIT](https://opensource.org/licenses/MIT). Siéntete libre de inspeccionar los JSONs para aprender cómo se estructuran los componentes.
-* **Derechos del AddOn:** Queda estrictamente prohibida la modificación, clonación o redistribución de este AddOn completo en otras tiendas/páginas web mediante acortadores o enlaces directos. Por favor, comparte siempre los enlaces oficiales de distribución:
-  * [CurseForge Bedrock](https://www.curseforge.com/minecraft-bedrock/addons/enderite-mod)
-  * [MCPEDL](https://mcpedl.com/enderite-mod/)
+* **Source Code**: Released under the [MIT License](https://opensource.org/licenses/MIT). You are free to inspect, learn from, and utilize code snippets for non-commercial educational purposes.
+* **AddOn Distribution**: Re-uploading, modifying, or distributing this AddOn on third-party websites or using monetized link shorteners is strictly prohibited. Please link directly to our official distribution pages:
+  * 🟢 [CurseForge Bedrock Page](https://www.curseforge.com/minecraft-bedrock/addons/enderite-mod)
+  * 🟦 [MCPEDL Page](https://mcpedl.com/enderite-mod/)
 
 ---
 
-💬 **Soporte y Feedback:** Si encuentras algún bug en los esquemas JSON o en las animaciones, abre un *Issue* en este repositorio o repórtalo en el [Servidor de Discord](https://discord.com/invite/z5wshN7Xgm).
+<div align="center">
+
+💬 **Need help or want to report a bug?**  
+Join our community on [Discord](https://discord.com/invite/z5wshN7Xgm) or open an issue on the [GitHub Repository](https://github.com/ByCesarDev/Enderite-Mod/issues).
+
+---
+
+<b>Crafted with ❤️ by ByCesarDev & The Enderite Mod Team</b>
+
+</div>
