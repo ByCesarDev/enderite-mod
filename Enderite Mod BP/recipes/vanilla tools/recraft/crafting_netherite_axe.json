@@ -1,0 +1,22 @@
+{
+  "format_version": "1.26",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "crafting:netherite_axe_recraft"
+    },
+    "unlock": [
+      {
+        "item": "minecraft:netherite_axe"
+      }
+    ],
+    "tags": ["crafting_table"],
+    "ingredients": [
+      {
+        "item": "ed:netherite_axe"
+      }
+    ],
+    "result": {
+      "item": "minecraft:netherite_axe"
+    }
+  }
+}

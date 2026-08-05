@@ -1,15 +1,4 @@
 {
   "format_version": "1.26.0",
-  "sound_definitions": {
-    "ed:shulker.open": {
-      "sounds": ["random.shulkerboxopen"],
-      "category": "block",
-      "subtitle": "ed:subtitle.shulker.open"
-    },
-    "ed:shulker.close": {
-      "sounds": ["random.shulkerboxclosed"],
-      "category": "block",
-      "subtitle": "ed:subtitle.shulker.close"
-    }
-  }
+  "sound_definitions": {}
 }

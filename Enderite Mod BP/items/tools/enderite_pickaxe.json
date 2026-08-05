@@ -1,4 +1,4 @@
-﻿{
+{
 	"format_version": "1.20.80",
 	"minecraft:item": {
 		"description": {
@@ -19,9 +19,15 @@
 				"repair_items": [
 					{
 						"items": [
+							"ed:enderite_ingot"
+						],
+						"repair_amount": "query.max_durability*0.25"
+					},
+					{
+						"items": [
 							"ed:enderite_pickaxe"
 						],
-						"repair_amount": 20
+						"repair_amount": "context.other->query.remaining_durability+0.12*context.other->query.max_durability"
 					}
 				]
 			},

@@ -25,7 +25,7 @@
 						"first_person_hold": "c.is_first_person"
 					},
 					{
-						"third_person_hold": "!c.is_first_person"
+						"third_person_hold": "!c.is_first_person && (c.item_slot == 'main_hand' || c.item_slot == 'off_hand')"
 					}
 				]
 			}

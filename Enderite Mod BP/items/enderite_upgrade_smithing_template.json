@@ -10,9 +10,9 @@
 		},
 		"components": {
 			"minecraft:icon": "ed_enderite_upgrade_smithing_template",
-			"minecraft:tags": { "tags": [
-					"minecraft:smithing_template",
-					"minecraft:transform_materials"
+			"minecraft:tags": {
+				"tags": [
+					"minecraft:transform_templates"
 				]
 			}
 		}

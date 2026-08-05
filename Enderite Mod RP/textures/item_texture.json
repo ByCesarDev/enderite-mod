@@ -126,7 +126,21 @@
 		},
 		"enderite_shulker_box": {
 			"textures": "textures/items/enderite_shulker_box"
+		},
+		"netherite_axe": {
+			"textures": "textures/items/netherite_axe"
+		},
+		"netherite_pickaxe": {
+			"textures": "textures/items/netherite_pickaxe"
+		},
+		"netherite_shovel": {
+			"textures": "textures/items/netherite_shovel"
+		},
+		"netherite_hoe": {
+			"textures": "textures/items/netherite_hoe"
+		},
+		"netherite_sword": {
+			"textures": "textures/items/netherite_sword"
 		}
-
 	}
 }

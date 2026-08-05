@@ -1,5 +1,5 @@
-﻿{
-	"format_version": "1.20.80",
+{
+	"format_version": "1.21.30",
 	"minecraft:item": {
 		"description": {
 			"identifier": "ed:enderite_boots",
@@ -22,10 +22,6 @@
 				}
 			},
 			"minecraft:icon": "enderite_boots",
-			"minecraft:wearable": {
-				"slot": "slot.armor.feet",
-				"protection": 4
-			},
 			"minecraft:repairable": {
 				"repair_items": [
 					{
@@ -42,11 +38,24 @@
 					}
 				]
 			},
-			"minecraft:tags": { "tags": [
+			"minecraft:tags": {
+				"tags": [
 					"minecraft:is_armor",
 					"minecraft:transformable_items",
-					"minecraft:trimmable_armors"
+					"minecraft:trimmable_armors",
+					"ed:custom_armor",
+					"ed:armor-3",
+					"ed:toughness-3",
+					"ed:knockback-1"
 				]
+			},
+			"minecraft:equippable": {
+				"slot": "slot.armor.feet",
+				"equip_sound": "armor.equip_netherite"
+			},
+			"minecraft:wearable": {
+				"slot": "slot.armor.feet",
+				"protection": 0
 			}
 		}
 	}

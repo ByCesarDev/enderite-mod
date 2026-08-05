@@ -35,9 +35,9 @@ export function entityHitEntity(data) {
     player?.typeId === "minecraft:player" &&
     entity?.getComponent("type_family")?.hasTypeFamily("ed:shulker")
   ) {
-    player.onScreenDisplay.setActionBar(
-      "To §cdestroy§r a shulker box, hold §eSHIFT§r and try to break it again",
-    );
+    player.onScreenDisplay.setActionBar({
+      translate: "actionbar.ed:shulker_destroy_hint"
+    });
     player.playSound("random.orb", { pitch: 0.5 });
   }
 }

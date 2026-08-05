@@ -1,4 +1,4 @@
-﻿{
+{
 	"format_version": "1.20.80",
 	"minecraft:item": {
 		"description": {
@@ -13,6 +13,22 @@
 			"minecraft:hand_equipped": true,
 			"minecraft:durability": {
 				"max_durability": 4096
+			},
+			"minecraft:repairable": {
+				"repair_items": [
+					{
+						"items": [
+							"ed:enderite_ingot"
+						],
+						"repair_amount": "query.max_durability*0.25"
+					},
+					{
+						"items": [
+							"ed:enderite_shovel"
+						],
+						"repair_amount": "context.other->query.remaining_durability+0.12*context.other->query.max_durability"
+					}
+				]
 			},
 			"minecraft:icon": "enderite_shovel",
 			"minecraft:damage": 7,

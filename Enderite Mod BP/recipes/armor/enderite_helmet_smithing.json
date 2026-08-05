@@ -1,0 +1,18 @@
+{
+  "format_version": "1.26",
+  "minecraft:recipe_smithing_transform": {
+    "description": {
+      "identifier": "crafting:ed_enderite_helmet_smithing"
+    },
+    "unlock": [
+      {
+        "item": "ed:enderite_upgrade_smithing_template"
+      }
+    ],
+    "tags": ["smithing_table"],
+    "template": "ed:enderite_upgrade_smithing_template",
+    "base": "minecraft:netherite_helmet",
+    "addition": "ed:enderite_ingot",
+    "result": "ed:enderite_helmet"
+  }
+}

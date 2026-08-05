@@ -9,11 +9,11 @@ const CUSTOM_SHIELDS = [
 ];
 
 const shieldNames = {
-    'enderite:shield': "Enderite Shield\n§3Charge: 0\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!",
-    'enderite:shield_tp': "Enderite Shield\n§3Charge: 16\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!",
-    'enderite:shield_tp_lv2': "Enderite Shield\n§3Charge: 32\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!",
-    'enderite:shield_tp_lv3': "Enderite Shield\n§3Charge: 48\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!",
-    'enderite:shield_tp_lv4': "Enderite Shield\n§3Charge: 64\n§7Upgrade in Enderite Crafting Tools with\nender pearls to load teleportation uses.\nTeleport attackers with sneaking + right click!"
+    'enderite:shield': "Enderite Shield",
+    'enderite:shield_tp': "Enderite Shield",
+    'enderite:shield_tp_lv2': "Enderite Shield",
+    'enderite:shield_tp_lv3': "Enderite Shield",
+    'enderite:shield_tp_lv4': "Enderite Shield"
 };
 
 const shieldDurability = {
@@ -447,6 +447,13 @@ system.runInterval(() => {
             let newShield = new ItemStack('minecraft:shield');
             newShield.setDynamicProperty("shield:variant", offhandItem.typeId);
             newShield.nameTag = shieldNames[offhandItem.typeId] || "§r§dEnderite Shield";
+            newShield.setLore([
+                { text: " " },
+                { translate: "lore.ed:charge", with: [(shieldCharges[offhandItem.typeId] || 0).toString()] },
+                { translate: "lore.ed:upgrade_info" },
+                { translate: "lore.ed:ender_pearls" },
+                { translate: "lore.ed:shield_teleport" }
+            ]);
             const offhandDamage = offhandItem?.getComponent("durability")?.damage ?? 0;
             const newShieldDurability = newShield.getComponent("durability");
             if (newShieldDurability) newShieldDurability.damage = offhandDamage;
@@ -478,6 +485,13 @@ system.runInterval(() => {
             let newShield = new ItemStack('minecraft:shield');
             newShield.setDynamicProperty("shield:variant", mainhandItem.typeId);
             newShield.nameTag = shieldNames[mainhandItem.typeId] || "§r§dEnderite Shield";
+            newShield.setLore([
+                { text: " " },
+                { translate: "lore.ed:charge", with: [(shieldCharges[mainhandItem.typeId] || 0).toString()] },
+                { translate: "lore.ed:upgrade_info" },
+                { translate: "lore.ed:ender_pearls" },
+                { translate: "lore.ed:shield_teleport" }
+            ]);
             const mainhandDamage = mainhandItem?.getComponent("durability")?.damage ?? 0;
             const newShieldDurability = newShield.getComponent("durability");
             if (newShieldDurability) newShieldDurability.damage = mainhandDamage;

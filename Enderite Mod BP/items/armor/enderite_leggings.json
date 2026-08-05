@@ -1,5 +1,5 @@
-﻿{
-	"format_version": "1.20.80",
+{
+	"format_version": "1.21.30",
 	"minecraft:item": {
 		"description": {
 			"identifier": "ed:enderite_leggings",
@@ -22,10 +22,6 @@
 				}
 			},
 			"minecraft:icon": "enderite_leggings",
-			"minecraft:wearable": {
-				"slot": "slot.armor.legs",
-				"protection": 7
-			},
 			"minecraft:repairable": {
 				"repair_items": [
 					{
@@ -42,11 +38,24 @@
 					}
 				]
 			},
-			"minecraft:tags": { "tags": [
+			"minecraft:tags": {
+				"tags": [
 					"minecraft:is_armor",
 					"minecraft:transformable_items",
-					"minecraft:trimmable_armors"
+					"minecraft:trimmable_armors",
+					"ed:custom_armor",
+					"ed:armor-6",
+					"ed:toughness-3",
+					"ed:knockback-1"
 				]
+			},
+			"minecraft:equippable": {
+				"slot": "slot.armor.legs",
+				"equip_sound": "armor.equip_netherite"
+			},
+			"minecraft:wearable": {
+				"slot": "slot.armor.legs",
+				"protection": 0
 			}
 		}
 	}

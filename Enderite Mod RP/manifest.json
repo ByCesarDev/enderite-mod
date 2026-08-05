@@ -13,6 +13,7 @@
 			26,
 			30
 		],
+		"pack_scope": "world",
 		"uuid": "1dc138ad-0c82-4ca2-b1c6-60fdbe072981",
 		"version": [
 			1,
@@ -40,5 +41,6 @@
 				0
 			]
 		}
-	]
+	],
+	"capabilities": ["pbr"]
 }

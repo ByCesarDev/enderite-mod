@@ -1,5 +1,5 @@
-﻿{
-	"format_version": "1.20.80",
+{
+	"format_version": "1.21.30",
 	"minecraft:item": {
 		"description": {
 			"identifier": "elytra:chesplate_broken",
@@ -27,10 +27,6 @@
 			"minecraft:durability": {
 				"max_durability": 1024
 			},
-			"minecraft:wearable": {
-				"slot": "slot.armor.chest",
-				"protection": 9
-			},
 			"minecraft:repairable": {
 				"repair_items": [
 					{
@@ -39,6 +35,23 @@
 						],
 						"repair_amount": 150
 					}
+				]
+			},
+			"minecraft:rarity": "epic",
+			"minecraft:equippable": {
+				"slot": "slot.armor.chest",
+				"equip_sound": "armor.equip_netherite"
+			},
+			"minecraft:wearable": {
+				"slot": "slot.armor.chest",
+				"protection": 0
+			},
+			"minecraft:tags": {
+				"tags": [
+					"ed:custom_armor",
+					"ed:armor-8",
+					"ed:toughness-3",
+					"ed:knockback-1"
 				]
 			}
 		}

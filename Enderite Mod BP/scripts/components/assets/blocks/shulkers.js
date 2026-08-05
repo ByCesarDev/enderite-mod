@@ -192,8 +192,8 @@ function buildLore(json) {
 
     if (!stackEntries.length) return [];
 
-    const lines = stackEntries.slice(0, 6).map(({ id, nameTag, count }) => {
-      const countText = count > 1 ? ` §fx${count}` : "";
+    const lines = stackEntries.slice(0, 5).map(({ id, nameTag, count }) => {
+      const countText = ` §fx${count}`;
 
       if (nameTag) {
         return {
@@ -222,10 +222,11 @@ function buildLore(json) {
       };
     });
 
-    if (stackEntries.length > 6) {
+    if (stackEntries.length > 5) {
       lines.push({
         rawtext: [
-          { text: "§7and " + (stackEntries.length - 6) + " more..." },
+          { text: "§7" },
+          { translate: "lore.ed:shulker_more", with: [String(stackEntries.length - 5)] }
         ],
       });
     }

@@ -10,8 +10,8 @@
 		},
 		"components": {
 			"minecraft:icon": "enderite_ingot",
-			"minecraft:tags": { "tags": [
-					"minecraft:smithing_template",
+			"minecraft:tags": {
+				"tags": [
 					"minecraft:transform_materials"
 				]
 			}

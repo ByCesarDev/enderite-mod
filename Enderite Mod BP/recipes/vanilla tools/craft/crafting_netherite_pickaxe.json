@@ -1,0 +1,22 @@
+{
+  "format_version": "1.26",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "crafting:netherite_pickaxe"
+    },
+    "unlock": [
+      {
+        "item": "minecraft:netherite_pickaxe"
+      }
+    ],
+    "tags": ["crafting_table"],
+    "ingredients": [
+      {
+        "item": "minecraft:netherite_pickaxe"
+      }
+    ],
+    "result": {
+      "item": "ed:netherite_pickaxe"
+    }
+  }
+}
