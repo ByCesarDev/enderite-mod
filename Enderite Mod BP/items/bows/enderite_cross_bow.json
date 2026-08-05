@@ -8,10 +8,11 @@
 		"components": {
 			"minecraft:frame_count": 3,
 			"minecraft:use_animation": "crossbow",
+			"minecraft:icon": "enderite_crossbow",
 			"minecraft:display_name": {
 				"value": "item.ed:enderite_cross_bow.name"
 			},
-			"minecraft:icon": "enderite_crossbow",
+			
 			"minecraft:durability": {
 				"max_durability": 768
 			},

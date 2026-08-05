@@ -5,10 +5,10 @@ item.ed:enderite_pickaxe=Pico de Enderita
 item.ed:enderite_hoe=Azada de Enderita
 item.ed:enderite_shovel=Pala de Enderita
 item.ed:enderite_sword=Espada de Enderita
-item.ed:enderite_helmet=Casco de Enderita\n§9+3 Armadura\n§9+3 Dureza de armadura\n§9+1 Resistencia al empuje
-item.ed:enderite_chestplate=Coraza de Enderita\n§9+8 Armadura\n§9+3 Dureza de armadura\n§9+1 Resistencia al empuje
-item.ed:enderite_leggings=Pantalones de Enderita\n§9+6 Armadura\n§9+3 Dureza de armadura\n§9+1 Resistencia al empuje
-item.ed:enderite_boots=Botas de Enderita\n§9+3 Armadura\n§9+3 Dureza de armadura\n§9+1 Resistencia al empuje
+item.ed:enderite_helmet=Casco de Enderita
+item.ed:enderite_chestplate=Coraza de Enderita
+item.ed:enderite_leggings=Pantalones de Enderita
+item.ed:enderite_boots=Botas de Enderita
 item.ed:enderite_scrap=Fragmento de Enderita
 item.ed:enderite_ingot=Lingote de Enderita
 tile.ed:cracked_enderite.name=Mena de enderita agrietada
@@ -68,8 +68,8 @@ item.ed:enderite_sword_tp_l3.name=Espada de Enderita
 
 item.ed:enderite_sword_tp_l4.name=Espada de Enderita
 
-item.elytra:chesplate_broken.name=Coraza con Élitros de Enderita\n§9+8 Armadura\n§9+3 Dureza de armadura\n§9+1 Resistencia al empuje
-item.elytra:chesplate.name=Coraza con Élitros de Enderita\n§9+8 Armadura\n§9+3 Dureza de armadura\n§9+1 Resistencia al empuje
+item.elytra:chesplate_broken.name=Coraza con Élitros de Enderita
+item.elytra:chesplate.name=Coraza con Élitros de Enderita
 item.elytra:enderite.name=Élitros de Enderita
 item.elytra:enderite_broken.name=Élitros de Enderita
 
@@ -90,3 +90,6 @@ lore.ed:sword_teleport=§7¡Teletranspórtate agachándote + click derecho!
 lore.ed:shield_teleport=§7¡Teletransporta atacantes agachándote + click derecho!
 lore.ed:shulker_more=y %1 más...
 actionbar.ed:shulker_destroy_hint=§aMantén SHIFT para destruir la shulker
+
+lore.ed:armor_toughness=§9+4 Resistencia de la armadura
+lore.ed:knockback_resistance=§9+1 Resistencia al derribo

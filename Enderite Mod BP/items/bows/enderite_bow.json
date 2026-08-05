@@ -8,10 +8,11 @@
 		"components": {
 			"minecraft:frame_count": 3,
 			"minecraft:use_animation": "bow",
+			"minecraft:icon": "enderite_bow",
 			"minecraft:display_name": {
 				"value": "item.ed:enderite_bow.name"
 			},
-			"minecraft:icon": "enderite_bow",
+			
 			"minecraft:durability": {
 				"max_durability": 768
 			},

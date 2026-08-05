@@ -5,10 +5,10 @@ item.ed:enderite_pickaxe=Enderite Pickaxe
 item.ed:enderite_hoe=Enderite Hoe
 item.ed:enderite_shovel=Enderite Shovel
 item.ed:enderite_sword=Enderite Sword
-item.ed:enderite_helmet=Enderite Helmet\n§9+3 Armor\n§9+3 Armor Toughness\n§9+1 Knockback Resistance
-item.ed:enderite_chestplate=Enderite Chestplate\n§9+8 Armor\n§9+3 Armor Toughness\n§9+1 Knockback Resistance
-item.ed:enderite_leggings=Enderite Leggings\n§9+6 Armor\n§9+3 Armor Toughness\n§9+1 Knockback Resistance
-item.ed:enderite_boots=Enderite Boots\n§9+3 Armor\n§9+3 Armor Toughness\n§9+1 Knockback Resistance
+item.ed:enderite_helmet=Enderite Helmet
+item.ed:enderite_chestplate=Enderite Chestplate
+item.ed:enderite_leggings=Enderite Leggings
+item.ed:enderite_boots=Enderite Boots
 item.ed:enderite_scrap=Enderite Scrap
 item.ed:enderite_ingot=Enderite Ingot
 tile.ed:cracked_enderite.name=Cracked Enderite Ore
@@ -72,8 +72,8 @@ item.ed:enderite_sword_tp_l3.name=Enderite Sword
 
 item.ed:enderite_sword_tp_l4.name=Enderite Sword
 
-item.elytra:chesplate_broken.name=Enderite Elytra Chestplate\n§9+8 Armor\n§9+3 Armor Toughness\n§9+1 Knockback Resistance
-item.elytra:chesplate.name=Enderite Elytra Chestplate\n§9+8 Armor\n§9+3 Armor Toughness\n§9+1 Knockback Resistance
+item.elytra:chesplate_broken.name=Enderite Elytra Chestplate
+item.elytra:chesplate.name=Enderite Elytra Chestplate
 item.elytra:enderite.name=Enderite Elytra
 item.elytra:enderite_broken.name=Enderite Elytra
 
@@ -97,3 +97,6 @@ lore.ed:sword_teleport=§7Teleport with sneaking + right click!
 lore.ed:shield_teleport=§7Teleport attackers with sneaking + right click!
 lore.ed:shulker_more=and %1 more...
 actionbar.ed:shulker_destroy_hint=§aHold SHIFT to destroy the shulker box
+
+lore.ed:armor_toughness=§9+4 Armor Toughness
+lore.ed:knockback_resistance=§9+1 Knockback Resistance

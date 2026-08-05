@@ -44,8 +44,8 @@
 					"minecraft:transformable_items",
 					"minecraft:trimmable_armors",
 					"ed:custom_armor",
-					"ed:armor-3",
-					"ed:toughness-3",
+					"ed:armor-4",
+					"ed:toughness-4",
 					"ed:knockback-1"
 				]
 			},
@@ -55,7 +55,7 @@
 			},
 			"minecraft:wearable": {
 				"slot": "slot.armor.head",
-				"protection": 0
+				"protection": 4
 			}
 		}
 	}

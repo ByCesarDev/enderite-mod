@@ -13,42 +13,73 @@ const TP_ITEMS = {
   "enderite:shield_tp_lv4": 64,
 };
 
+const ARMOR_ITEMS = new Set([
+  "ed:enderite_helmet",
+  "ed:enderite_chestplate",
+  "ed:enderite_leggings",
+  "ed:enderite_boots",
+  "ed:enderite_elytra_chesplate",
+  "ed:enderite_elytra_chesplate_broken",
+  "elytra:chesplate",
+  "elytra:chesplate_broken" // ID from the json earlier might be this
+]);
+
 function applyTPLore(itemStack) {
-  if (!itemStack || !(itemStack.typeId in TP_ITEMS)) return false;
+  if (!itemStack) return false;
+
+  const isTP = itemStack.typeId in TP_ITEMS;
+  const isArmor = ARMOR_ITEMS.has(itemStack.typeId);
+
+  if (!isTP && !isArmor) return false;
 
   try {
     const currentLore = itemStack.getLore();
-    // Check if lore is already applied (we can check by length, since we add 5 lines)
-    if (currentLore && currentLore.length >= 4) {
+    // Armaduras tienen 2 lineas, TP tools tienen 5
+    const targetLength = isArmor ? 2 : 5;
+    if (currentLore && currentLore.length >= targetLength) {
        return false;
     }
   } catch {}
 
   try {
-    const charge = TP_ITEMS[itemStack.typeId];
-    const isShield = itemStack.typeId.includes("shield");
-    
-    // We use RawMessage for all translations so it supports language changing dynamically!
-    const lore = [
-        { text: " " },
-        { translate: "lore.ed:charge", with: [charge.toString()] },
-        { translate: "lore.ed:upgrade_info" },
-        { translate: "lore.ed:ender_pearls" },
-        { translate: isShield ? "lore.ed:shield_teleport" : "lore.ed:sword_teleport" }
-    ];
+    let lore = [];
+    if (isArmor) {
+        lore = [
+            { translate: "lore.ed:armor_toughness" },
+            { translate: "lore.ed:knockback_resistance" }
+        ];
+    } else {
+        const charge = TP_ITEMS[itemStack.typeId];
+        const isShield = itemStack.typeId.includes("shield");
+        lore = [
+            { text: " " },
+            { translate: "lore.ed:charge", with: [charge.toString()] },
+            { translate: "lore.ed:upgrade_info" },
+            { translate: "lore.ed:ender_pearls" },
+            { translate: isShield ? "lore.ed:shield_teleport" : "lore.ed:sword_teleport" }
+        ];
+    }
     
     itemStack.setLore(lore);
     return true;
   } catch (e) {
     try {
-      // Fallback for older API versions if RawMessage array fails
-      itemStack.setLore([
-        " ",
-        "§3Charge: " + charge,
-        "§7Upgrade in Enderite Crafting Tools with",
-        "§7ender pearls to load teleportation uses.",
-        isShield ? "§7Teleport attackers with sneaking + right click!" : "§7Teleport with sneaking + right click!"
-      ]);
+      if (isArmor) {
+        itemStack.setLore([
+          "§9+4 Armor Toughness", // Fallback if translations fail
+          "§9+1 Knockback Resistance"
+        ]);
+      } else {
+        const charge = TP_ITEMS[itemStack.typeId];
+        const isShield = itemStack.typeId.includes("shield");
+        itemStack.setLore([
+          " ",
+          "§3Charge: " + charge,
+          "§7Upgrade in Enderite Crafting Tools with",
+          "§7ender pearls to load teleportation uses.",
+          isShield ? "§7Teleport attackers with sneaking + right click!" : "§7Teleport with sneaking + right click!"
+        ]);
+      }
       return true;
     } catch {}
   }
@@ -83,7 +114,7 @@ system.runInterval(() => {
         if (inventory) {
           for (let i = 0; i < inventory.size; i++) {
             const item = inventory.getItem(i);
-            if (item && item.typeId in TP_ITEMS) {
+            if (item && (item.typeId in TP_ITEMS || ARMOR_ITEMS.has(item.typeId))) {
               if (applyTPLore(item)) {
                 inventory.setItem(i, item);
               }
@@ -96,10 +127,10 @@ system.runInterval(() => {
       try {
         const equippable = player.getComponent("equippable");
         if (equippable) {
-          const slots = ["Mainhand", "Offhand"];
+          const slots = ["Mainhand", "Offhand", "Head", "Chest", "Legs", "Feet"];
           for (const slotName of slots) {
             const item = equippable.getEquipment(slotName);
-            if (item && item.typeId in TP_ITEMS) {
+            if (item && (item.typeId in TP_ITEMS || ARMOR_ITEMS.has(item.typeId))) {
               if (applyTPLore(item)) {
                 equippable.setEquipment(slotName, item);
               }
