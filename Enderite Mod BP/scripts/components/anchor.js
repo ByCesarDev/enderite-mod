@@ -40,6 +40,62 @@ const PROP_EXITING_END = "ed:exiting_end";
  */
 const playersProcessingRespawn = new Set();
 
+
+/*
+ * Genera partículas ambientales alrededor del bloque.
+ */
+function spawnAnchorAmbientParticles(block, level, player) {
+    console.warn(`[Anchor] spawnAnchorAmbientParticles called with level: ${level}, player: ${player?.name}`);
+    if (typeof level !== "number" || level <= 0) {
+        console.warn(`[Anchor] spawnAnchorAmbientParticles returning due to invalid level: ${level}`);
+        return;
+    }
+
+    // Usar coordenadas enteras del bloque en lugar de center()
+    const location = block.location;
+    const dimension = block.dimension;
+
+    // Reducir cantidad de partículas para evitar lag
+    const particleCount = Math.max(1, Math.floor(level / 2) + 1);
+
+    // Usar el mismo patrón que en swords_tp.js y shield.js
+    const runCmd = (cmd) => {
+        try {
+            if (player && player.runCommand) {
+                console.warn(`[Anchor] Using player.runCommand: ${cmd}`);
+                player.runCommand(cmd);
+            } else if (player && player.runCommandAsync) {
+                console.warn(`[Anchor] Using player.runCommandAsync: ${cmd}`);
+                player.runCommandAsync(cmd);
+            } else {
+                console.warn(`[Anchor] Using dimension.runCommand: ${cmd}`);
+                dimension.runCommand(cmd);
+            }
+        } catch (e) {
+            console.warn(`[Anchor] Command failed: ${cmd}, error: ${e}`);
+        }
+    };
+
+    for (let i = 0; i < particleCount; i++) {
+        // Coordenadas enteras con pequeños offsets
+        const offsetX = Math.random() < 0.5 ? 0 : 0.5; // Solo 0 o 0.5 para mantener en el centro
+        const offsetZ = Math.random() < 0.5 ? 0 : 0.5;
+        const offsetY = 1.0; // Justo encima del bloque
+
+        const x = location.x + offsetX;
+        const y = location.y + offsetY;
+        const z = location.z + offsetZ;
+
+        // Usar partículas simples sin movimiento/dispersión
+        runCmd(`particle minecraft:end_chest ${x} ${y} ${z}`);
+
+        if (Math.random() < 0.15) {
+            runCmd(`particle minecraft:portal_directional  ${x} ${y} ${z}`);
+        }
+    }
+}
+
+
 /**
  * Consume una perla del End.
  */
@@ -794,3 +850,56 @@ world.afterEvents.playerBreakBlock.subscribe(
         }
     }
 );
+
+
+
+/**
+ * Genera partículas ambientales alrededor de las anclas activas.
+ */
+system.runInterval(() => {
+    console.warn(`[Anchor] Particle interval running`);
+    const processedAnchors = new Set();
+    const endDimension = world.getDimension(END_DIMENSION_ID);
+
+    for (const player of world.getAllPlayers()) {
+        const anchorLocation = getPlayerAnchorLocation(player);
+
+        if (!anchorLocation) {
+            continue;
+        }
+
+        console.warn(`[Anchor] Found anchor location for player ${player.name}: ${anchorLocation.x}, ${anchorLocation.y}, ${anchorLocation.z}`);
+
+        const key =
+            `${anchorLocation.x},${anchorLocation.y},${anchorLocation.z}`;
+
+        // Evita procesar la misma ancla varias veces
+        if (processedAnchors.has(key)) {
+            continue;
+        }
+
+        processedAnchors.add(key);
+
+        let anchor;
+        try {
+            anchor = endDimension.getBlock(anchorLocation);
+        } catch {
+            continue;
+        }
+
+        if (!anchor || anchor.typeId !== ANCHOR_ID) {
+            console.warn(`[Anchor] Block at location is not an anchor or doesn't exist`);
+            continue;
+        }
+
+        const level = anchor.permutation.getState(FILLING_STATE);
+        console.warn(`[Anchor] Anchor level: ${level}`);
+
+        if (typeof level !== "number" || level <= 0) {
+            console.warn(`[Anchor] Skipping particles due to level: ${level}`);
+            continue;
+        }
+
+        spawnAnchorAmbientParticles(anchor, level, player);
+    }
+}, 20); // Aumentar a 20 ticks (1 segundo) para reducir lag
