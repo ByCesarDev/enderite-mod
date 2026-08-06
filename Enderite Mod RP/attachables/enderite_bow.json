@@ -22,23 +22,23 @@
 			},
 			"animations": {
 				"wield": "animation.player.bow_custom.first_person",
-				"thierd": "animation.player.bow_custom",
+				"third": "animation.player.bow_custom",
 				"wield_first_person_pull": "animation.custom_bow.wield_first_person_pull"
 			},
 			"scripts": {
 				"pre_animation": [
-					"variable.charge_time = query.is_using_item ? variable.charge_time + 1 : 0;",
-					"variable.charge_amount = (variable.charge_time >= 60) ? 3 : (variable.charge_time >= 40 ? 2 : (variable.charge_time >= 20 ? 1 : 0));"
+					"variable.charge_amount = math.clamp((query.main_hand_item_max_duration - (query.main_hand_item_use_duration - query.frame_alpha + 1.0)) / 10.0, 0.0, 1.0);",
+					"variable.bow_tex_idx = query.main_hand_item_use_duration == 0.0 ? 0 : math.floor(variable.charge_amount / 0.34) + 1;"
 				],
 				"animate": [
 					{
 						"wield": "c.is_first_person"
 					},
 					{
-						"thierd": "!c.is_first_person"
+						"third": "!c.is_first_person"
 					},
 					{
-						"wield_first_person_pull": "query.is_using_item && c.is_first_person && (temp.value = 0; temp.index = 0; loop(27, {temp.value = (query.is_item_name_any('slot.inventory', temp.index, 'ed:enderite_arrow') || (query.is_item_name_any('slot.hotbar', temp.index, 'ed:enderite_arrow'))); temp.value ? {return temp.value;}; temp.index = temp.index+1;}););"
+						"wield_first_person_pull": "query.main_hand_item_use_duration > 0.0 && c.is_first_person"
 					}
 				]
 			},

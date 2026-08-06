@@ -1,0 +1,46 @@
+{
+	"format_version": "1.16.0",
+	"minecraft:feature_rules": {
+		"description": {
+			"identifier": "multimc:overworld_underground_enderite_feature",
+			"places_feature": "multimc:enderite_feature"
+		},
+		"conditions": {
+			"placement_pass": "surface_pass",
+			"minecraft:biome_filter": {
+				"any_of": [
+					{
+						"test": "has_biome_tag",
+						"operator": "==",
+						"value": "the_end"
+					}
+				]
+			}
+		},
+		"distribution": {
+			"iterations": 5,
+			"coordinate_eval_order": "zyx",
+			"x": {
+				"distribution": "uniform",
+				"extent": [
+					0,
+					12
+				]
+			},
+			"y": {
+				"distribution": "uniform",
+				"extent": [
+					0,
+					48
+				]
+			},
+			"z": {
+				"distribution": "uniform",
+				"extent": [
+					0,
+					12
+				]
+			}
+		}
+	}
+}

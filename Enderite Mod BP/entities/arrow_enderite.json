@@ -1,5 +1,5 @@
 {
-	"format_version": "1.16.0",
+	"format_version": "1.26.20",
 	"minecraft:entity": {
 		"description": {
 			"identifier": "ed:arrow_enderite",
@@ -24,17 +24,22 @@
 			},
 			"pickup_item": {
 				"minecraft:entity_sensor": {
-					"sensor_range": 1.5,
-					"event_filters": {
-						"test": "is_family",
-						"subject": "other",
-						"value": "player"
-					},
-					"event": "ed:spawn_item"
+					"subsensors": [
+						{
+							"range": [1.5, 1.5],
+							"event_filters": {
+								"test": "is_family",
+								"subject": "other",
+								"value": "player"
+							},
+							"event": "ed:spawn_item"
+						}
+					]
 				}
 			},
 			"minecraft:player_arrow": {
 				"minecraft:projectile": {
+					"isolated_physics": true,
 					"on_hit": {
 						"definition_event": {
 							"affect_projectile": true,
@@ -86,11 +91,7 @@
 			"minecraft:scale": {
 				"value": 0.5
 			},
-			"minecraft:physics": {},
-			"minecraft:pushable": {
-				"is_pushable": false,
-				"is_pushable_by_piston": true
-			}
+			"minecraft:physics": {}
 		},
 		"events": {
 			"ed:particle": {

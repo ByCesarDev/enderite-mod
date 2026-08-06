@@ -1,0 +1,38 @@
+{
+	"format_version": "1.21.30",
+	"minecraft:item": {
+		"description": {
+			"identifier": "ed:elytra",
+			"menu_category": {
+				"category": "none"
+			}
+		},
+		"components": {
+            "minecraft:icon": "elytra",
+            "minecraft:enchantable": {
+				"value": 9,
+				"slot": "armor_torso"
+			},
+			"minecraft:durability": {
+				"max_durability": 662,
+				"damage_chance": {
+					"min": 60,
+					"max": 100
+				}
+			},
+            "minecraft:equippable": {
+				"slot": "slot.armor.chest"
+			},
+			"minecraft:wearable": {
+				"slot": "slot.armor.chest",
+				"protection": 0
+			},
+			"minecraft:tags": {
+				"tags": [
+					"minecraft:transformable_items"
+				]
+			},
+			"minecraft:rarity": "epic"
+		}
+	}
+}

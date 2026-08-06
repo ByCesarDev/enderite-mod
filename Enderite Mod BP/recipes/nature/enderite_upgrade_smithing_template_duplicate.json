@@ -17,7 +17,7 @@
 				"item": "ed:enderite_upgrade_smithing_template"
 			},
 			"#": {
-				"item": "minecraft:netherite_ingot"
+				"item": "ed:enderite_ingot"
 			},
 			"C": {
 				"item": "minecraft:end_stone"

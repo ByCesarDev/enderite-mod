@@ -1,0 +1,87 @@
+{
+  "format_version": "1.21.110",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.ed.shulker_destruction",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 3,
+        "visible_bounds_height": 2.5,
+        "visible_bounds_offset": [0, 0.75, 0]
+      },
+      "bones": [
+        {
+          "name": "shulker",
+          "pivot": [0, 0, 0],
+          "cubes": [
+            {
+              "origin": [-7.05, 0, -7.025],
+              "size": [14.1, 10, 14.05],
+              "pivot": [0, 5, 0],
+              "rotation": [0, 0, -180],
+              "uv": {
+                "north": { "uv": [15, 16], "uv_size": [-14, -10] },
+                "east": { "uv": [15, 16], "uv_size": [-14, -10] },
+                "south": { "uv": [15, 16], "uv_size": [-14, -10] },
+                "west": { "uv": [15, 16], "uv_size": [-14, -10] },
+                "up": { "uv": [1, 1], "uv_size": [14, 14] },
+                "down": { "uv": [1, 1], "uv_size": [14, 14] }
+              }
+            }
+          ]
+        },
+        {
+          "name": "main",
+          "parent": "shulker",
+          "pivot": [0, 0, 0]
+        },
+        {
+          "name": "pivot",
+          "parent": "main",
+          "pivot": [0, 0, 0]
+        },
+        {
+          "name": "rightitem",
+          "parent": "pivot",
+          "pivot": [0, 6, -9]
+        },
+        {
+          "name": "top",
+          "parent": "shulker",
+          "pivot": [0, 9, -7],
+          "cubes": [
+            {
+              "origin": [-7, 9, -7],
+              "size": [14, 5, 14],
+              "pivot": [0, 11.5, 0],
+              "rotation": [0, 0, -180],
+              "uv": {
+                "north": { "uv": [15, 5], "uv_size": [-14, -5] },
+                "east": { "uv": [15, 5], "uv_size": [-14, -5] },
+                "south": { "uv": [15, 5], "uv_size": [-14, -5] },
+                "west": { "uv": [15, 5], "uv_size": [-14, -5] },
+                "up": { "uv": [1, 1], "uv_size": [14, 14] },
+                "down": { "uv": [1, 1], "uv_size": [14, 14] }
+              }
+            },
+            {
+              "origin": [-1, 7, 7],
+              "size": [2, 4, 1],
+              "pivot": [0, 9, 8],
+              "rotation": [0, 0, -180],
+              "uv": {
+                "north": { "uv": [9, 9], "uv_size": [-2, -4] },
+                "east": { "uv": [9, 9], "uv_size": [-1, -4] },
+                "south": { "uv": [9, 9], "uv_size": [-2, -4] },
+                "west": { "uv": [8, 9], "uv_size": [-1, -4] },
+                "up": { "uv": [7, 15], "uv_size": [2, 1] },
+                "down": { "uv": [7, 15], "uv_size": [2, 1] }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

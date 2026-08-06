@@ -1,0 +1,27 @@
+{
+  "format_version": "1.12",
+  "minecraft:recipe_shaped": {
+    "description": {
+      "identifier": "ed:enderite_shulker_box"
+    },
+    "tags": [
+      "crafting_table"
+    ],
+    "pattern": [
+      " # ",
+      "#U#",
+      " # "
+    ],
+    "key": {
+      "#": {
+        "item": "ed:enderite_ingot"
+      },
+      "U": {
+        "item": "minecraft:undyed_shulker_box"
+      }
+    },
+    "result": {
+      "item": "ed:enderite_shulker_box"
+    }
+  }
+}

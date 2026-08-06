@@ -1,0 +1,6 @@
+{
+  "ui_defs": [
+    "ui/assets/common.json",
+    "ui/assets/enderite_shulker_box.json"
+  ]
+}

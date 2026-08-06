@@ -1,0 +1,29 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:enderite_axe"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"#Ne"
+		],
+		"key": {
+			"#": {
+				"item": "ed:enderite_upgrade_smithing_template"
+			},
+			"N": {
+				"item": "minecraft:netherite_axe"
+			},
+			"e": {
+				"item": "ed:enderite_ingot"
+			}
+		},
+		"result": {
+			"item": "ed:enderite_axe",
+			"count": 1
+		}
+	}
+}

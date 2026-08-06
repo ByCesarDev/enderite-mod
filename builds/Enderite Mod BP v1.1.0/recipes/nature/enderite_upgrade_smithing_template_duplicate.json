@@ -1,0 +1,31 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:enderite_upgrade_smithing_template_duplicate"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"#S#",
+			"#C#",
+			"###"
+		],
+		"key": {
+			"S": {
+				"item": "ed:enderite_upgrade_smithing_template"
+			},
+			"#": {
+				"item": "minecraft:netherite_ingot"
+			},
+			"C": {
+				"item": "minecraft:end_stone"
+			}
+		},
+		"result": {
+			"item": "ed:enderite_upgrade_smithing_template",
+			"count": 2
+		}
+	}
+}

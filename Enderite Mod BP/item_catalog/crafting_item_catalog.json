@@ -1,0 +1,25 @@
+{
+    "format_version": "1.21.60",
+    "minecraft:crafting_items_catalog": {
+        "categories": [
+            {
+                "category_name": "equipment",
+                "groups": [
+                    {
+                        "group_identifier": {
+                            "icon": "enderite:shield",
+                            "name": "minecraft:itemGroup.name.shield"
+                        },
+                        "items": [
+                            "enderite:shield",
+                            "enderite:shield_tp",
+                            "enderite:shield_tp_lv2",
+                            "enderite:shield_tp_lv3",
+                            "enderite:shield_tp_lv4"
+                        ]
+                    }
+                ]
+            }
+        ]
+    }
+}

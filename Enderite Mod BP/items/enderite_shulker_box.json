@@ -4,7 +4,8 @@
 		"description": {
 			"identifier": "ed:enderite_shulker_box",
 			"menu_category": {
-				"category": "items"
+				"category": "items",
+				"group": "minecraft:itemGroup.name.shulkerBox"
 			}
 		},
 		"components": {

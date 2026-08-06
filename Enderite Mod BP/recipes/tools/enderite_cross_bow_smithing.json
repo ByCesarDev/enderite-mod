@@ -11,7 +11,7 @@
     ],
     "tags": ["smithing_table"],
     "template": "ed:enderite_upgrade_smithing_template",
-    "base": "minecraft:crossbow",
+    "base": "ed:crossbow",
     "addition": "ed:enderite_ingot",
     "result": "ed:enderite_cross_bow"
   }

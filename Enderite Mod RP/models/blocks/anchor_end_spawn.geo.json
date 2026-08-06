@@ -1,105 +1,76 @@
 {
-	"format_version": "1.19.0",
-	"minecraft:geometry": [
-		{
-			"description": {
-				"identifier": "geometry.anchor_end_spawn",
-				"texture_width": 16,
-				"texture_height": 16,
-				"visible_bounds_width": 2,
-				"visible_bounds_height": 2.5,
-				"visible_bounds_offset": [
-					0,
-					0.75,
-					0
-				]
-			},
-			"bones": [
-				{
-					"name": "block",
-					"pivot": [
-						0,
-						0,
-						0
-					],
-					"cubes": [
-						{
-							"origin": [
-								-8,
-								0,
-								-8
-							],
-							"size": [
-								16,
-								16,
-								16
-							],
-							"uv": {
-								"north": {
-									"uv": [
-										0,
-										0
-									],
-									"uv_size": [
-										16,
-										16
-									]
-								},
-								"east": {
-									"uv": [
-										0,
-										0
-									],
-									"uv_size": [
-										16,
-										16
-									]
-								},
-								"south": {
-									"uv": [
-										0,
-										0
-									],
-									"uv_size": [
-										16,
-										16
-									]
-								},
-								"west": {
-									"uv": [
-										0,
-										0
-									],
-									"uv_size": [
-										16,
-										16
-									]
-								},
-								"up": {
-									"uv": [
-										16,
-										16
-									],
-									"uv_size": [
-										-16,
-										-16
-									]
-								},
-								"down": {
-									"uv": [
-										16,
-										16
-									],
-									"uv_size": [
-										-16,
-										-16
-									]
-								}
-							}
-						}
-					]
-				}
-			]
-		}
-	]
+  "format_version": "1.19.0",
+  "minecraft:geometry": [
+    {
+      "description": {
+        "identifier": "geometry.anchor_end_spawn",
+        "texture_width": 16,
+        "texture_height": 16,
+        "visible_bounds_width": 2,
+        "visible_bounds_height": 2.5,
+        "visible_bounds_offset": [0, 0.75, 0]
+      },
+      "bones": [
+        {
+          "name": "block",
+          "pivot": [0, 0, 0],
+          "cubes": [
+            {
+              "origin": [-8, 0, -8],
+              "size": [16, 16, 16],
+              "uv": {
+                "north": {
+                  "uv": [0, 0],
+                  "uv_size": [16, 16],
+                  "material_instance": "north"
+                },
+                "east": {
+                  "uv": [0, 0],
+                  "uv_size": [16, 16],
+                  "material_instance": "east"
+                },
+                "south": {
+                  "uv": [0, 0],
+                  "uv_size": [16, 16],
+                  "material_instance": "south"
+                },
+                "west": {
+                  "uv": [0, 0],
+                  "uv_size": [16, 16],
+                  "material_instance": "west"
+                },
+                "up": {
+                  "uv": [16, 16],
+                  "uv_size": [-16, -16],
+                  "material_instance": "up"
+                },
+                "down": {
+                  "uv": [16, 16],
+                  "uv_size": [-16, -16],
+                  "material_instance": "down"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "name": "portal",
+          "pivot": [0, 16, 0],
+          "cubes": [
+            {
+              "origin": [-5, 16.001, -5],
+              "size": [10, 0.01, 10],
+              "uv": {
+                "up": {
+                  "uv": [10, 10],
+                  "uv_size": [-10, -10],
+                  "material_instance": "portal"
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }

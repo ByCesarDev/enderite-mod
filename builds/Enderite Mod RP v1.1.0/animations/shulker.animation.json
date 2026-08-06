@@ -1,0 +1,75 @@
+{
+	"format_version": "1.8.0",
+	"animations": {
+		"animation.enderiteShulker.closed": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"ShulkerTop": {
+					"position": [0, 0, 0],
+					"rotation": [0, 0, 0]
+				}
+			}
+		},
+		"animation.enderiteShulker.opening": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 0.3,
+			"bones": {
+				"ShulkerTop": {
+					"rotation": {
+						"0.0": [0, 0, 0],
+						"0.1": [0, 45, 0],
+						"0.2": [0, 135, 0],
+						"0.3": [0, 180, 0]
+					},
+					"position": {
+						"0.0": [0, 0, 0],
+						"0.1": [0, 2.5, 0],
+						"0.2": [0, 6, 0],
+						"0.3": [0, 8, 0]
+					}
+				}
+			}
+		},
+		"animation.enderiteShulker.closing": {
+			"loop": "hold_on_last_frame",
+			"animation_length": 0.3,
+			"bones": {
+				"ShulkerTop": {
+					"rotation": {
+						"0.0": [0, 180, 0],
+						"0.1": [0, 135, 0],
+						"0.2": [0, 45, 0],
+						"0.3": [0, 0, 0]
+					},
+					"position": {
+						"0.0": [0, 8, 1],
+						"0.1": [0, 6, 0],
+						"0.2": [0, 2.5, 0],
+						"0.3": [0, 0, 0]
+					}
+				}
+			}
+		},
+		"animation.enderiteShulker.opened": {
+			"loop": "hold_on_last_frame",
+			"bones": {
+				"ShulkerTop": {
+					"rotation": [0, 180, 0],
+					"position": [0, 8, 0]
+				}
+			}
+		},
+		"animation.enderiteShulker.rotation": {
+			"loop": true,
+			"bones": {
+				"EnderiteShulkerBox": {
+					"rotation": [
+						0,
+						"query.property('ed:cardinal_direction') == 'south' ? 0 : query.property('ed:cardinal_direction') == 'east' ? 270 : query.property('ed:cardinal_direction') == 'west' ? 90 : 180",
+						0
+					]
+				}
+			}
+		}
+	}
+}

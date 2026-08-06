@@ -1,29 +1,15 @@
 {
-	"format_version": "1.12",
-	"minecraft:recipe_shaped": {
-		"description": {
-			"identifier": "ed:enderite_elytra"
-		},
-		"tags": [
-			"crafting_table"
-		],
-		"pattern": [
-			"#Ee"
-		],
-		"key": {
-			"#": {
-				"item": "ed:enderite_upgrade_smithing_template"
-			},
-			"E": {
-				"item": "minecraft:elytra"
-			},
-			"e": {
-				"item": "ed:enderite_ingot"
-			}
-		},
-		"result": {
-			"item": "elytra:enderite",
-			"count": 1
-		}
-	}
+  "format_version": "1.26",
+  "minecraft:recipe_smithing_transform": {
+    "description": {
+      "identifier": "crafting:elytra_enderite_smithing"
+    },
+    "tags": [
+      "smithing_table"
+    ],
+    "template": "ed:enderite_upgrade_smithing_template",
+    "base": "ed:elytra",
+    "addition": "ed:enderite_ingot",
+    "result": "elytra:enderite"
+  }
 }

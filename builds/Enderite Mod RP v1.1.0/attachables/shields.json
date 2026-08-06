@@ -1,0 +1,109 @@
+{
+	"format_version": "1.10.0",
+	"minecraft:attachable": {
+		"description": {
+			"identifier": "multimc:shields",
+			"materials": {
+				"breeze": "entity_custom",
+				"emissive": "entity_emissive_alpha",
+				"default": "entity_alphatest",
+				"enchanted": "entity_alphatest_glint"
+			},
+			"item": {
+				"minecraft:shield": "query.owner_identifier == 'minecraft:player'"
+			},
+			"particle_effects": {
+				"torch": "minecraft:eye_of_ender_bubble_particle"
+			},
+			"textures": {
+				"default": "textures/entity/shield",
+				"enchanted": "textures/misc/enchanted_item_glint",
+				"enderite_shield": "textures/entity/enderite_shield/enderite_shield"
+			},
+			"geometry": {
+				"enderite_shield": "geometry.enderite_shield",
+				"default": "geometry.shield"
+			},
+			"animations": {
+				"wield": "controller.animation.shield.wield",
+				"wield_main_hand_first_person": "animation.shield.wield_main_hand_first_person",
+				"wield_off_hand_first_person": "animation.shield.wield_off_hand_first_person",
+				"wield_main_hand_first_person_block": "animation.shield.wield_main_hand_first_person_blocking",
+				"wield_off_hand_first_person_block": "animation.shield.wield_off_hand_first_person_blocking",
+				"wield_third_person": "animation.shield.wield_third_person"
+			},
+			"scripts": {
+				"initialize": [
+					"variable.breeze = 0;variable.log = 0;variable.torch = 0; variable.default = 0 ; variable.warden = 0;variable.amethyst = 0;variable.enderite = 0;variable.diamond =0;variable.iron=0;variable.gold = 0;variable.magma= 0;variable.shulker= 0;variable.bee = 0;variable.tnt = 0;variable.emerald= 0 ;variable.nether = 0;variable.ender=0;variable.dripstone=0;variable.sea=0;variable.goat=0;variable.default=0;",
+					"variable.main_hand_first_person_pos_x =  5.3;",
+					"variable.main_hand_first_person_pos_y = 26.0;",
+					"variable.main_hand_first_person_pos_z = 0.4;",
+					"variable.main_hand_first_person_rot_x = 91.0;",
+					"variable.main_hand_first_person_rot_y = 65.0;",
+					"variable.main_hand_first_person_rot_z = -43.0;",
+					"variable.off_hand_first_person_pos_x = -13.5;",
+					"variable.off_hand_first_person_pos_y = -5.8;",
+					"variable.off_hand_first_person_pos_z = 5.1;",
+					"variable.off_hand_first_person_with_bow_pos_z = -25.0;",
+					"variable.off_hand_first_person_rot_x = 1.0;",
+					"variable.off_hand_first_person_rot_y = 176.0;",
+					"variable.off_hand_first_person_rot_z = -2.5;"
+				],
+				"pre_animation": [
+					"variable.enderite = query.get_name == '§f§1' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§1' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§2' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§2' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§3' ? 1 : variable.enderite;",
+					"variable.default = query.get_name == '§f§3' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§4' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§4' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§5' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§5' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§6' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§6' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§7' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§7' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§8' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§8' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§f§9' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§f§9' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§1§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§1§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§2§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§2§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§3§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§3§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§4§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§4§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§5§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§5§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§6§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§6§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§7§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§7§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§8§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§8§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§9§f' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§9§f' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§0§f' ? 0 : variable.enderite;",
+					"variable.default = variable.breeze == 0 && variable.log == 0 && variable.torch == 0 && variable.warden == 0 && variable.amethyst == 0 && variable.enderite == 0 && variable.diamond == 0 && variable.iron == 0 && variable.shulker == 0 && variable.gold == 0 && variable.ender == 0 && variable.nether == 0 && variable.magma == 0 && variable.bee == 0 && variable.tnt == 0 && variable.emerald == 0 && variable.dripstone == 0 && variable.sea == 0 && variable.goat == 0 ? 1 : 0;",
+					"variable.is_blocking_main_hand = query.blocking && !query.is_item_name_any('slot.weapon.offhand', 'minecraft:shield') && query.is_item_name_any('slot.weapon.mainhand', 'minecraft:sword');",
+					"variable.is_blocking_off_hand = query.blocking && query.is_item_name_any('slot.weapon.offhand', 'minecraft:shield');",
+					"variable.is_using_bow = query.is_using_item == 'minecraft:bow';"
+				],
+				"animate": [
+					"wield"
+				]
+			},
+			"render_controllers": [
+				{
+					"controller.render.item_default": "variable.default == 1"
+				},
+				{
+					"controller.render.enderite_shield": "variable.enderite == 1"
+				}
+			]
+		}
+	}
+}

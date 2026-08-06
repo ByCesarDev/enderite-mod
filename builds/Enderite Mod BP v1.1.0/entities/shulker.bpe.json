@@ -1,0 +1,254 @@
+{
+  "format_version": "1.26.0",
+  "minecraft:entity": {
+    "description": {
+      "identifier": "ed:default_shulker",
+      "is_summonable": true,
+      "properties": {
+        "ed:cardinal_direction": {
+          "client_sync": true,
+          "default": "north",
+          "type": "enum",
+          "values": ["north", "south", "east", "west"]
+        },
+        "ed:is_opened": {
+          "client_sync": true,
+          "default": false,
+          "type": "bool"
+        },
+        "ed:is_hidden": {
+          "client_sync": true,
+          "default": false,
+          "type": "bool"
+        },
+        "ed:offset_type": {
+          "client_sync": true,
+          "type": "enum",
+          "default": "block",
+          "values": [
+            "block",
+            "item",
+            "block_180_degress",
+            "block_90_degress",
+            "block_270_degress",
+            "skull",
+            "hand_equipped",
+            "banner",
+            "wall",
+            "copper_golem",
+            "dripleaf",
+            "heavy_core",
+            "fishing_rod",
+            "pointed_dripstone",
+            "decorated_pot",
+            "shield"
+          ]
+        }
+      }
+    },
+    "component_groups": {
+      "despawn": {
+        "minecraft:transformation": {
+          "drop_equipment": false,
+          "drop_inventory": true,
+          "into": "ed:despawn"
+        }
+      },
+      "block_collision": {
+        "minecraft:collision_box": {
+          "width": 0.875,
+          "height": 0.875
+        }
+      },
+      "empty_collision": {
+        "minecraft:collision_box": {
+          "height": 0,
+          "width": 0
+        }
+      },
+      "ed:enderite_shulker_box": {
+        "minecraft:variant": {
+          "value": 2
+        },
+        "minecraft:inventory": {
+          "container_type": "container",
+          "inventory_size": 45
+        }
+      }
+    },
+    "components": {
+      "minecraft:nameable": {
+        "allow_name_tag_renaming": false,
+        "always_show": false
+      },
+      "minecraft:persistent": {},
+      "minecraft:tick_world": {},
+      "minecraft:renders_when_invisible": {},
+      "minecraft:type_family": {
+        "family": ["inanimate", "shulker", "ed:shulker"]
+      },
+      "minecraft:spell_effects": {
+        "add_effects": [
+          {
+            "effect": "invisibility",
+            "duration": "infinite",
+            "visible": false,
+            "ambient": false,
+            "amplifier": 0
+          }
+        ]
+      },
+      "minecraft:entity_sensor": {
+        "find_players_only": true,
+        "subsensors": [
+          {
+            "range": [6, 6],
+            "minimum_count": 1,
+            "event_filters": {
+              "test": "actor_health",
+              "operator": ">",
+              "value": 0,
+              "subject": "other"
+            },
+            "event": "ed:players_nearby"
+          },
+          {
+            "range": [6, 6],
+            "minimum_count": 1,
+            "event_filters": [
+              {
+                "all_of": [
+                  {
+                    "test": "actor_health",
+                    "operator": ">",
+                    "value": 0,
+                    "subject": "other"
+                  },
+                  {
+                    "test": "bool_property",
+                    "domain": "ed:is_opened",
+                    "value": true,
+                    "subject": "self"
+                  }
+                ]
+              }
+            ],
+            "event": "ed:shulker_opened_tick"
+          }
+        ]
+      },
+      "minecraft:mob_effect_immunity": {
+        "mob_effects": [
+          "absorption",
+          "bad_omen",
+          "blindness",
+          "conduit_power",
+          "darkness",
+          "fatal_poison",
+          "fire_resistance",
+          "haste",
+          "health_boost",
+          "hunger",
+          "infested",
+          "instant_damage",
+          "instant_health",
+          "jump_boost",
+          "levitation",
+          "mining_fatigue",
+          "nausea",
+          "night_vision",
+          "oozing",
+          "poison",
+          "raid_omen",
+          "regeneration",
+          "resistance",
+          "saturation",
+          "slow_falling",
+          "slowness",
+          "speed",
+          "strength",
+          "trial_omen",
+          "village_hero",
+          "water_breathing",
+          "weakness",
+          "weaving",
+          "wind_charged",
+          "wither"
+        ]
+      },
+      "minecraft:damage_sensor": {
+        "triggers": [
+          {
+            "cause": "all",
+            "deals_damage": "no"
+          }
+        ]
+      },
+      "minecraft:health": {
+        "value": 1,
+        "max": 1,
+        "min": 1
+      },
+      "minecraft:knockback_resistance": {
+        "value": 1,
+        "max": 1,
+        "min": 1
+      },
+      "minecraft:timer": {
+        "time": 0.5,
+        "looping": true,
+        "time_down_event": {
+          "event": "ed:hopper_system",
+          "target": "self"
+        }
+      },
+      "minecraft:pushable": {
+        "is_pushable": false,
+        "is_pushable_by_piston": false
+      }
+    },
+    "events": {
+      "minecraft:entity_spawned": {
+        "add": {
+          "component_groups": ["empty_collision"]
+        }
+      },
+      "ed:switch_to_enderite_shulker_box": {
+        "add": {
+          "component_groups": ["ed:enderite_shulker_box"]
+        },
+        "trigger": "minecraft:entity_spawned"
+      },
+      "ed:set_block_collision": {
+        "set_property": {
+          "ed:is_hidden": false
+        },
+        "add": {
+          "component_groups": ["block_collision"]
+        },
+        "remove": {
+          "component_groups": ["empty_collision"]
+        }
+      },
+      "ed:remove_collision": {
+        "set_property": {
+          "ed:is_hidden": true
+        },
+        "add": {
+          "component_groups": ["empty_collision"]
+        },
+        "remove": {
+          "component_groups": ["block_collision"]
+        }
+      },
+      "ed:hopper_system": {},
+      "ed:shulker_opened_tick": {},
+      "ed:players_nearby": {},
+      "ed:despawn_event": {
+        "add": {
+          "component_groups": ["despawn"]
+        }
+      }
+    }
+  }
+}

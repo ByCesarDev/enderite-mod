@@ -1,0 +1,29 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:enderite_shears"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"#Ne"
+		],
+		"key": {
+			"#": {
+				"item": "ed:enderite_upgrade_smithing_template"
+			},
+			"N": {
+				"item": "minecraft:shears"
+			},
+			"e": {
+				"item": "ed:enderite_ingot"
+			}
+		},
+		"result": {
+			"item": "ed:enderite_shears",
+			"count": 1
+		}
+	}
+}

@@ -1,93 +1,95 @@
 pack.name=Enderite Mod V2 RP
 pack.description=
+
+## Blocks
+tile.ed:enderite.name=Enderite Ore
+tile.ed:cracked_enderite.name=Cracked Enderite Ore
+tile.ed:enderite_block.name=Block of Enderite
+tile.ed:enderite_shulker_box.name=Enderite Shulker Box
+tile.ed:anchor_end_spawn.name=Enderite Respawn Anchor
+
+## Enderite Armor
+item.ed:enderite_helmet=Enderite Helmet
+item.ed:enderite_chestplate=Enderite Chestplate
+item.ed:enderite_leggings=Enderite Leggings
+item.ed:enderite_boots=Enderite Boots
+
+## Enderite Tools & Weapons
 item.ed:enderite_axe=Enderite Axe
 item.ed:enderite_pickaxe=Enderite Pickaxe
 item.ed:enderite_hoe=Enderite Hoe
 item.ed:enderite_shovel=Enderite Shovel
 item.ed:enderite_sword=Enderite Sword
-item.ed:enderite_helmet=Enderite Helmet
-item.ed:enderite_chestplate=Enderite Chestplate
-item.ed:enderite_leggings=Enderite Leggings
-item.ed:enderite_boots=Enderite Boots
-item.ed:enderite_scrap=Enderite Scrap
-item.ed:enderite_ingot=Enderite Ingot
-tile.ed:cracked_enderite.name=Cracked Enderite Ore
-tile.ed:enderite_block.name=Block of Enderite
-tile.ed:enderite.name=Enderite Ore
-item.ed:enderite_bow.name=Enderite Bow
-item.ed:enderite_arrow.name=Arrow
-tile.ed:enderite_shulker_box.name=Enderite Shulker Box
-item.ed:enderite_shulker_box=Enderite Shulker Box
-
-enchantment.enderitemod.void_floating=Void Floating
-
-item.ed:diamond_boots=Diamond Boots
-item.ed:diamond_chestplate=Diamond Chestplate
-item.ed:diamond_helmet=Diamond Helmet
-item.ed:diamond_leggings=Diamond Leggings
-
-
-item.ed:netherite_boots=Netherite Boots
-item.ed:netherite_chestplate=Netherite Chestplate
-item.ed:netherite_helmet=Netherite Helmet
-item.ed:netherite_leggings=Netherite Leggings
-
-
-item.ed:iron_boots=Iron Boots
-item.ed:iron_chestplate=Iron Chestplate
-item.ed:iron_helmet=Iron Helmet
-item.ed:iron_leggings=Iron Leggings
-
-
-item.ed:gold_boots=Golden Boots
-item.ed:gold_chestplate=Golden Chestplate
-item.ed:gold_helmet=Golden Helmet
-item.ed:gold_leggings=Golden Leggings
-item.ed:enderite_upgrade_smithing_template=Enderite Upgrade
-tile.ed:anchor_end_spawn.name=Enderite Respawn Anchor
 item.ed:enderite_shears=Enderite Shears
 
+## Other Enderite Items
+item.ed:enderite_scrap=Enderite Scrap
+item.ed:enderite_ingot=Enderite Ingot
+item.ed:enderite_upgrade_smithing_template=Enderite Upgrade
+item.ed:enderite_shulker_box=Enderite Shulker Box
 
-## Custom Items Display Names
-item.ed:enderite_cross_bow.name=Enderite Crossbow
-item.ed:floating_void.name=§eEnchanted Book\n§7Void floating ability
-item.ed:enderite_arrow.name=Enderite Arrow
-item.ed:enderite_bow.name=Enderite Bow
+## Like Vanilla — Diamond Armor
+item.ed:diamond_helmet=Diamond Helmet
+item.ed:diamond_chestplate=Diamond Chestplate
+item.ed:diamond_leggings=Diamond Leggings
+item.ed:diamond_boots=Diamond Boots
 
-item.enderite:shield.name=Enderite Shield
+## Like Vanilla — Iron Armor
+item.ed:iron_helmet=Iron Helmet
+item.ed:iron_chestplate=Iron Chestplate
+item.ed:iron_leggings=Iron Leggings
+item.ed:iron_boots=Iron Boots
 
-item.enderite:shield_tp.name=Enderite Shield
+## Like Vanilla — Gold Armor
+item.ed:gold_helmet=Golden Helmet
+item.ed:gold_chestplate=Golden Chestplate
+item.ed:gold_leggings=Golden Leggings
+item.ed:gold_boots=Golden Boots
 
-item.enderite:shield_tp_lv2.name=Enderite Shield
+## Like Vanilla — Netherite Armor
+item.ed:netherite_helmet=Netherite Helmet
+item.ed:netherite_chestplate=Netherite Chestplate
+item.ed:netherite_leggings=Netherite Leggings
+item.ed:netherite_boots=Netherite Boots
 
-item.enderite:shield_tp_lv3.name=Enderite Shield
-
-item.enderite:shield_tp_lv4.name=Enderite Shield
-
-item.ed:enderite_sword_tp.name=Enderite Sword
-
-item.ed:enderite_sword_tp_l2.name=Enderite Sword
-
-item.ed:enderite_sword_tp_l3.name=Enderite Sword
-
-item.ed:enderite_sword_tp_l4.name=Enderite Sword
-
-item.elytra:chesplate_broken.name=Enderite Elytra Chestplate
-item.elytra:chesplate.name=Enderite Elytra Chestplate
-item.elytra:enderite.name=Enderite Elytra
-item.elytra:enderite_broken.name=Enderite Elytra
-
-
-## SUBTITLES
-ed:subtitle.shulker.open=Enderite shulker opening
-ed:subtitle.shulker.close=Enderite shulker closing
-
-
+## Like Vanilla — Netherite Tools
 item.ed:netherite_axe=Netherite Axe
 item.ed:netherite_pickaxe=Netherite Pickaxe
 item.ed:netherite_hoe=Netherite Hoe
 item.ed:netherite_shovel=Netherite Shovel
 item.ed:netherite_sword=Netherite Sword
+
+## Like Vanilla — Other Items
+item.ed:bow=Bow
+item.ed:crossbow=Crossbow
+item.ed:elytra=Elytra
+item.ed:shears=Shears
+
+## Item Display Names
+item.ed:enderite_bow.name=Enderite Bow
+item.ed:enderite_cross_bow.name=Enderite Crossbow
+item.ed:enderite_arrow.name=Enderite Arrow
+item.ed:floating_void.name=§eEnchanted Book\n§7Void floating ability
+item.enderite:shield.name=Enderite Shield
+item.enderite:shield_tp.name=Enderite Shield
+item.enderite:shield_tp_lv2.name=Enderite Shield
+item.enderite:shield_tp_lv3.name=Enderite Shield
+item.enderite:shield_tp_lv4.name=Enderite Shield
+item.ed:enderite_sword_tp.name=Enderite Sword
+item.ed:enderite_sword_tp_l2.name=Enderite Sword
+item.ed:enderite_sword_tp_l3.name=Enderite Sword
+item.ed:enderite_sword_tp_l4.name=Enderite Sword
+item.elytra:chesplate.name=Enderite Elytra Chestplate
+item.elytra:chesplate_broken.name=Enderite Elytra Chestplate
+item.elytra:enderite.name=Enderite Elytra
+item.elytra:enderite_broken.name=Enderite Elytra
+
+## Enchantments
+enchantment.enderitemod.void_floating=Void Floating
+
+## Subtitles
+ed:subtitle.shulker.open=Enderite shulker opening
+ed:subtitle.shulker.close=Enderite shulker closing
 
 ## Script Lore Translations
 lore.ed:charge=§3Charge: %1
@@ -97,6 +99,8 @@ lore.ed:sword_teleport=§7Teleport with sneaking + right click!
 lore.ed:shield_teleport=§7Teleport attackers with sneaking + right click!
 lore.ed:shulker_more=and %1 more...
 actionbar.ed:shulker_destroy_hint=§aHold SHIFT to destroy the shulker box
-
 lore.ed:armor_toughness=§9+4 Armor Toughness
 lore.ed:knockback_resistance=§9+1 Knockback Resistance
+
+## Creative Tabs
+itemGroup.name.shield=Enderite Shields

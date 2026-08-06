@@ -1,0 +1,22 @@
+{
+	"format_version": "1.10.0",
+	"animation_controllers": {
+		"controller.animation.dummy.sendMessage": {
+			"initial_state": "default",
+			"states": {
+				"default": {
+					"transitions": [
+						{
+							"execute": "1"
+						}
+					]
+				},
+				"execute": {
+					"on_entry": [
+						"/tellraw @p {\"rawtext\": [{\"translate\": \"tile.respawn_anchor.respawnSet\"}]}"
+					]
+				}
+			}
+		}
+	}
+}

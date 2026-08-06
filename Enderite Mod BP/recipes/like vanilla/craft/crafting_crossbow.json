@@ -1,0 +1,24 @@
+{
+  "format_version": "1.26",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "crafting:crossbow"
+    },
+    "unlock": [
+      {
+        "item": "minecraft:crossbow"
+      }
+    ],
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:crossbow"
+      }
+    ],
+    "result": {
+      "item": "ed:crossbow"
+    }
+  }
+}

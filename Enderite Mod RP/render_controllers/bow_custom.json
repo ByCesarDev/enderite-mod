@@ -20,14 +20,14 @@
 					]
 				}
 			},
-			"geometry": "array.bow_geo_frames[variable.charge_amount]",
+			"geometry": "array.bow_geo_frames[variable.bow_tex_idx]",
 			"materials": [
 				{
 					"*": "variable.is_enchanted?material.enchanted:material.default"
 				}
 			],
 			"textures": [
-				"array.bow_texture_frames[variable.charge_amount]",
+				"array.bow_texture_frames[variable.bow_tex_idx]",
 				"texture.enchanted"
 			]
 		},
@@ -52,14 +52,14 @@
 					]
 				}
 			},
-			"geometry": "array.bow_geo_frames[variable.charge_amount]",
+			"geometry": "array.bow_geo_frames[variable.bow_tex_idx]",
 			"materials": [
 				{
 					"*": "variable.is_enchanted?material.enchanted:material.default"
 				}
 			],
 			"textures": [
-				"array.bow_texture_frames[variable.charge_amount]",
+				"array.bow_texture_frames[variable.bow_tex_idx]",
 				"texture.enchanted"
 			]
 		}

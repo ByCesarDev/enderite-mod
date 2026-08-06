@@ -1,0 +1,30 @@
+{
+	"format_version": "1.16.100",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:diamond_helmet"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"   ",
+			"X Y",
+			"   "
+		],
+		"key": {
+			"X": {
+				"item": "minecraft:diamond_helmet"
+			},
+			"Y": {
+				"item": "ed:floating_void"
+			}
+		},
+		"result": [
+			{
+				"item": "ed:diamond_helmet",
+				"count": 1
+			}
+		]
+	}
+}

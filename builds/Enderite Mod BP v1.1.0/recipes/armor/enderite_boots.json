@@ -1,0 +1,29 @@
+{
+	"format_version": "1.12",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:enderite_boots"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"#Ne"
+		],
+		"key": {
+			"#": {
+				"item": "ed:enderite_upgrade_smithing_template"
+			},
+			"N": {
+				"item": "minecraft:netherite_boots"
+			},
+			"e": {
+				"item": "ed:enderite_ingot"
+			}
+		},
+		"result": {
+			"item": "ed:enderite_boots",
+			"count": 1
+		}
+	}
+}

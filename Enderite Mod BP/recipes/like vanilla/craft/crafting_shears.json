@@ -1,0 +1,24 @@
+{
+  "format_version": "1.26",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "crafting:shears"
+    },
+    "unlock": [
+      {
+        "item": "minecraft:shears"
+      }
+    ],
+    "tags": [
+      "crafting_table"
+    ],
+    "ingredients": [
+      {
+        "item": "minecraft:shears"
+      }
+    ],
+    "result": {
+      "item": "ed:shears"
+    }
+  }
+}

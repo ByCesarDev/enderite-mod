@@ -1,0 +1,14 @@
+{
+  "entity_sounds": {
+    "entities": {
+      "ed:default_shulker": {
+        "events": {
+          "death": "",
+          "hurt": "",
+          "step": ""
+        },
+        "volume": 0.0
+      }
+    }
+  }
+}

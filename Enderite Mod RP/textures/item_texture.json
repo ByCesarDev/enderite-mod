@@ -141,6 +141,18 @@
 		},
 		"netherite_sword": {
 			"textures": "textures/items/netherite_sword"
+		},
+		"elytra": {
+			"textures": "textures/items/elytra"
+		},
+		"bow": {
+			"textures": "textures/items/bow_standby"
+		},
+		"crossbow": {
+			"textures": "textures/items/crossbow_standby"
+		},
+		"shears": {
+			"textures": "textures/items/shears"
 		}
 	}
 }

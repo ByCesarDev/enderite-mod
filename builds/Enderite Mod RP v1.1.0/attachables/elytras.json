@@ -1,0 +1,91 @@
+{
+	"format_version": "1.10.0",
+	"minecraft:attachable": {
+		"description": {
+			"materials": {
+				"default": "elytra",
+				"enderite_chesplate": "armor",
+				"enchanted": "elytra_glint",
+				"emissive": "entity_emissive_alpha"
+			},
+			"textures": {
+				"default": "textures/models/armor/elytra",
+				"enchanted": "textures/misc/enchanted_item_glint",
+				"enderite": "textures/entity/elytra/enderite_elytra",
+				"chesplate": "textures/entity/elytra/enderite_elytra",
+				"enderite_chesplate": "textures/models/armor/enderite_1"
+			},
+			"geometry": {
+				"default": "geometry.elytra",
+				"enderite_chesplate": "geometry.humanoid.armor.chestplate"
+			},
+			"animations": {
+				"default_controller": "controller.animation.elytra.default",
+				"default": "animation.elytra.default",
+				"gliding": "animation.elytra.gliding",
+				"sneaking": "animation.elytra.sneaking",
+				"sleeping": "animation.elytra.sleeping",
+				"swimming": "animation.elytra.swimming"
+			},
+			"scripts": {
+				"animate": [
+					"default_controller"
+				],
+				"pre_animation": [
+					"variable.default = query.get_name == '§f' ? 1 : variable.default;",
+					"variable.chesplate = query.get_name == '§f' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§f' ? 0 : variable.enderite;",
+					"variable.chesplate = query.get_name == '§1' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§1' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§1' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§3' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§3' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§3' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§2' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§2' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§2' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§4' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§4' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§4' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§6' ? 1 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§6' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§6' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§5' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§5' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§5' ? 0 : variable.default;",
+					"variable.enderite = query.get_name == '§7' ? 1 : variable.enderite;",
+					"variable.chesplate = query.get_name == '§7' ? 0 : variable.chesplate;",
+					"variable.default = query.get_name == '§7' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§8' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§8' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§8' ? 0 : variable.default;",
+					"variable.chesplate = query.get_name == '§9' ? 0 : variable.chesplate;",
+					"variable.enderite = query.get_name == '§9' ? 0 : variable.enderite;",
+					"variable.default = query.get_name == '§9' ? 0 : variable.default;"
+				],
+				"initialize": [
+					"variable.default = 0; variable.enderite = 0; variable.chesplate = 0;"
+				],
+				"parent_setup": "variable.chest_layer_visible = 0.0;"
+			},
+			"render_controllers": [
+				{
+					"controller.render.elytra_enderite": "variable.enderite == 1"
+				},
+				{
+					"controller.render.elytra_chesplate": "variable.chesplate == 1"
+				},
+				{
+					"controller.render.enderite_chesplate": "variable.chesplate == 1"
+				},
+				{
+					"controller.render.armor": "variable.default == 1"
+				}
+			],
+			"identifier": "multimc:global1",
+			"item": {
+				"minecraft:elytra": "query.owner_identifier == 'minecraft:player'"
+			}
+		}
+	}
+}

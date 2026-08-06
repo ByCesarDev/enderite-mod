@@ -1,82 +1,97 @@
 pack.name=Enderite Mod V2 RP
 pack.description=
+
+## Bloques
+tile.ed:enderite.name=Mena de enderita
+tile.ed:cracked_enderite.name=Mena de enderita cuarteada
+tile.ed:enderite_block.name=Bloque de enderita
+tile.ed:enderite_shulker_box.name=Caja de Shulker de Enderita
+tile.ed:anchor_end_spawn.name=Ancla de Reaparición de Enderita
+
+## Armadura de Enderita
+item.ed:enderite_helmet=Casco de Enderita
+item.ed:enderite_chestplate=Pechera de Enderita
+item.ed:enderite_leggings=Pantalones de Enderita
+item.ed:enderite_boots=Botas de Enderita
+
+## Herramientas y Armas de Enderita
 item.ed:enderite_axe=Hacha de Enderita
 item.ed:enderite_pickaxe=Pico de Enderita
 item.ed:enderite_hoe=Azadón de Enderita
 item.ed:enderite_shovel=Pala de Enderita
 item.ed:enderite_sword=Espada de Enderita
-item.ed:enderite_helmet=Casco de Enderita
-item.ed:enderite_chestplate=Pechera de Enderita
-item.ed:enderite_leggings=Pantalones de Enderita
-item.ed:enderite_boots=Botas de Enderita
-item.ed:enderite_scrap=Fragmento de Enderita
-item.ed:enderite_ingot=Lingote de Enderita
-tile.ed:cracked_enderite.name=Mena de enderita cuarteada
-tile.ed:enderite_block.name=Bloque de enderita
-tile.ed:enderite.name=Mena de enderita
-item.ed:enderite_bow.name=Arco de Enderita
-item.ed:enderite_arrow.name=Flecha
-tile.ed:enderite_shulker_box.name=Caja de Shulker de Enderita
-item.ed:enderite_shulker_box=Caja de Shulker de Enderita
-
-enchantment.enderitemod.void_floating=Flotar en vacío
-
-item.ed:diamond_boots=Botas de Diamante
-item.ed:diamond_chestplate=Pechera de Diamante
-item.ed:diamond_helmet=Casco de Diamante
-item.ed:diamond_leggings=Pantalones de Diamante
-
-item.ed:netherite_boots=Botas de Netherita
-item.ed:netherite_chestplate=Pechera de Netherita
-item.ed:netherite_helmet=Casco de Netherita
-item.ed:netherite_leggings=Pantalones de Netherita
-
-item.ed:iron_boots=Botas de Hierro
-item.ed:iron_chestplate=Pechera de Hierro
-item.ed:iron_helmet=Casco de Hierro
-item.ed:iron_leggings=Pantalones de Hierro
-
-item.ed:gold_boots=Botas de Oro
-item.ed:gold_chestplate=Pechera de Oro
-item.ed:gold_helmet=Casco de Oro
-item.ed:gold_leggings=Pantalones de Oro
-item.ed:enderite_upgrade_smithing_template=Plantilla de mejora de enderita
-tile.ed:anchor_end_spawn.name=Ancla de Reaparición de Enderita
 item.ed:enderite_shears=Tijeras de Enderita
 
-## Custom Items Display Names
-item.ed:enderite_cross_bow.name=Ballesta de Enderita
-item.ed:floating_void.name=§eLibro Encantado\n§7Habilidad de flotación de vacío
-item.ed:enderite_arrow.name=Flecha de Enderita
+## Otros Ítems de Enderita
+item.ed:enderite_scrap=Fragmento de Enderita
+item.ed:enderite_ingot=Lingote de Enderita
+item.ed:enderite_upgrade_smithing_template=Plantilla de mejora de enderita
+item.ed:enderite_shulker_box=Caja de Shulker de Enderita
+
+## Como Vainilla — Armadura de Diamante
+item.ed:diamond_helmet=Casco de Diamante
+item.ed:diamond_chestplate=Pechera de Diamante
+item.ed:diamond_leggings=Pantalones de Diamante
+item.ed:diamond_boots=Botas de Diamante
+
+## Como Vainilla — Armadura de Hierro
+item.ed:iron_helmet=Casco de Hierro
+item.ed:iron_chestplate=Pechera de Hierro
+item.ed:iron_leggings=Pantalones de Hierro
+item.ed:iron_boots=Botas de Hierro
+
+## Como Vainilla — Armadura de Oro
+item.ed:gold_helmet=Casco de Oro
+item.ed:gold_chestplate=Pechera de Oro
+item.ed:gold_leggings=Pantalones de Oro
+item.ed:gold_boots=Botas de Oro
+
+## Como Vainilla — Armadura de Netherita
+item.ed:netherite_helmet=Casco de Netherita
+item.ed:netherite_chestplate=Pechera de Netherita
+item.ed:netherite_leggings=Pantalones de Netherita
+item.ed:netherite_boots=Botas de Netherita
+
+## Como Vainilla — Herramientas de Netherita
+item.ed:netherite_axe=Hacha de Netherita
+item.ed:netherite_pickaxe=Pico de Netherita
+item.ed:netherite_hoe=Azadón de Netherita
+item.ed:netherite_shovel=Pala de Netherita
+item.ed:netherite_sword=Espada de Netherita
+
+## Como Vainilla — Otros Ítems
+item.ed:bow=Arco
+item.ed:crossbow=Ballesta
+item.ed:elytra=Élitros
+item.ed:shears=Tijeras
+
+## Nombres de Visualización de Ítems
 item.ed:enderite_bow.name=Arco de Enderita
-
+item.ed:enderite_cross_bow.name=Ballesta de Enderita
+item.ed:enderite_arrow.name=Flecha de Enderita
+item.ed:floating_void.name=§eLibro Encantado\n§7Habilidad de flotación de vacío
 item.enderite:shield.name=Escudo de Enderita
-
 item.enderite:shield_tp.name=Escudo de Enderita
-
 item.enderite:shield_tp_lv2.name=Escudo de Enderita
-
 item.enderite:shield_tp_lv3.name=Escudo de Enderita
-
 item.enderite:shield_tp_lv4.name=Escudo de Enderita
-
 item.ed:enderite_sword_tp.name=Espada de Enderita
-
 item.ed:enderite_sword_tp_l2.name=Espada de Enderita
-
 item.ed:enderite_sword_tp_l3.name=Espada de Enderita
-
 item.ed:enderite_sword_tp_l4.name=Espada de Enderita
-
-item.elytra:chesplate_broken.name=Pechera con Élitros de Enderita
 item.elytra:chesplate.name=Pechera con Élitros de Enderita
+item.elytra:chesplate_broken.name=Pechera con Élitros de Enderita
 item.elytra:enderite.name=Élitros de Enderita
 item.elytra:enderite_broken.name=Élitros de Enderita
 
-## Missing translations sync
+## Encantamientos
+enchantment.enderitemod.void_floating=Flotar en vacío
 
+## Subtítulos
+ed:subtitle.shulker.open=Abriendo shulker de enderita
+ed:subtitle.shulker.close=Cerrando shulker de enderita
 
-## Script Lore Translations
+## Traducciones de Lore de Scripts
 lore.ed:charge=§3Carga: %1
 lore.ed:upgrade_info=§7Mejora en Herramientas de Crafteo de Enderita con
 lore.ed:ender_pearls=§7perlas de ender para cargar usos de teletransporte.
@@ -84,6 +99,8 @@ lore.ed:sword_teleport=§7¡Teletranspórtate agachándote + click derecho!
 lore.ed:shield_teleport=§7¡Teletransporta atacantes agachándote + click derecho!
 lore.ed:shulker_more=y %1 más...
 actionbar.ed:shulker_destroy_hint=§aMantén SHIFT para destruir la shulker
-
 lore.ed:armor_toughness=§9+4 Resistencia de la armadura
 lore.ed:knockback_resistance=§9+1 Resistencia al derribo
+
+## Catalogos
+itemGroup.name.shield=Escudos de Enderita

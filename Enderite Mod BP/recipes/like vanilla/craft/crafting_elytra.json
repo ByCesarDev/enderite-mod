@@ -1,0 +1,22 @@
+{
+  "format_version": "1.26",
+  "minecraft:recipe_shapeless": {
+    "description": {
+      "identifier": "crafting:elytra"
+    },
+    "unlock": [
+      {
+        "item": "minecraft:elytra"
+      }
+    ],
+    "tags": ["crafting_table"],
+    "ingredients": [
+      {
+        "item": "minecraft:elytra"
+      }
+    ],
+    "result": {
+      "item": "ed:elytra"
+    }
+  }
+}

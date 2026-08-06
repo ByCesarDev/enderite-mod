@@ -1,0 +1,30 @@
+{
+	"format_version": "1.16.100",
+	"minecraft:recipe_shaped": {
+		"description": {
+			"identifier": "ed:iron_chestplate"
+		},
+		"tags": [
+			"crafting_table"
+		],
+		"pattern": [
+			"   ",
+			"X Y",
+			"   "
+		],
+		"key": {
+			"X": {
+				"item": "minecraft:iron_chestplate"
+			},
+			"Y": {
+				"item": "ed:floating_void"
+			}
+		},
+		"result": [
+			{
+				"item": "ed:iron_chestplate",
+				"count": 1
+			}
+		]
+	}
+}

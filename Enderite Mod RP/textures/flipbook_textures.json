@@ -1,0 +1,8 @@
+[
+  {
+    "flipbook_texture": "textures/blocks/end_portal",
+    "atlas_tile": "enderite_respawn_anchor_portal",
+    "ticks_per_frame": 6,
+    "blend_frames": false
+  }
+]
