@@ -11,3 +11,6 @@ Desktop.ini
 *.bak
 *.tmp
 
+# Excluir carpeta de builds
+# builds/Enderite Mod BP v1.1.0
+# builds/Enderite Mod RP v1.1.0
