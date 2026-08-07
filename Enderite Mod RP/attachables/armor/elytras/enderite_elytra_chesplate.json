@@ -36,7 +36,7 @@
 				"controller.render.enderite_chesplate"
 			],
 			"item": {
-				"elytra:chesplate_broken": "query.owner_identifier == 'minecraft:player'"
+				"elytra:chesplate_broken": "query.owner_identifier == 'minecraft:player' || query.owner_identifier == 'minecraft:armor_stand'"
 			}
 		}
 	}

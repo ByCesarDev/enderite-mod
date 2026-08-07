@@ -84,7 +84,7 @@
 			],
 			"identifier": "multimc:global1",
 			"item": {
-				"minecraft:elytra": "query.owner_identifier == 'minecraft:player'"
+				"minecraft:elytra": "query.owner_identifier == 'minecraft:player' || query.owner_identifier == 'minecraft:armor_stand'"
 			}
 		}
 	}

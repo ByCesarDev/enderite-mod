@@ -45,9 +45,7 @@ const playersProcessingRespawn = new Set();
  * Genera partículas ambientales alrededor del bloque.
  */
 function spawnAnchorAmbientParticles(block, level, player) {
-    console.warn(`[Anchor] spawnAnchorAmbientParticles called with level: ${level}, player: ${player?.name}`);
     if (typeof level !== "number" || level <= 0) {
-        console.warn(`[Anchor] spawnAnchorAmbientParticles returning due to invalid level: ${level}`);
         return;
     }
 
@@ -62,17 +60,14 @@ function spawnAnchorAmbientParticles(block, level, player) {
     const runCmd = (cmd) => {
         try {
             if (player && player.runCommand) {
-                console.warn(`[Anchor] Using player.runCommand: ${cmd}`);
                 player.runCommand(cmd);
             } else if (player && player.runCommandAsync) {
-                console.warn(`[Anchor] Using player.runCommandAsync: ${cmd}`);
                 player.runCommandAsync(cmd);
             } else {
-                console.warn(`[Anchor] Using dimension.runCommand: ${cmd}`);
                 dimension.runCommand(cmd);
             }
-        } catch (e) {
-            console.warn(`[Anchor] Command failed: ${cmd}, error: ${e}`);
+        } catch {
+            // Ignorar si falla
         }
     };
 
@@ -313,9 +308,6 @@ function restorePreviousSpawnPoint(player) {
             z,
         });
     } catch (error) {
-        console.warn(
-            `[End Anchor] No se pudo restaurar el spawn de ${player.name}: ${error}`
-        );
 
         player.setSpawnPoint();
     }
@@ -373,9 +365,7 @@ function setSpawnPointToAnchor(player) {
             z: anchorLocation.z + 0.5,
         });
     } catch (error) {
-        console.warn(
-            `[End Anchor] No se pudo activar el spawn del End para ${player.name}: ${error}`
-        );
+        return
     }
 }
 
@@ -479,9 +469,7 @@ function explodeAnchor(block) {
             }
         );
     } catch (error) {
-        console.warn(
-            `[End Anchor] Error creando la explosión: ${error}`
-        );
+        return;
     }
 }
 
@@ -857,7 +845,6 @@ world.afterEvents.playerBreakBlock.subscribe(
  * Genera partículas ambientales alrededor de las anclas activas.
  */
 system.runInterval(() => {
-    console.warn(`[Anchor] Particle interval running`);
     const processedAnchors = new Set();
     const endDimension = world.getDimension(END_DIMENSION_ID);
 
@@ -867,8 +854,6 @@ system.runInterval(() => {
         if (!anchorLocation) {
             continue;
         }
-
-        console.warn(`[Anchor] Found anchor location for player ${player.name}: ${anchorLocation.x}, ${anchorLocation.y}, ${anchorLocation.z}`);
 
         const key =
             `${anchorLocation.x},${anchorLocation.y},${anchorLocation.z}`;
@@ -888,15 +873,12 @@ system.runInterval(() => {
         }
 
         if (!anchor || anchor.typeId !== ANCHOR_ID) {
-            console.warn(`[Anchor] Block at location is not an anchor or doesn't exist`);
             continue;
         }
 
         const level = anchor.permutation.getState(FILLING_STATE);
-        console.warn(`[Anchor] Anchor level: ${level}`);
 
         if (typeof level !== "number" || level <= 0) {
-            console.warn(`[Anchor] Skipping particles due to level: ${level}`);
             continue;
         }
 

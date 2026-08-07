@@ -47,6 +47,9 @@
 			},
 			"minecraft:tags": {
 				"tags": [
+					"minecraft:is_armor",
+					"minecraft:transformable_items",
+					"minecraft:trimmable_armors",
 					"ed:custom_armor",
 					"ed:armor-9",
 					"ed:toughness-4",

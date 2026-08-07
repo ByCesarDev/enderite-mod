@@ -115,6 +115,9 @@ system.runInterval(() => {
 				let modifiedElytra = new ItemStack("minecraft:elytra");
 
 				if (chestSlot) {
+					console.warn(`[Elytra] Converting ${chestSlot.typeId} to vanilla elytra`);
+					console.warn(`[Elytra] Item has dynamic properties: ${chestSlot.getDynamicPropertyTotalByteCount() > 0}`);
+
 					modifiedElytra.setDynamicProperty("elytra:variant", chestSlot.typeId);
 					modifiedElytra.setDynamicProperty("elytra:protection", protectionValues[chestSlot.typeId] || 9);
 					modifiedElytra.nameTag =
@@ -125,6 +128,19 @@ system.runInterval(() => {
 						parts[0].charAt(0).toUpperCase() +
 						parts[0].substring(1);
 					modifiedElytra.getComponent("durability").damage = chestSlot.getComponent("durability").damage;
+
+					// Preservar armor trim si existe
+					const trimComponent = chestSlot.getComponent("trim");
+					console.warn(`[Elytra] Trim component exists: ${trimComponent !== undefined}`);
+					if (trimComponent) {
+						console.warn(`[Elytra] Trim material: ${trimComponent.material}, pattern: ${trimComponent.pattern}`);
+						modifiedElytra.getComponent("trim").material = trimComponent.material;
+						modifiedElytra.getComponent("trim").pattern = trimComponent.pattern;
+						console.warn(`[Elytra] Trim applied to new elytra`);
+					} else {
+						console.warn(`[Elytra] No trim component found on original item`);
+					}
+
 					turnItemInto(chestSlot, modifiedElytra, EquipmentSlot.Chest, undefined, equippable);
 				}
 			});
@@ -144,6 +160,14 @@ system.runInterval(() => {
 				}
 				if (slotItem !== undefined) {
 					slotItem.getComponent("durability").damage = getItem.getComponent("durability").damage;
+
+					// Preservar armor trim si existe
+					const trimComponent = getItem.getComponent("trim");
+					if (trimComponent) {
+						slotItem.getComponent("trim").material = trimComponent.material;
+						slotItem.getComponent("trim").pattern = trimComponent.pattern;
+					}
+
 					turnItemInto(getItem, slotItem, i, inventory);
 				}
 			}
@@ -162,6 +186,10 @@ function turnItemInto(itemToReplace, ItemToGet, slot, inventory, equippable) {
 	enchantments.forEach((enchantment) => {
 		ItemToGet.getComponent("enchantable").addEnchantment(enchantment);
 	});
+
+	// Verificar trim antes de reemplazar
+	const trimBefore = ItemToGet.getComponent("trim");
+	console.warn(`[Elytra] TurnItemInto - Trim before: ${trimBefore ? trimBefore.material + ',' + trimBefore.pattern : 'none'}`);
 
 	if (slot !== EquipmentSlot.Chest && inventory) {
 		inventory.container.setItem(slot, ItemToGet);

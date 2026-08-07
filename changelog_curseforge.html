@@ -59,52 +59,37 @@
 <tbody>
 <tr>
 <td style="background-color: #1a202c; border: 1px solid #2d3748; color: #cbd5e0;">
-
 <h4 style="color: #9f7aea;">🚀 Complete Respawn Anchor Rewrite</h4>
 <ul style="line-height: 2;">
 <li><strong>Entirely reworked system</strong> using player dynamic properties instead of entities and ticking areas for more reliable performance.</li>
-<li><strong>Individual player data</strong> — Each player now has their own anchor data stored separately, eliminating conflicts in multiplayer.</li>
-<li><strong>Automatic spawn restoration</strong> — Breaking the Enderite Respawn Anchor now automatically restores your previous spawn point.</li>
-<li><strong>Improved teleportation reliability</strong> — More precise respawn mechanics with better error handling and prevention of duplicate spawns.</li>
+<li><strong>Individual player data</strong> &mdash; Each player now has their own anchor data stored separately, eliminating conflicts in multiplayer.</li>
+<li><strong>Automatic spawn restoration</strong> &mdash; Breaking the Enderite Respawn Anchor now automatically restores your previous spawn point.</li>
+<li><strong>Improved teleportation reliability</strong> &mdash; More precise respawn mechanics with better error handling and prevention of duplicate spawns.</li>
 </ul>
-
 <h4 style="color: #9f7aea;">⚖️ Enhanced Armor System</h4>
 <ul style="line-height: 2;">
 <li><strong>New custom armor calculation system</strong> that correctly applies +4 Armor Toughness and +1 Knockback Resistance to Enderite armor.</li>
-<li><strong>Visual stat display</strong> — All Enderite armor pieces now show their toughness and knockback resistance values in the item lore.</li>
-<li><strong>Vanilla armor support</strong> — System now supports custom stats for vanilla armor variants (Diamond, Iron, Gold, Netherite).</li>
-<li><strong>Better damage reduction</strong> — Improved separation between native Bedrock armor reduction and custom armor math.</li>
+<li><strong>Visual stat display</strong> &mdash; All Enderite armor pieces now show their toughness and knockback resistance values in the item lore.</li>
+<li><strong>Vanilla armor support</strong> &mdash; System now supports custom stats for vanilla armor variants (Diamond, Iron, Gold, Netherite).</li>
+<li><strong>Better damage reduction</strong> &mdash; Improved separation between native Bedrock armor reduction and custom armor math.</li>
 </ul>
-
 <h4 style="color: #9f7aea;">⚡ Teleportation Items with Dynamic Lore</h4>
 <ul style="line-height: 2;">
-<li><strong>Automatic charge display</strong> — Teleport Swords and Shields now show their current charge amount (0, 16, 32, 48, 64) in the item lore.</li>
-<li><strong>Ability instructions</strong> — Clear usage instructions: "Teleport with sneaking + right click!" for swords and "Teleport attackers with sneaking + right click!" for shields.</li>
-<li><strong>Real-time updates</strong> — Lore automatically updates in inventory and equipment slots while playing.</li>
-<li><strong>Fallback text support</strong> — System includes English fallback text if translations fail to load.</li>
+<li><strong>Automatic charge display</strong> &mdash; Teleport Swords and Shields now show their current charge amount (0, 16, 32, 48, 64) in the item lore.</li>
+<li><strong>Ability instructions</strong> &mdash; Clear usage instructions: "Teleport with sneaking + right click!" for swords and "Teleport attackers with sneaking + right click!" for shields.</li>
+<li><strong>Real-time updates</strong> &mdash; Lore automatically updates in inventory and equipment slots while playing.</li>
+<li><strong>Fallback text support</strong> &mdash; System includes English fallback text if translations fail to load.</li>
 </ul>
-
 <h4 style="color: #9f7aea;">🎨 Improved Crossbow Animations</h4>
 <ul style="line-height: 2;">
 <li><strong>New player animation controllers</strong> specifically for the Enderite Crossbow with smoother charge and discharge animations.</li>
 <li><strong>Better integration</strong> with vanilla animation system for more realistic bow handling.</li>
 </ul>
-
 <h4 style="color: #9f7aea;">📦 Creative Catalog Organization</h4>
 <ul style="line-height: 2;">
-<li><strong>New "Enderite Shields" category</strong> in the creative inventory with all shield variants (shield, shield_tp, shield_tp_lv2, shield_tp_lv3, shield_tp_lv4).</li>
+<li><strong>New "Enderite Shields" category</strong> in the creative inventory with all shield variants.</li>
 <li><strong>Custom icon</strong> for the shield category in the creative menu.</li>
 </ul>
-
-<h4 style="color: #9f7aea;">🔧 Technical Improvements</h4>
-<ul style="line-height: 2;">
-<li><strong>Script optimization</strong> — anchor.js expanded from 119 to 796 lines with complete rewrite for better reliability.</li>
-<li><strong>New armor.js script</strong> (237 lines) for custom armor stat calculations.</li>
-<li><strong>New tp_lore.js script</strong> (144 lines) for automatic teleportation item lore management.</li>
-<li><strong>Removed obsolete files</strong> — Cleaned up dummy entities, ticking area dependencies, and development-only files.</li>
-<li><strong>Updated format versions</strong> to 1.21.60 for better compatibility with latest Minecraft Bedrock versions.</li>
-</ul>
-
 </td>
 </tr>
 </tbody>
@@ -169,27 +154,27 @@
 </tr>
 <tr>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #fff;"><strong>Enderite Helmet</strong></td>
-<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">560 Durability — 4 Protection / 4 Toughness</td>
+<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">560 Durability &mdash; 4 Protection / 4 Toughness</td>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">Prevents Endermen from becoming aggressive when looked at directly.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #fff;"><strong>Enderite Chestplate</strong></td>
-<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">662 Durability — 9 Protection / 4 Toughness</td>
+<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">662 Durability &mdash; 9 Protection / 4 Toughness</td>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">Best-in-slot chest armor. Surpasses Netherite in both protection and toughness.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #fff;"><strong>Enderite Leggings</strong></td>
-<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">621 Durability — 7 Protection / 4 Toughness</td>
+<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">621 Durability &mdash; 7 Protection / 4 Toughness</td>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">Supports vanilla Armor Trims, fire immunity, and void floating.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #fff;"><strong>Enderite Boots</strong></td>
-<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">538 Durability — 4 Protection / 4 Toughness</td>
+<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">538 Durability &mdash; 4 Protection / 4 Toughness</td>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">Supports vanilla Armor Trims, fire immunity, and void floating.</td>
 </tr>
 <tr>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #fff;"><strong>Enderite Elytra Chestplate</strong></td>
-<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">1024 Durability — 9 Protection / 4 Toughness</td>
+<td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">1024 Durability &mdash; 9 Protection / 4 Toughness</td>
 <td style="border: 1px solid #2d3748; background-color: #1a202c; color: #cbd5e0;">Combines heavy armor protection with Elytra flight.</td>
 </tr>
 <tr>
@@ -229,30 +214,31 @@
 <td style="background-color: #1a202c; border: 1px solid #2d3748;">
 <h3 style="color: #9f7aea;"><strong>1. Ore Mining &amp; Smelting</strong></h3>
 <p style="color: #cbd5e0;">Find Enderite Ore in The End between Y: 12 and Y: 48. Detonate an explosion next to it to transform it into Cracked Enderite Ore. Mine the cracked ore using a Netherite Pickaxe and smelt it in a Blast Furnace to obtain Enderite Scraps.</p>
-<p style="text-align: center;"><img src="https://i.imgur.com/mdGMsIA.png" alt="Enderite Ore Smelting Recipe"></p>
+<p style="text-align: center;"><img src="https://i.imgur.com/DUQ7Igv.png" alt="Enderite Ore Smelting Recipe" width="1961" height="314"></p>
 <h3 style="color: #9f7aea;"><strong>2. Ingot Forging &amp; Smithing Template</strong></h3>
-<p style="color: #cbd5e0;">Combine <strong>4 Enderite Scraps + 4 Diamonds</strong> in a Crafting Table to forge an Enderite Ingot. Obtain the Enderite Upgrade Smithing Template from End Cities, or duplicate it using 7 Diamonds, 1 End Stone, and 1 Enderite Upgrade Smithing Template.</p>
-<p style="text-align: center;"><img src="https://i.imgur.com/h1z8P8k.png" alt="Enderite Smithing Template Recipe"></p>
-<h3 style="color: #9f7aea;"><strong>3. Armor Upgrades — Smithing Table</strong></h3>
+<p style="color: #cbd5e0;">Combine <strong>4 Enderite Scraps + 4 Diamonds</strong> in a Crafting Table to forge an Enderite Ingot. Obtain the Enderite Upgrade Smithing Template from End Cities, or duplicate it using 7 Enderite Ingots, 1 End Stone, and 1 Enderite Upgrade Smithing Template.</p>
+<p style="text-align: center;"><img src="https://i.imgur.com/2NdLjUj.png" alt="Enderite Smithing Template Recipe" width="1504" height="276"></p>
+<h3 style="color: #9f7aea;"><strong>3. Armor Upgrades &mdash; Smithing Table</strong></h3>
 <p style="color: #cbd5e0;">Upgrade each piece of Netherite armor into Enderite armor at the Smithing Table:</p>
 <p style="text-align: center;"><code>[Enderite Upgrade Template] + [Netherite Armor Piece] + [Enderite Ingot]</code></p>
-<p style="color: #a0aec0; font-size: 13px; text-align: center;">Applies to: Helmet · Chestplate · Leggings · Boots</p>
-<p style="text-align: center;"><img src="PLACEHOLDER_smithing_armor.png" alt="Enderite Armor Smithing Recipes"></p>
-<h3 style="color: #9f7aea;"><strong>4. Tool &amp; Weapon Upgrades — Smithing Table</strong></h3>
+<p style="color: #a0aec0; font-size: 13px; text-align: center;">Applies to: Helmet &middot; Chestplate &middot; Leggings &middot; Boots</p>
+<p style="text-align: center;"><img src="https://i.imgur.com/qVl3KbM.png" alt="Enderite Armor Smithing Recipes" width="1464" height="568"></p>
+<h3 style="color: #9f7aea;"><strong>4. Tool &amp; Weapon Upgrades &mdash; Smithing Table</strong></h3>
 <p style="color: #cbd5e0;">Upgrade Netherite tools and weapons into their Enderite versions at the Smithing Table:</p>
 <p style="text-align: center;"><code>[Enderite Upgrade Template] + [Netherite Tool / Weapon] + [Enderite Ingot]</code></p>
-<p style="color: #a0aec0; font-size: 13px; text-align: center;">Applies to: Sword · Axe · Pickaxe · Shovel · Hoe</p>
-<p style="text-align: center;"><img src="PLACEHOLDER_smithing_tools.png" alt="Enderite Tools Smithing Recipes"></p>
-<h3 style="color: #9f7aea;"><strong>5. Ranged &amp; Shield Upgrades — Smithing Table</strong></h3>
+<p style="color: #a0aec0; font-size: 13px; text-align: center;">Applies to: Sword &middot; Axe &middot; Pickaxe &middot; Shovel &middot; Hoe</p>
+<p style="text-align: center;"><img src="https://i.imgur.com/qCB8rCb.png" alt="Enderite Tools Smithing Recipes" width="2440" height="284"></p>
+<h3 style="color: #9f7aea;"><strong>5. Ranged &amp; Shield Upgrades &mdash; Smithing Table</strong></h3>
 <p style="color: #cbd5e0;">Upgrade your ranged weapons and shield at the Smithing Table:</p>
 <p style="text-align: center;"><code>[Enderite Upgrade Template] + [Netherite Bow / Crossbow / Shield] + [Enderite Ingot]</code></p>
-<p style="text-align: center;"><img src="PLACEHOLDER_smithing_ranged_shield.png" alt="Enderite Bow Crossbow Shield Smithing Recipes"></p>
+<p style="text-align: center;"><img src="https://i.imgur.com/oiTXJKw.png" alt="Enderite Bow Crossbow Shield Smithing Recipes" width="1476" height="284"></p>
 <h3 style="color: #9f7aea;"><strong>6. Special Crafting Recipes</strong></h3>
 <p style="color: #cbd5e0;">Some Enderite items are crafted directly in the Crafting Table:</p>
-<p style="text-align: center;"><img src="PLACEHOLDER_crafting_misc.png" alt="Enderite Shulker Box, Elytra Chestplate, Respawn Anchor, Block recipes"></p>
+<p style="text-align: center;"><img src="https://i.imgur.com/htiIbXZ.png" alt="Enderite Shulker Box, Elytra Chestplate, Respawn Anchor, Block recipes" width="1996" height="276"></p>
 <h3 style="color: #9f7aea;"><strong>7. Apply Armor Trims</strong></h3>
 <p style="color: #cbd5e0;">After crafting your Enderite armor, place it inside a Smithing Table together with a vanilla Armor Trim Smithing Template and a supported trim material to customize its appearance.</p>
 <p style="text-align: center;"><code>[Armor Trim Template] + [Enderite Armor] + [Trim Material]</code></p>
+<p style="text-align: center;"><img src="https://i.imgur.com/c61FYbJ.jpeg" alt="" width="2434" height="1369"></p>
 </td>
 </tr>
 </tbody>
