@@ -267,27 +267,11 @@ world.afterEvents.entitySpawn.subscribe((event) => {
         if (!shooter) {
             const entityLoc = entity.location;
             const dimension = entity.dimension;
-            let closestDistSq = 9.0;
+            let closestDistSq = 25.0;
 
-        for (const [playerId, pending] of pendingBowShots.entries()) {
-            try {
-                const p = world.getEntity(playerId);
-                if (isEntityValid(p) && p.dimension.id === dimension.id) {
-                    const dx = p.location.x - entityLoc.x;
-                    const dy = p.location.y - entityLoc.y;
-                    const dz = p.location.z - entityLoc.z;
-                    const distSq = dx * dx + dy * dy + dz * dz;
-                    if (distSq < closestDistSq) {
-                        closestDistSq = distSq;
-                        shooter = p;
-                    }
-                }
-            } catch (e) {}
-        }
-
-        if (!shooter) {
-            try {
-                for (const p of world.getAllPlayers()) {
+            for (const [playerId, pending] of pendingBowShots.entries()) {
+                try {
+                    const p = world.getAllPlayers().find(pl => pl.id === playerId);
                     if (isEntityValid(p) && p.dimension.id === dimension.id) {
                         const dx = p.location.x - entityLoc.x;
                         const dy = p.location.y - entityLoc.y;
@@ -298,8 +282,25 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                             shooter = p;
                         }
                     }
-                }
-            } catch (e) {}
+                } catch (e) {}
+            }
+
+            if (!shooter) {
+                try {
+                    for (const p of world.getAllPlayers()) {
+                        if (isEntityValid(p) && p.dimension.id === dimension.id) {
+                            const dx = p.location.x - entityLoc.x;
+                            const dy = p.location.y - entityLoc.y;
+                            const dz = p.location.z - entityLoc.z;
+                            const distSq = dx * dx + dy * dy + dz * dz;
+                            if (distSq < closestDistSq) {
+                                closestDistSq = distSq;
+                                shooter = p;
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
         }
 
         if (!shooter) {
