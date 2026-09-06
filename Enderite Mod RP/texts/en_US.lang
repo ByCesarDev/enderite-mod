@@ -28,30 +28,6 @@ item.ed:enderite_ingot=Enderite Ingot
 item.ed:enderite_upgrade_smithing_template=Enderite Upgrade
 item.ed:enderite_shulker_box=Enderite Shulker Box
 
-## Like Vanilla — Diamond Armor
-item.ed:diamond_helmet=Diamond Helmet
-item.ed:diamond_chestplate=Diamond Chestplate
-item.ed:diamond_leggings=Diamond Leggings
-item.ed:diamond_boots=Diamond Boots
-
-## Like Vanilla — Iron Armor
-item.ed:iron_helmet=Iron Helmet
-item.ed:iron_chestplate=Iron Chestplate
-item.ed:iron_leggings=Iron Leggings
-item.ed:iron_boots=Iron Boots
-
-## Like Vanilla — Gold Armor
-item.ed:gold_helmet=Golden Helmet
-item.ed:gold_chestplate=Golden Chestplate
-item.ed:gold_leggings=Golden Leggings
-item.ed:gold_boots=Golden Boots
-
-## Like Vanilla — Netherite Armor
-item.ed:netherite_helmet=Netherite Helmet
-item.ed:netherite_chestplate=Netherite Chestplate
-item.ed:netherite_leggings=Netherite Leggings
-item.ed:netherite_boots=Netherite Boots
-
 ## Like Vanilla — Netherite Tools
 item.ed:netherite_axe=Netherite Axe
 item.ed:netherite_pickaxe=Netherite Pickaxe
