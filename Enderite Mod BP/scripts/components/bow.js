@@ -22,6 +22,41 @@ export const projectileShotMap = new Map(); // projectileId -> ShotData
 // Compatibilidad retroactiva si algún script externo consulta lastShotData
 export const lastShotData = new Map(); // playerId -> ShotData
 
+// Rastreo de proyectiles críticos activos en vuelo para emisión de partículas
+const activeCritProjectiles = new Map(); // projectileId -> Entity
+
+// Rastreo de flechas clavadas en bloques para recolección vanilla segura
+const stuckPickableArrows = new Map(); // projectileId -> { projectile, dimension, stickTick }
+
+// Loop de partículas críticas (1 tick): emite minecraft:basic_crit_particle durante el vuelo
+system.runInterval(() => {
+    try {
+        for (const [id, proj] of activeCritProjectiles.entries()) {
+            if (!isEntityValid(proj)) {
+                activeCritProjectiles.delete(id);
+                continue;
+            }
+
+            let speedSq = 1;
+            try {
+                const vel = proj.getVelocity();
+                speedSq = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
+            } catch (e) {}
+
+            if (speedSq < 0.05 || proj.isOnGround) {
+                activeCritProjectiles.delete(id);
+                continue;
+            }
+
+            try {
+                proj.dimension.spawnParticle("minecraft:basic_crit_particle", proj.location);
+            } catch (e) {
+                activeCritProjectiles.delete(id);
+            }
+        }
+    } catch (e) {}
+}, 1);
+
 const isEntityValid = (e) => Boolean(e && (typeof e.isValid === 'function' ? e.isValid() : e.isValid));
 
 /**
@@ -230,12 +265,30 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
         // Si no está disponible en projComp.owner, buscar al jugador más cercano en la misma dimensión
         if (!shooter) {
+            const entityLoc = entity.location;
+            const dimension = entity.dimension;
+            let closestDistSq = 9.0;
+
+        for (const [playerId, pending] of pendingBowShots.entries()) {
             try {
-                if (isEntityValid(entity)) {
-                    const entityLoc = entity.location;
-                    const dim = entity.dimension;
-                    let closestDistSq = 25.0; // radio de búsqueda: 5 bloques
-                    for (const p of dim.getPlayers()) {
+                const p = world.getEntity(playerId);
+                if (isEntityValid(p) && p.dimension.id === dimension.id) {
+                    const dx = p.location.x - entityLoc.x;
+                    const dy = p.location.y - entityLoc.y;
+                    const dz = p.location.z - entityLoc.z;
+                    const distSq = dx * dx + dy * dy + dz * dz;
+                    if (distSq < closestDistSq) {
+                        closestDistSq = distSq;
+                        shooter = p;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (!shooter) {
+            try {
+                for (const p of world.getAllPlayers()) {
+                    if (isEntityValid(p) && p.dimension.id === dimension.id) {
                         const dx = p.location.x - entityLoc.x;
                         const dy = p.location.y - entityLoc.y;
                         const dz = p.location.z - entityLoc.z;
@@ -263,6 +316,16 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                 fireTick: system.currentTick
             });
             return;
+        }
+
+        let isShooterCreative = false;
+        try {
+            isShooterCreative = String(shooter.getGameMode()).toLowerCase() === "creative";
+        } catch (e) {}
+
+        if (isShooterCreative) {
+            entity.addTag("creative_arrow");
+            entity.addTag("no_pickup");
         }
 
         // 2. Determinar si el disparo provino de Bow pendiente o de Crossbow
@@ -293,15 +356,10 @@ world.afterEvents.entitySpawn.subscribe((event) => {
             // Si el arco tenía Infinity, aislarlo estrictamente a este proyectil y reembolsar la munición
             if (shotData.infinityLevel > 0) {
                 entity.addTag("infinity_arrow");
-                debug(`Tagged projectile ${entity.id} as 'infinity_arrow' strictly for ${shooter.name}.`);
+                entity.addTag("no_pickup");
+                debug(`Tagged projectile ${entity.id} as 'infinity_arrow' (no pickup) strictly for ${shooter.name}.`);
 
-                let isCreative = false;
-                try {
-                    const gm = shooter.getGameMode();
-                    isCreative = String(gm).toLowerCase() === "creative";
-                } catch (e) {}
-
-                if (!isCreative) {
+                if (!isShooterCreative) {
                     try {
                         const inv = shooter.getComponent("inventory")?.container;
                         if (inv) {
@@ -354,6 +412,13 @@ world.afterEvents.entitySpawn.subscribe((event) => {
             }
         }
 
+        // Si el disparo es crítico (tensado al 100% o crítico), registrar para rastro de partículas
+        if (shotData.isCritical) {
+            entity.addTag("critical_shot");
+            activeCritProjectiles.set(entity.id, entity);
+            debug(`Registered active critical particle trail for projId: ${entity.id}`);
+        }
+
         // 3. Vincular los datos de disparo directamente al ID del proyectil
         projectileShotMap.set(entity.id, shotData);
         lastShotData.set(shooter.id, shotData);
@@ -362,19 +427,111 @@ world.afterEvents.entitySpawn.subscribe((event) => {
     }
 });
 
-// 4. Impacto en bloque: destruir flechas Infinity y limpiar estado
+// 4. Impacto en bloque: detener partículas, proteger Infinity/Creativo y registrar para recolección vanilla
 world.afterEvents.projectileHitBlock.subscribe((event) => {
     try {
         const proj = event.projectile;
         if (proj?.typeId === "ed:arrow_enderite") {
-            if (proj.hasTag("infinity_arrow")) {
-                proj.remove();
-                debug(`Removed infinity arrow upon block impact (cannot be duplicated/farmed).`);
-            }
+            activeCritProjectiles.delete(proj.id);
             projectileShotMap.delete(proj.id);
+
+            const cannotPickup = proj.hasTag("no_pickup") || 
+                                 proj.hasTag("infinity_arrow") || 
+                                 proj.hasTag("creative_arrow");
+
+            if (cannotPickup) {
+                debug(`Projectile ${proj.id} stuck in block with 'no_pickup' tag. Will naturally despawn without player pickup.`);
+                system.runTimeout(() => {
+                    try {
+                        if (isEntityValid(proj)) proj.remove();
+                    } catch (e) {}
+                }, 1200);
+                return;
+            }
+
+            stuckPickableArrows.set(proj.id, {
+                projectile: proj,
+                dimension: event.dimension,
+                stickTick: system.currentTick
+            });
+            debug(`Registered pickable arrow ${proj.id} in block.`);
         }
     } catch (e) {}
 });
+
+// 5. Loop de recolección vanilla (cada 4 ticks / 0.2s):
+// Respeta inventario lleno, jugadores en creativo, multijugador exacto y recolección única
+system.runInterval(() => {
+    try {
+        const currentTick = system.currentTick;
+        for (const [id, data] of stuckPickableArrows.entries()) {
+            const proj = data.projectile;
+            if (!isEntityValid(proj)) {
+                stuckPickableArrows.delete(id);
+                continue;
+            }
+
+            // Despawn natural tras 60 segundos (1200 ticks) si no es recogida
+            if (currentTick - data.stickTick > 1200) {
+                try { proj.remove(); } catch (e) {}
+                stuckPickableArrows.delete(id);
+                continue;
+            }
+
+            let nearbyPlayers = [];
+            try {
+                nearbyPlayers = data.dimension.getPlayers({ location: proj.location, maxDistance: 1.5 });
+            } catch (e) {}
+
+            if (!nearbyPlayers || nearbyPlayers.length === 0) continue;
+
+            for (const player of nearbyPlayers) {
+                // En vanilla, los jugadores en modo creativo no recogen flechas del suelo
+                let isCreative = false;
+                try {
+                    isCreative = String(player.getGameMode()).toLowerCase() === "creative";
+                } catch (e) {}
+                if (isCreative) continue;
+
+                const inv = player.getComponent("inventory")?.container;
+                if (!inv) continue;
+
+                // Verificar si el jugador tiene espacio en su inventario
+                let hasSpace = inv.emptySlotsCount > 0;
+                if (!hasSpace) {
+                    for (let s = 0; s < inv.size; s++) {
+                        const it = inv.getItem(s);
+                        if (it?.typeId === "ed:enderite_arrow" && it.amount < (it.maxAmount ?? 64)) {
+                            const lore = it.getLore();
+                            if (!lore || !lore.includes(VIRTUAL_ARROW_LORE)) {
+                                hasSpace = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Si el inventario está completamente lleno, la flecha permanece clavada en el suelo
+                if (!hasSpace) continue;
+
+                // Otorgar 1 flecha de Enderita directamente a este jugador específico
+                inv.addItem(new ItemStack("ed:enderite_arrow", 1));
+                try {
+                    data.dimension.playSound("random.pop", player.location);
+                } catch (e) {}
+                try {
+                    proj.remove();
+                } catch (e) {}
+
+                stuckPickableArrows.delete(id);
+                debug(`Arrow ${id} safely picked up by ${player.name}.`);
+                break; // Un único jugador recoge la flecha
+            }
+        }
+    } catch (e) {
+        debug(`Error in arrow pickup loop: ${e}`);
+    }
+}, 4);
 
 // 5. Paridad Infinity con 0 flechas en inventario:
 // Si el jugador sostiene un arco con Infinity y tiene 0 flechas, se le otorga 1 flecha virtual protegida con lockMode "inventory".
