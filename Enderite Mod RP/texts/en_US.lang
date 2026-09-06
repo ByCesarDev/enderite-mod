@@ -45,7 +45,9 @@ item.ed:shears=Shears
 item.ed:enderite_bow.name=Enderite Bow
 item.ed:enderite_cross_bow.name=Enderite Crossbow
 item.ed:enderite_arrow.name=Enderite Arrow
-item.ed:floating_void.name=§eEnchanted Book\n§7Void floating ability
+item.ed:floating_void.name=§eEnchanted Book
+item.ed:floating_void_2.name=§eEnchanted Book
+item.ed:floating_void_3.name=§eEnchanted Book
 item.enderite:shield.name=Enderite Shield
 item.enderite:shield_tp.name=Enderite Shield
 item.enderite:shield_tp_lv2.name=Enderite Shield
@@ -82,5 +84,11 @@ actionbar.ed:shulker_destroy_hint=§aHold SHIFT to destroy the shulker box
 lore.ed:armor_toughness=§9+4 Armor Toughness
 lore.ed:knockback_resistance=§9+1 Knockback Resistance
 
-## Creative Tabs
 itemGroup.name.shield=Enderite Shields
+
+## Void Floating Anvil UI
+ui.ed:void_anvil_title=Void Floating — Anvil
+ui.ed:void_anvil_body=Select an item from your inventory to apply or upgrade Void Floating:
+ui.ed:void_anvil_no_items=§cNo compatible durability items found in your inventory.
+ui.ed:void_anvil_close=Close
+ui.ed:void_anvil_applied=§aApplied Void Floating %1 to %2!

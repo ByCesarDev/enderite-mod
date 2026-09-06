@@ -45,7 +45,9 @@ item.ed:shears=Tijeras
 item.ed:enderite_bow.name=Arco de Enderita
 item.ed:enderite_cross_bow.name=Ballesta de Enderita
 item.ed:enderite_arrow.name=Flecha de Enderita
-item.ed:floating_void.name=§eLibro Encantado\n§7Habilidad de flotación de vacío
+item.ed:floating_void.name=§eLibro encantado
+item.ed:floating_void_2.name=§eLibro encantado
+item.ed:floating_void_3.name=§eLibro encantado
 item.enderite:shield.name=Escudo de Enderita
 item.enderite:shield_tp.name=Escudo de Enderita
 item.enderite:shield_tp_lv2.name=Escudo de Enderita
@@ -84,3 +86,10 @@ lore.ed:knockback_resistance=§9+1 Resistencia al derribo
 
 ## Catalogos
 itemGroup.name.shield=Escudos de Enderita
+
+## Interfaz de Yunque de Flotar en Vacío
+ui.ed:void_anvil_title=Flotar en vacío — Yunque
+ui.ed:void_anvil_body=Selecciona un objeto de tu inventario para aplicar o mejorar Flotar en vacío:
+ui.ed:void_anvil_no_items=§cNo se encontraron objetos compatibles con durabilidad en tu inventario.
+ui.ed:void_anvil_close=Cerrar
+ui.ed:void_anvil_applied=§a¡Se aplicó Flotar en vacío %1 a %2!

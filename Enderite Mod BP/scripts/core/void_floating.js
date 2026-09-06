@@ -1,7 +1,9 @@
-import { world, system } from "@minecraft/server";
+import { world, system, ItemStack } from "@minecraft/server";
+import { ActionFormData } from "@minecraft/server-ui";
 
 /**
  * Exact set of Enderite items matching Java upstream #enderitemod:enderite_items.
+ * Note: Smithing Template is excluded per Java upstream tag definition.
  * These items natively have zero gravity and vertical dampening (EnderiteDropMixin.java).
  */
 export const ENDERITE_ITEM_IDS = new Set([
@@ -11,7 +13,6 @@ export const ENDERITE_ITEM_IDS = new Set([
     "ed:enderite_ingot",
     "ed:enderite_scrap",
     "ed:enderite_block",
-    "ed:enderite_upgrade_smithing_template",
 
     // Tools and Weapons
     "ed:enderite_pickaxe",
@@ -76,6 +77,50 @@ export function isEnderiteItem(itemStack) {
 }
 
 /**
+ * Validates whether an item is compatible with the Void Floating enchantment.
+ * Matches Java #minecraft:enchantable/durability excluding Enderite items.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @returns {boolean}
+ */
+export function isVoidFloatingCompatible(itemStack) {
+    if (!itemStack) return false;
+    if (isEnderiteItem(itemStack)) return false;
+    return Boolean(itemStack.getComponent("durability"));
+}
+
+/**
+ * Reads the Void Floating book level from an enchanted book item.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @returns {number} 0 if not a book, 1, 2, or 3
+ */
+export function getVoidFloatingBookLevel(itemStack) {
+    if (!itemStack) return 0;
+    if (itemStack.typeId === "ed:floating_void_3") return 3;
+    if (itemStack.typeId === "ed:floating_void_2") return 2;
+    if (itemStack.typeId === "ed:floating_void") {
+        try {
+            const prop = itemStack.getDynamicProperty("ed:void_floating_level");
+            if (typeof prop === "number" && prop >= 1 && prop <= 3) return Math.floor(prop);
+        } catch {}
+        return 1;
+    }
+    return 0;
+}
+
+/**
+ * Calculates new enchantment level after combining current level with a book level.
+ * @param {number} currentLevel
+ * @param {number} bookLevel
+ * @returns {number}
+ */
+export function calculateCombinedVoidLevel(currentLevel, bookLevel) {
+    if (currentLevel === bookLevel) {
+        return Math.min(3, currentLevel + 1);
+    }
+    return Math.max(currentLevel, bookLevel);
+}
+
+/**
  * Reads the Void Floating enchantment level (0 to 3) stored on an item.
  * @param {import("@minecraft/server").ItemStack} itemStack
  * @returns {number} 0, 1, 2, or 3
@@ -137,6 +182,28 @@ export function setVoidFloatingLevel(itemStack, level) {
         }
 
         itemStack.setLore(preserved);
+    } catch {}
+}
+
+/**
+ * Ensures an enchanted book displays its localized level lore.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @param {number} level
+ */
+export function ensureVoidBookLore(itemStack, level) {
+    if (!itemStack) return;
+    try {
+        let raw = [];
+        try {
+            raw = itemStack.getRawLore() ?? [];
+        } catch {
+            raw = (itemStack.getLore() ?? []).map(t => ({ text: t }));
+        }
+        const key = `lore.ed:void_floating_${level}`;
+        const hasLore = raw.some(l => l?.translate === key || (typeof l?.text === 'string' && l.text.includes(String(level))));
+        if (!hasLore) {
+            itemStack.setLore([{ translate: key }]);
+        }
     } catch {}
 }
 
@@ -247,6 +314,13 @@ export function registerFloatingItemEntity(entity) {
         const itemStack = itemComp?.itemStack;
         if (!itemStack) return;
 
+        // Ensure dropped book has correct level lore
+        const bookLevel = getVoidFloatingBookLevel(itemStack);
+        if (bookLevel > 0) {
+            ensureVoidBookLore(itemStack, bookLevel);
+            itemComp.itemStack = itemStack;
+        }
+
         const isEnderite = isEnderiteItem(itemStack);
         const voidLevel = getVoidFloatingLevel(itemStack);
 
@@ -347,3 +421,139 @@ system.runInterval(() => {
         }
     } catch {}
 }, 100);
+
+// 4. Anvil Interaction for Void Floating Books (Zero Experiments)
+world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
+    try {
+        const { player, block, itemStack } = event;
+        if (!block?.typeId?.includes("anvil")) return;
+
+        const bookLevel = getVoidFloatingBookLevel(itemStack);
+        if (!bookLevel) return;
+
+        // Player is interacting with anvil while holding a Void Floating Book!
+        event.cancel = true;
+
+        system.run(() => {
+            openVoidFloatingAnvilUi(player, block, bookLevel);
+        });
+    } catch {}
+});
+
+/**
+ * Displays the modal Anvil UI to apply or combine Void Floating books on compatible items.
+ * @param {import("@minecraft/server").Player} player
+ * @param {import("@minecraft/server").Block} block
+ * @param {number} bookLevel
+ */
+export function openVoidFloatingAnvilUi(player, block, bookLevel) {
+    if (!player?.isValid) return;
+
+    const invComp = player.getComponent("inventory");
+    const container = invComp?.container;
+    if (!container) return;
+
+    const candidates = [];
+    const heldSlot = player.selectedSlotIndex;
+
+    for (let slot = 0; slot < container.size; slot++) {
+        const item = container.getItem(slot);
+        if (!item) continue;
+
+        // Candidate 1: Compatible durability item
+        if (isVoidFloatingCompatible(item)) {
+            const currentLevel = getVoidFloatingLevel(item);
+            const targetLevel = calculateCombinedVoidLevel(currentLevel, bookLevel);
+            if (targetLevel > currentLevel) {
+                candidates.push({
+                    slot,
+                    item,
+                    isBook: false,
+                    currentLevel,
+                    targetLevel
+                });
+            }
+        }
+        // Candidate 2: Combining with another Void Floating Book in inventory (not held slot)
+        else if (item.typeId === "ed:floating_void" || item.typeId === "ed:floating_void_2" || item.typeId === "ed:floating_void_3") {
+            if (slot !== heldSlot) {
+                const otherBookLevel = getVoidFloatingBookLevel(item);
+                if (otherBookLevel > 0) {
+                    const targetLevel = calculateCombinedVoidLevel(otherBookLevel, bookLevel);
+                    if (targetLevel > otherBookLevel) {
+                        candidates.push({
+                            slot,
+                            item,
+                            isBook: true,
+                            currentLevel: otherBookLevel,
+                            targetLevel
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    const form = new ActionFormData();
+    form.title({ translate: "ui.ed:void_anvil_title" });
+
+    if (candidates.length === 0) {
+        form.body({ translate: "ui.ed:void_anvil_no_items" });
+        form.button({ translate: "ui.ed:void_anvil_close" });
+        form.show(player).catch(() => {});
+        return;
+    }
+
+    form.body({ translate: "ui.ed:void_anvil_body" });
+
+    for (const cand of candidates) {
+        const name = cand.item.nameTag || cand.item.typeId.replace(/^minecraft:/, '').replace(/^ed:/, '').replace(/_/g, ' ');
+        const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+        const label = cand.currentLevel > 0
+            ? `${formattedName}\n§8Level ${cand.currentLevel} ➔ §aLevel ${cand.targetLevel}`
+            : `${formattedName}\n§8[No Void] ➔ §aLevel ${cand.targetLevel}`;
+        form.button(label);
+    }
+
+    form.show(player).then((response) => {
+        if (response.canceled || response.selection === undefined) return;
+        const chosen = candidates[response.selection];
+        if (!chosen) return;
+
+        // Re-verify inventory slots before applying
+        const currentHeld = container.getItem(heldSlot);
+        const currentTarget = container.getItem(chosen.slot);
+
+        if (!currentHeld || getVoidFloatingBookLevel(currentHeld) !== bookLevel) return;
+        if (!currentTarget) return;
+
+        // 1. Consume 1 book from hand
+        if (currentHeld.amount > 1) {
+            currentHeld.amount -= 1;
+            container.setItem(heldSlot, currentHeld);
+        } else {
+            container.setItem(heldSlot, undefined);
+        }
+
+        // 2. Apply upgrade to target
+        if (chosen.isBook) {
+            const upgradedBookId = chosen.targetLevel === 3 ? "ed:floating_void_3" : "ed:floating_void_2";
+            const newBook = new ItemStack(upgradedBookId, 1);
+            ensureVoidBookLore(newBook, chosen.targetLevel);
+            container.setItem(chosen.slot, newBook);
+        } else {
+            setVoidFloatingLevel(currentTarget, chosen.targetLevel);
+            container.setItem(chosen.slot, currentTarget);
+        }
+
+        // 3. Play anvil sound and portal particle
+        try {
+            player.dimension.playSound("random.anvil_use", player.location, { volume: 1.0, pitch: 1.0 });
+            player.dimension.spawnParticle("minecraft:basic_portal_particle", {
+                x: block.location.x + 0.5,
+                y: block.location.y + 1.0,
+                z: block.location.z + 0.5
+            });
+        } catch {}
+    }).catch(() => {});
+}
