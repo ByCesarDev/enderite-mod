@@ -26,20 +26,24 @@ function applyTPLore(itemStack) {
 
   if (!isSword && !isShield && !isArmor) return false;
 
-  // Manejo de espadas teleportables con carga dinámica
+  // Manejo de espadas con carga dinámica y espada base
   if (isSword) {
-    const capacity = SWORD_CAPACITIES[itemStack.typeId];
-    if (capacity <= 0) return false;
-
+    const capacity = SWORD_CAPACITIES[itemStack.typeId] ?? 0;
     const currentCharge = getTeleportCharge(itemStack);
     
     // Verificar si el lore ya está al día con la carga actual
     let needsUpdate = true;
     try {
       const rawLore = itemStack.getRawLore() ?? [];
-      const chargeEntry = rawLore.find(l => l?.translate === "lore.ed:charge");
-      if (chargeEntry?.with?.[0] === String(currentCharge) && chargeEntry?.with?.[1] === String(capacity)) {
-        needsUpdate = false;
+      const chargeEntry = rawLore.find(l => l?.translate === "lore.ed:charge" || l?.translate === "lore.ed:charge_zero");
+      if (capacity > 0) {
+        if (chargeEntry?.translate === "lore.ed:charge" && chargeEntry?.with?.[0] === String(currentCharge) && chargeEntry?.with?.[1] === String(capacity)) {
+          needsUpdate = false;
+        }
+      } else {
+        if (chargeEntry?.translate === "lore.ed:charge_zero") {
+          needsUpdate = false;
+        }
       }
     } catch (e) {}
 

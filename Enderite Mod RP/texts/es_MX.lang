@@ -93,6 +93,7 @@ ed:subtitle.shulker.close=Cerrando shulker de enderita
 
 ## Traducciones de Lore de Scripts
 lore.ed:charge=§3Carga: %1/%2
+lore.ed:charge_zero=§3Carga: 0
 lore.ed:upgrade_info=§7§oMejorar en una mesa de herrería con
 lore.ed:ender_pearls=§7§operlas de ender para obtener usos.
 lore.ed:sword_teleport=§7§o¡Shift + click derecho para teletransportarte!

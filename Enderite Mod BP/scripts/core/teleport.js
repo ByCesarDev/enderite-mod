@@ -135,6 +135,7 @@ export function updateSwordLore(itemStack, currentCharge, capacity) {
     try {
         const managedKeys = new Set([
             "lore.ed:charge",
+            "lore.ed:charge_zero",
             "lore.ed:upgrade_info",
             "lore.ed:ender_pearls",
             "lore.ed:sword_teleport",
@@ -165,9 +166,13 @@ export function updateSwordLore(itemStack, currentCharge, capacity) {
         });
 
         const isShield = Boolean(itemStack.typeId && itemStack.typeId.includes("shield"));
+        const chargeEntry = capacity > 0
+            ? { translate: "lore.ed:charge", with: [String(currentCharge), String(capacity)] }
+            : { translate: "lore.ed:charge_zero" };
+
         const enderiteLore = [
             { text: " " },
-            { translate: "lore.ed:charge", with: [String(currentCharge), String(capacity)] },
+            chargeEntry,
             { translate: "lore.ed:upgrade_info" },
             { translate: "lore.ed:ender_pearls" },
             { translate: isShield ? "lore.ed:shield_teleport" : "lore.ed:sword_teleport" }
