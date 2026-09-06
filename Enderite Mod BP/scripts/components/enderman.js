@@ -1,5 +1,5 @@
 import { world, system, EntityDamageCause } from '@minecraft/server';
-import { consumeProjectileShotData, getProjectileShotData, consumePendingBowShot, lastShotData } from './bow.js';
+import { resolveCurrentShot } from './bow.js';
 
 const ENDERMAN_DEBUG = true;
 
@@ -20,7 +20,7 @@ const isEntityValid = (e) => Boolean(e && (typeof e.isValid === 'function' ? e.i
  * 2. Curva cuadrática exacta de 30 ticks para el Arco.
  * 3. Crítico determinístico al 100% de carga (Java parity: full charge = critical).
  * 4. Encantamiento Power exclusivo para el Arco (+25% por nivel sobre base).
- * Todo asociado directamente al ID único del proyectil impactado (projectile.id).
+ * Todo asociado directamente al proyectil o resuelto desde el draw activo en disparos a quemarropa.
  */
 world.afterEvents.projectileHitEntity.subscribe((event) => {
     try {
@@ -38,32 +38,8 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
                 debug(`[projectileHitEntity] Error removing projectile: ${e}`);
             }
 
-            // Obtener y consumir los datos de disparo asociados a este proyectil específico
-            let shot = consumeProjectileShotData(projectile.id) ?? getProjectileShotData(projectile.id);
-
-            // Fallback inmediato para disparos a quemarropa (point-blank):
-            // Si el proyectil impactó antes de que entitySpawn terminara el registro,
-            // consumir la intención de disparo pendiente del tirador para conservar el cálculo exacto
-            if (!shot && attacker) {
-                const pending = consumePendingBowShot(attacker.id);
-                if (pending) {
-                    shot = {
-                        projectileId: projectile?.id ?? 'pending',
-                        shooterId: attacker.id,
-                        shooterName: attacker.name,
-                        weaponTypeId: pending.weaponTypeId,
-                        chargeRatio: pending.chargeRatio,
-                        isCritical: pending.isCritical,
-                        powerLevel: pending.powerLevel,
-                        infinityLevel: pending.infinityLevel,
-                        fireTick: pending.fireTick
-                    };
-                    debug(`[projectileHitEntity] Point-blank shot resolved from pendingBowShots for ${attacker.name}`);
-                } else if (lastShotData.has(attacker.id)) {
-                    shot = lastShotData.get(attacker.id);
-                    debug(`[projectileHitEntity] Point-blank shot resolved from lastShotData for ${attacker.name}`);
-                }
-            }
+            // Resolver los datos de disparo asociados a este proyectil (a prueba de race condition / point-blank)
+            const shot = resolveCurrentShot(attacker, projectile.id);
 
             let damage;
             if (shot) {

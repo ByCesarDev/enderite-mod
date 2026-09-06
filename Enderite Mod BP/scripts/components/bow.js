@@ -11,16 +11,13 @@ function debug(message) {
 const BOW_TYPES = new Set(["ed:enderite_bow", "ed:enderite_cross_bow"]);
 const VIRTUAL_ARROW_LORE = "§5Infinity Arrow§r";
 
-// Rastrear el tick exacto en que el jugador comenzó a tensar el arco
-const playerDrawStartMap = new Map(); // playerId -> startTick
+// Rastrear el estado activo de tensado del arco por jugador (fuente de verdad independiente de eventos)
+export const playerDrawState = new Map(); // playerId -> { startTick, weaponTypeId, powerLevel, infinityLevel, shooterName }
 
-// Intenciones de disparo de arco pendientes hasta que se confirma la aparición del proyectil en el mundo
-const pendingBowShots = new Map(); // playerId -> { shooterId, shooterName, weaponTypeId, chargeRatio, isCritical, powerLevel, infinityLevel, fireTick, location, dimensionId }
+// Rastrear el último disparo con ballesta para agrupar Multishot y deducir durabilidad una sola vez por gatillazo
+const crossbowFireMap = new Map(); // playerId -> fireTick
 
 export const projectileShotMap = new Map(); // projectileId -> ShotData
-
-// Compatibilidad retroactiva si algún script externo consulta lastShotData
-export const lastShotData = new Map(); // playerId -> ShotData
 
 // Rastreo de proyectiles críticos activos en vuelo para emisión de partículas
 const activeCritProjectiles = new Map(); // projectileId -> Entity
@@ -60,6 +57,24 @@ system.runInterval(() => {
 const isEntityValid = (e) => Boolean(e && (typeof e.isValid === 'function' ? e.isValid() : e.isValid));
 
 /**
+ * Helper para leer encantamientos de Power e Infinity del arco sostenido en mano principal u offhand.
+ */
+function getPlayerHeldBowEnchantments(player, item) {
+    try {
+        const equippable = player.getComponent(EntityEquippableComponent.componentId);
+        const mainhand = equippable?.getEquipment(EquipmentSlot.Mainhand);
+        const offhand = equippable?.getEquipment(EquipmentSlot.Offhand);
+        const heldItem = (mainhand?.typeId === item?.typeId) ? mainhand : ((offhand?.typeId === item?.typeId) ? offhand : item);
+        const enchantable = heldItem?.getComponent("enchantable");
+        const powerLevel = enchantable?.getEnchantment?.("power")?.level ?? 0;
+        const infinityLevel = enchantable?.getEnchantment?.("infinity")?.level ?? 0;
+        return { powerLevel, infinityLevel };
+    } catch (e) {
+        return { powerLevel: 0, infinityLevel: 0 };
+    }
+}
+
+/**
  * Obtiene los datos de disparo asociados a un proyectil específico.
  */
 export function getProjectileShotData(projectileId) {
@@ -78,29 +93,88 @@ export function consumeProjectileShotData(projectileId) {
 }
 
 /**
- * Permite consumir la intención de disparo de arco en casos de impactos a quemarropa (point-blank)
- * donde projectileHitEntity ocurre antes de que entitySpawn termine de registrar el proyectil.
+ * Curva cuadrática exacta de Enderite Bow Java v1.9.1:
+ * float f = (float) useTicks / EnderiteMod.CONFIG.tools.enderiteBowChargeTime; // default 30 ticks
+ * f = (f * f + f * 2.0F) / 3.0F;
  */
-export function consumePendingBowShot(playerId) {
-    if (!playerId) return undefined;
-    const pending = pendingBowShots.get(playerId);
-    if (pending && (system.currentTick - pending.fireTick) <= 20) {
-        pendingBowShots.delete(playerId);
-        return pending;
-    }
-    return undefined;
+export function getEnderiteBowPowerRaw(ticks) {
+    let f = ticks / 30.0;
+    return (f * f + f * 2.0) / 3.0;
+}
+
+export function getEnderiteBowPower(ticks) {
+    const f = getEnderiteBowPowerRaw(ticks);
+    return Math.min(Math.max(f, 0.0), 1.0);
 }
 
 /**
- * Curva exacta de Enderite Bow Java v1.9.1:
- * float f = (float) useTicks / EnderiteMod.CONFIG.tools.enderiteBowChargeTime; // default 30 ticks
- * f = (f * f + f * 2.0F) / 3.0F;
- * if (f > 1.0F) f = 1.0F;
+ * Resuelve el disparo actual de forma determinista y a prueba de condiciones de carrera (point-blank).
+ * Si el impacto ocurre antes de que entitySpawn termine de registrar el proyectil,
+ * se resuelve directamente desde el draw activo del tirador sin usar fallbacks antiguos contaminados.
  */
-export function getEnderiteBowPower(ticks) {
-    let f = ticks / 30.0;
-    f = (f * f + f * 2.0) / 3.0;
-    return Math.min(Math.max(f, 0.1), 1.0);
+export function resolveCurrentShot(attacker, projectileId) {
+    // 1. Proyectil ya registrado en projectileShotMap
+    let shot = consumeProjectileShotData(projectileId) ?? getProjectileShotData(projectileId);
+    if (shot) return shot;
+
+    // 2. Disparo a quemarropa: el atacante está tensando activamente el arco en este instante
+    if (attacker && playerDrawState.has(attacker.id)) {
+        const draw = playerDrawState.get(attacker.id);
+        playerDrawState.delete(attacker.id);
+        const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
+        const rawPower = getEnderiteBowPowerRaw(elapsedTicks);
+        const chargeRatio = Math.min(Math.max(rawPower, 0.1), 1.0);
+        const isCritical = chargeRatio >= 1.0;
+        shot = {
+            projectileId: projectileId ?? "point_blank",
+            shooterId: attacker.id,
+            shooterName: attacker.name,
+            weaponTypeId: "ed:enderite_bow",
+            chargeRatio,
+            isCritical,
+            powerLevel: draw.powerLevel,
+            infinityLevel: draw.infinityLevel,
+            fireTick: system.currentTick
+        };
+        applyWeaponDurabilityDamage(attacker, "ed:enderite_bow");
+        debug(`Resolved point-blank shot directly from active draw for ${attacker.name}: ticks=${elapsedTicks}, ratio=${chargeRatio.toFixed(2)}, isCrit=${isCritical}`);
+        return shot;
+    }
+
+    // 3. Atacante disparando Ballesta
+    if (attacker) {
+        const eq = attacker.getComponent(EntityEquippableComponent.componentId);
+        const mainhand = eq?.getEquipment(EquipmentSlot.Mainhand);
+        const offhand = eq?.getEquipment(EquipmentSlot.Offhand);
+        const isCrossbow = (mainhand?.typeId === "ed:enderite_cross_bow") || (offhand?.typeId === "ed:enderite_cross_bow");
+        if (isCrossbow) {
+            shot = {
+                projectileId: projectileId ?? "point_blank",
+                shooterId: attacker.id,
+                shooterName: attacker.name,
+                weaponTypeId: "ed:enderite_cross_bow",
+                chargeRatio: 1.0,
+                isCritical: false,
+                powerLevel: 0,
+                infinityLevel: 0,
+                fireTick: system.currentTick
+            };
+            return shot;
+        }
+    }
+
+    // 4. Fallback conservador (NUNCA crítico, NUNCA datos antiguos)
+    return {
+        projectileId: projectileId ?? "fallback",
+        shooterId: attacker?.id ?? "unknown",
+        shooterName: attacker?.name ?? "unknown",
+        weaponTypeId: "ed:enderite_bow",
+        chargeRatio: 0.5,
+        isCritical: false,
+        powerLevel: 0,
+        infinityLevel: 0,
+        fireTick: system.currentTick
+    };
 }
 
 /**
@@ -160,11 +234,17 @@ world.afterEvents.itemStartUse.subscribe((event) => {
     try {
         const player = event.source;
         const item = event.itemStack;
-        if (!item || !player) return;
+        if (!item || !player || item.typeId !== "ed:enderite_bow") return;
 
-        if (item.typeId === "ed:enderite_bow") {
-            playerDrawStartMap.set(player.id, system.currentTick);
-        }
+        const { powerLevel, infinityLevel } = getPlayerHeldBowEnchantments(player, item);
+        playerDrawState.set(player.id, {
+            startTick: system.currentTick,
+            weaponTypeId: "ed:enderite_bow",
+            powerLevel,
+            infinityLevel,
+            shooterName: player.name
+        });
+        debug(`Player ${player.name} started drawing ${item.typeId} at tick ${system.currentTick} (power=${powerLevel}, infinity=${infinityLevel}).`);
     } catch (e) {}
 });
 
@@ -172,13 +252,18 @@ world.afterEvents.itemUse.subscribe((event) => {
     try {
         const player = event.source;
         const item = event.itemStack;
-        if (!item || !player) return;
+        if (!item || !player || item.typeId !== "ed:enderite_bow") return;
 
-        if (item.typeId === "ed:enderite_bow") {
-            if (!playerDrawStartMap.has(player.id)) {
-                playerDrawStartMap.set(player.id, system.currentTick);
-            }
-            debug(`Player ${player.name} drawing ${item.typeId}.`);
+        if (!playerDrawState.has(player.id)) {
+            const { powerLevel, infinityLevel } = getPlayerHeldBowEnchantments(player, item);
+            playerDrawState.set(player.id, {
+                startTick: system.currentTick,
+                weaponTypeId: "ed:enderite_bow",
+                powerLevel,
+                infinityLevel,
+                shooterName: player.name
+            });
+            debug(`Player ${player.name} drawing ${item.typeId} at tick ${system.currentTick}.`);
         }
     } catch (e) {
         debug(`Error in itemUse: ${e}`);
@@ -190,58 +275,14 @@ world.afterEvents.itemStopUse.subscribe((event) => {
     try {
         const player = event.source;
         const item = event.itemStack;
-
-        // Solo procesamos el arco en itemStopUse. La ballesta (charge_on_draw) se procesa al disparar (entitySpawn).
         if (!item || !player || item.typeId !== "ed:enderite_bow") return;
 
-        // Calcular tiempo real transcurrido mediante ticks del servidor
-        const startTick = playerDrawStartMap.get(player.id);
-        playerDrawStartMap.delete(player.id);
-
-        // Sin número mágico 2e9: si no tenemos registro del tick inicial, descartar limpiamente
-        if (startTick === undefined) {
-            debug(`No startTick recorded for ${player.name}; ignoring release.`);
-            return;
+        const draw = playerDrawState.get(player.id);
+        if (draw) {
+            const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
+            debug(`Player ${player.name} released ${item.typeId} (charge: ${elapsedTicks} ticks).`);
+            playerDrawState.delete(player.id);
         }
-
-        const elapsedTicks = Math.max(1, system.currentTick - startTick);
-        debug(`Player ${player.name} released ${item.typeId} (charge: ${elapsedTicks} ticks).`);
-
-        // Si fue una cancelación inmediata (sin tensado efectivo < 6 ticks), no se dispara flecha
-        if (elapsedTicks < 6) {
-            debug(`Shot cancelled or duration too short (${elapsedTicks} < 6 ticks); no arrow fired.`);
-            return;
-        }
-
-        // Leer encantamientos del arco sostenido
-        const equippable = player.getComponent(EntityEquippableComponent.componentId);
-        const mainhand = equippable?.getEquipment(EquipmentSlot.Mainhand);
-        const heldItem = (mainhand?.typeId === item.typeId) ? mainhand : item;
-
-        const enchantable = heldItem?.getComponent("enchantable");
-        const powerLevel = enchantable?.getEnchantment?.("power")?.level ?? 0;
-        const infinityLevel = enchantable?.getEnchantment?.("infinity")?.level ?? 0;
-
-        // Curva exacta de Java (30 ticks cuadrática)
-        const chargeRatio = getEnderiteBowPower(elapsedTicks);
-        // Crítico determinístico al 100% de carga
-        const isCritical = chargeRatio >= 1.0;
-
-        // Registrar intención de disparo pendiente hasta que entitySpawn confirme que el proyectil apareció
-        pendingBowShots.set(player.id, {
-            shooterId: player.id,
-            shooterName: player.name,
-            weaponTypeId: "ed:enderite_bow",
-            chargeRatio,
-            isCritical,
-            powerLevel,
-            infinityLevel,
-            fireTick: system.currentTick,
-            location: { x: player.location.x, y: player.location.y, z: player.location.z },
-            dimensionId: player.dimension.id
-        });
-
-        debug(`Registered pending bow shot for ${player.name}: charge=${chargeRatio.toFixed(2)}, crit=${isCritical}, power=${powerLevel}, infinity=${infinityLevel}`);
     } catch (e) {
         debug(`Error in itemStopUse: ${e}`);
     }
@@ -269,7 +310,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
             const dimension = entity.dimension;
             let closestDistSq = 25.0;
 
-            for (const [playerId, pending] of pendingBowShots.entries()) {
+            for (const [playerId] of playerDrawState.entries()) {
                 try {
                     const p = world.getAllPlayers().find(pl => pl.id === playerId);
                     if (isEntityValid(p) && p.dimension.id === dimension.id) {
@@ -304,14 +345,14 @@ world.afterEvents.entitySpawn.subscribe((event) => {
         }
 
         if (!shooter) {
-            debug(`Spawned ed:arrow_enderite (id: ${entity.id}) without detectable shooter; using default shot data.`);
+            debug(`Spawned ed:arrow_enderite (id: ${entity.id}) without detectable shooter; using conservative default.`);
             projectileShotMap.set(entity.id, {
                 projectileId: entity.id,
                 shooterId: "unknown",
                 shooterName: "unknown",
                 weaponTypeId: "ed:enderite_bow",
-                chargeRatio: 1.0,
-                isCritical: true,
+                chargeRatio: 0.5,
+                isCritical: false,
                 powerLevel: 0,
                 infinityLevel: 0,
                 fireTick: system.currentTick
@@ -329,27 +370,38 @@ world.afterEvents.entitySpawn.subscribe((event) => {
             entity.addTag("no_pickup");
         }
 
-        // 2. Determinar si el disparo provino de Bow pendiente o de Crossbow
-        const pending = pendingBowShots.get(shooter.id);
+        // 2. Determinar ShotData directamente desde el draw activo de Arco o desde Ballesta
         let shotData;
+        const draw = playerDrawState.get(shooter.id);
 
-        if (pending && (system.currentTick - pending.fireTick) <= 5) {
-            // Confirmación de disparo de ARCO
-            pendingBowShots.delete(shooter.id);
+        if (draw) {
+            playerDrawState.delete(shooter.id);
+            const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
+            const rawPower = getEnderiteBowPowerRaw(elapsedTicks);
+
+            // Umbral Java exacto: if (f < 0.1F) -> cancelar disparo y descartar proyectil
+            if (rawPower < 0.1) {
+                debug(`Shot cancelled: rawPower ${rawPower.toFixed(2)} < 0.1 (${elapsedTicks} ticks); removing projectile.`);
+                try { entity.remove(); } catch (e) {}
+                return;
+            }
+
+            const chargeRatio = Math.min(rawPower, 1.0);
+            const isCritical = chargeRatio >= 1.0;
 
             shotData = {
                 projectileId: entity.id,
                 shooterId: shooter.id,
                 shooterName: shooter.name,
                 weaponTypeId: "ed:enderite_bow",
-                chargeRatio: pending.chargeRatio,
-                isCritical: pending.isCritical,
-                powerLevel: pending.powerLevel,
-                infinityLevel: pending.infinityLevel,
+                chargeRatio,
+                isCritical,
+                powerLevel: draw.powerLevel,
+                infinityLevel: draw.infinityLevel,
                 fireTick: system.currentTick
             };
 
-            debug(`Confirmed Bow shot for ${shooter.name} (projId: ${entity.id}): charge=${shotData.chargeRatio.toFixed(2)}, crit=${shotData.isCritical}, power=${shotData.powerLevel}, infinity=${shotData.infinityLevel}`);
+            debug(`Confirmed Bow shot for ${shooter.name} (projId: ${entity.id}): ticks=${elapsedTicks}, charge=${chargeRatio.toFixed(2)}, crit=${isCritical}, power=${draw.powerLevel}, infinity=${draw.infinityLevel}`);
 
             // Descontar durabilidad del arco únicamente ahora que la flecha fue disparada
             applyWeaponDurabilityDamage(shooter, "ed:enderite_bow");
@@ -373,14 +425,13 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                 }
             }
         } else {
-            // No hay intención pendiente de arco: verificar si el tirador disparó con Crossbow
+            // No había draw de arco: verificar si el tirador disparó con Ballesta
             const eq = shooter.getComponent(EntityEquippableComponent.componentId);
             const mainhand = eq?.getEquipment(EquipmentSlot.Mainhand);
             const offhand = eq?.getEquipment(EquipmentSlot.Offhand);
             const isCrossbow = (mainhand?.typeId === "ed:enderite_cross_bow") || (offhand?.typeId === "ed:enderite_cross_bow");
 
             if (isCrossbow) {
-                // Confirmación de disparo de BALLESTA
                 shotData = {
                     projectileId: entity.id,
                     shooterId: shooter.id,
@@ -393,19 +444,22 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                     fireTick: system.currentTick
                 };
 
-                debug(`Confirmed Crossbow shot for ${shooter.name} (projId: ${entity.id}).`);
-
-                // Descontar durabilidad de la ballesta únicamente al disparar
-                applyWeaponDurabilityDamage(shooter, "ed:enderite_cross_bow");
+                // Agrupar Multishot: solo cobrar durabilidad una vez por gatillazo/ráfaga
+                const lastFireTick = crossbowFireMap.get(shooter.id) ?? -999;
+                if (system.currentTick - lastFireTick > 1) {
+                    crossbowFireMap.set(shooter.id, system.currentTick);
+                    applyWeaponDurabilityDamage(shooter, "ed:enderite_cross_bow");
+                    debug(`Confirmed Crossbow trigger pull for ${shooter.name} (durability applied).`);
+                }
             } else {
-                // Fallback si no se detectó el arma
+                // Fallback conservador si no se detectó el arma (NUNCA crítico)
                 shotData = {
                     projectileId: entity.id,
                     shooterId: shooter.id,
                     shooterName: shooter.name,
                     weaponTypeId: "ed:enderite_bow",
-                    chargeRatio: 1.0,
-                    isCritical: true,
+                    chargeRatio: 0.5,
+                    isCritical: false,
                     powerLevel: 0,
                     infinityLevel: 0,
                     fireTick: system.currentTick
@@ -413,7 +467,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
             }
         }
 
-        // Si el disparo es crítico (tensado al 100% o crítico), registrar para rastro de partículas
+        // Si el disparo es crítico (tensado al 100%), registrar para rastro de partículas
         if (shotData.isCritical) {
             entity.addTag("critical_shot");
             activeCritProjectiles.set(entity.id, entity);
@@ -422,7 +476,6 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
         // 3. Vincular los datos de disparo directamente al ID del proyectil
         projectileShotMap.set(entity.id, shotData);
-        lastShotData.set(shooter.id, shotData);
     } catch (e) {
         debug(`Error in entitySpawn: ${e}`);
     }
@@ -435,6 +488,10 @@ world.afterEvents.projectileHitBlock.subscribe((event) => {
         if (proj?.typeId === "ed:arrow_enderite") {
             activeCritProjectiles.delete(proj.id);
             projectileShotMap.delete(proj.id);
+
+            if (stuckPickableArrows.has(proj.id)) {
+                return; // Idempotente: evitar re-procesamiento si el motor notifica varias veces el impacto
+            }
 
             const cannotPickup = proj.hasTag("no_pickup") || 
                                  proj.hasTag("infinity_arrow") || 
@@ -598,9 +655,14 @@ system.runInterval(() => {
                 projectileShotMap.delete(id);
             }
         }
-        for (const [playerId, pending] of pendingBowShots.entries()) {
-            if (currentTick - pending.fireTick > 100) {
-                pendingBowShots.delete(playerId);
+        for (const [playerId, draw] of playerDrawState.entries()) {
+            if (currentTick - draw.startTick > 1200) {
+                playerDrawState.delete(playerId);
+            }
+        }
+        for (const [playerId, fireTick] of crossbowFireMap.entries()) {
+            if (currentTick - fireTick > 100) {
+                crossbowFireMap.delete(playerId);
             }
         }
     } catch (e) {}
