@@ -19,5 +19,4 @@ system.beforeEvents.startup.subscribe(initEvent => {
     itemRegistry.registerCustomComponent('ed:sword32', swordHandler);
     itemRegistry.registerCustomComponent('ed:sword48', swordHandler);
     itemRegistry.registerCustomComponent('ed:sword64', swordHandler);
-    itemRegistry.registerCustomComponent('ed:enderite_sword_tp', swordHandler);
 });
