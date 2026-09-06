@@ -158,7 +158,8 @@ export function updateSwordLore(itemStack, currentCharge, capacity) {
                     trimmed.startsWith("§7Teleport Distance:") || trimmed.startsWith("§7Sneak + Use") ||
                     trimmed.startsWith("§7Upgrade in") || trimmed.startsWith("§7Mejora en") ||
                     trimmed.startsWith("§7ender pearls") || trimmed.startsWith("§7perlas de ender") ||
-                    trimmed.startsWith("§7Teleport with") || trimmed.startsWith("§7¡Teletranspórtate")) {
+                    trimmed.startsWith("§7Teleport with") || trimmed.startsWith("§7¡Teletranspórtate") ||
+                    trimmed.startsWith("§7Shift") || trimmed.startsWith("§7¡Shift")) {
                     return false;
                 }
             }
@@ -171,7 +172,6 @@ export function updateSwordLore(itemStack, currentCharge, capacity) {
             : { translate: "lore.ed:charge_zero" };
 
         const enderiteLore = [
-            { text: " " },
             chargeEntry,
             { translate: "lore.ed:upgrade_info" },
             { translate: "lore.ed:ender_pearls" },

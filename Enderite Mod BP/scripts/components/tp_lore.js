@@ -56,7 +56,7 @@ function applyTPLore(itemStack) {
   // Manejo de armaduras y escudos
   try {
     const currentLore = itemStack.getLore();
-    const targetLength = isArmor ? 2 : 5;
+    const targetLength = isArmor ? 2 : 4;
     if (currentLore && currentLore.length >= targetLength) {
        return false;
     }
@@ -70,10 +70,12 @@ function applyTPLore(itemStack) {
             { translate: "lore.ed:knockback_resistance" }
         ];
     } else {
-        const charge = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
+        const capacity = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
+        const chargeEntry = capacity > 0
+            ? { translate: "lore.ed:charge", with: [String(capacity), String(capacity)] }
+            : { translate: "lore.ed:charge_zero" };
         lore = [
-            { text: " " },
-            { translate: "lore.ed:charge", with: [charge.toString()] },
+            chargeEntry,
             { translate: "lore.ed:upgrade_info" },
             { translate: "lore.ed:ender_pearls" },
             { translate: "lore.ed:shield_teleport" }
@@ -91,12 +93,12 @@ function applyTPLore(itemStack) {
         ]);
       } else {
         const charge = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
+        const chargeText = charge > 0 ? `§3Charge: ${charge}/${charge}` : "§3Charge: 0";
         itemStack.setLore([
-          " ",
-          "§3Charge: " + charge,
-          "§7Upgrade in Enderite Crafting Tools with",
-          "§7ender pearls to load teleportation uses.",
-          "§7Teleport attackers with sneaking + right click!"
+          chargeText,
+          "§7Upgrade in smithing table with",
+          "§7enderpearls to load teleportation uses.",
+          "§7Teleport attacker with sneaking + block!"
         ]);
       }
       return true;
