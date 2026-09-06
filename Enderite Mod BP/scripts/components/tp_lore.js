@@ -35,14 +35,17 @@ function applyTPLore(itemStack) {
     let needsUpdate = true;
     try {
       const rawLore = itemStack.getRawLore() ?? [];
+      const hasLeadingEmpty = rawLore.length > 0 && typeof rawLore[0]?.text === 'string' && rawLore[0].text.trim() === "";
       const chargeEntry = rawLore.find(l => l?.translate === "lore.ed:charge" || l?.translate === "lore.ed:charge_zero");
-      if (capacity > 0) {
-        if (chargeEntry?.translate === "lore.ed:charge" && chargeEntry?.with?.[0] === String(currentCharge) && chargeEntry?.with?.[1] === String(capacity)) {
-          needsUpdate = false;
-        }
-      } else {
-        if (chargeEntry?.translate === "lore.ed:charge_zero") {
-          needsUpdate = false;
+      if (!hasLeadingEmpty) {
+        if (capacity > 0) {
+          if (chargeEntry?.translate === "lore.ed:charge" && chargeEntry?.with?.[0] === String(currentCharge) && chargeEntry?.with?.[1] === String(capacity)) {
+            needsUpdate = false;
+          }
+        } else {
+          if (chargeEntry?.translate === "lore.ed:charge_zero") {
+            needsUpdate = false;
+          }
         }
       }
     } catch (e) {}
@@ -55,9 +58,11 @@ function applyTPLore(itemStack) {
 
   // Manejo de armaduras y escudos
   try {
+    const rawLore = itemStack.getRawLore() ?? [];
+    const hasLeadingEmpty = !isArmor && rawLore.length > 0 && typeof rawLore[0]?.text === 'string' && rawLore[0].text.trim() === "";
     const currentLore = itemStack.getLore();
     const targetLength = isArmor ? 2 : 4;
-    if (currentLore && currentLore.length >= targetLength) {
+    if (!hasLeadingEmpty && currentLore && currentLore.length === targetLength) {
        return false;
     }
   } catch {}
