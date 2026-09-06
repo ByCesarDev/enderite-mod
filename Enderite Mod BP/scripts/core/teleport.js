@@ -133,28 +133,47 @@ export function setTeleportCharge(itemStack, charge) {
 export function updateSwordLore(itemStack, currentCharge, capacity) {
     if (!itemStack) return;
     try {
-        const existingLore = itemStack.getLore() ?? [];
-        const cleanedLore = existingLore.filter(line => {
-            if (typeof line !== 'string') return true;
-            const trimmed = line.trim();
-            if (trimmed === "") return false;
-            if (trimmed.startsWith("§3Charge:") || trimmed.startsWith("§7Charge:") || trimmed.startsWith("Charge:")) return false;
-            if (trimmed.startsWith("§7Teleport Distance:") || trimmed.startsWith("Teleport Distance:")) return false;
-            if (trimmed.startsWith("§7Sneak + Use to teleport") || trimmed.startsWith("Sneak + Use to teleport")) return false;
-            if (trimmed.startsWith("§7Upgrade in Enderite Crafting Tools")) return false;
-            if (trimmed.startsWith("§7ender pearls to load teleportation uses.")) return false;
-            if (trimmed.startsWith("§7Teleport with sneaking")) return false;
+        const managedKeys = new Set([
+            "lore.ed:charge",
+            "lore.ed:upgrade_info",
+            "lore.ed:ender_pearls",
+            "lore.ed:sword_teleport",
+            "lore.ed:shield_teleport"
+        ]);
+
+        let rawLore = [];
+        try {
+            rawLore = itemStack.getRawLore() ?? [];
+        } catch (e) {
+            rawLore = (itemStack.getLore() ?? []).map(t => ({ text: t }));
+        }
+
+        const preserved = rawLore.filter(line => {
+            if (!line) return false;
+            if (line.translate && managedKeys.has(line.translate)) return false;
+            if (typeof line.text === 'string') {
+                const trimmed = line.text.trim();
+                if (trimmed === "" || trimmed.startsWith("§3Charge:") || trimmed.startsWith("§3Carga:") ||
+                    trimmed.startsWith("§7Teleport Distance:") || trimmed.startsWith("§7Sneak + Use") ||
+                    trimmed.startsWith("§7Upgrade in") || trimmed.startsWith("§7Mejora en") ||
+                    trimmed.startsWith("§7ender pearls") || trimmed.startsWith("§7perlas de ender") ||
+                    trimmed.startsWith("§7Teleport with") || trimmed.startsWith("§7¡Teletranspórtate")) {
+                    return false;
+                }
+            }
             return true;
         });
 
-        const managedLines = [
-            " ",
-            `§3Charge: ${currentCharge} / ${capacity}`,
-            `§7Teleport Distance: ${TELEPORT_DISTANCE}`,
-            "§7Sneak + Use to teleport"
+        const isShield = Boolean(itemStack.typeId && itemStack.typeId.includes("shield"));
+        const enderiteLore = [
+            { text: " " },
+            { translate: "lore.ed:charge", with: [String(currentCharge), String(capacity)] },
+            { translate: "lore.ed:upgrade_info" },
+            { translate: "lore.ed:ender_pearls" },
+            { translate: isShield ? "lore.ed:shield_teleport" : "lore.ed:sword_teleport" }
         ];
 
-        itemStack.setLore([...cleanedLore, ...managedLines]);
+        itemStack.setLore([...preserved, ...enderiteLore]);
     } catch (e) {}
 }
 
@@ -257,8 +276,15 @@ export function isSafeStandingPosition(dimension, x, y, z) {
         return false;
     }
 
-    // Fuera de límites de mundo
-    if (by < -64 || by > 319) return false;
+    // Fuera de límites reales de la dimensión
+    try {
+        const heightRange = dimension.heightRange;
+        if (heightRange && (by < heightRange.min || by >= heightRange.max)) {
+            return false;
+        }
+    } catch (e) {
+        if (by < -64 || by > 319) return false;
+    }
 
     // Bloque debajo -> suelo seguro y sólido
     const floor = getBlockSafe(dimension, bx, by - 1, bz);
@@ -400,18 +426,18 @@ export function useEnderiteSwordTeleport(player, itemStack) {
         player.dimension.playSound("mob.enderman.portal", target);
     } catch (e) {}
 
-    // Partículas discretas de portal en origen y destino
+    // Partículas discretas de portal vanilla en origen y destino
     try {
-        for (let i = 0; i < 6; i++) {
-            const ox = (Math.random() - 0.5) * 0.6;
+        for (let i = 0; i < 8; i++) {
+            const ox = (Math.random() - 0.5) * 0.8;
             const oy = Math.random() * 1.8;
-            const oz = (Math.random() - 0.5) * 0.6;
-            player.dimension.spawnParticle("minecraft:portal_reverse_particle", {
+            const oz = (Math.random() - 0.5) * 0.8;
+            player.dimension.spawnParticle("minecraft:basic_portal_particle", {
                 x: origin.x + ox,
                 y: origin.y + oy,
                 z: origin.z + oz
             });
-            player.dimension.spawnParticle("minecraft:portal_reverse_particle", {
+            player.dimension.spawnParticle("minecraft:basic_portal_particle", {
                 x: target.x + ox,
                 y: target.y + oy,
                 z: target.z + oz
@@ -472,7 +498,7 @@ system.runInterval(() => {
             const target = findSafeTeleportTarget(player.dimension, player, start, dir, TELEPORT_DISTANCE);
 
             if (target) {
-                player.dimension.spawnParticle("minecraft:portal_reverse_particle", {
+                player.dimension.spawnParticle("minecraft:basic_portal_particle", {
                     x: target.x,
                     y: target.y + 0.1,
                     z: target.z

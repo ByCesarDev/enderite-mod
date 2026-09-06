@@ -92,11 +92,11 @@ ed:subtitle.shulker.open=Abriendo shulker de enderita
 ed:subtitle.shulker.close=Cerrando shulker de enderita
 
 ## Traducciones de Lore de Scripts
-lore.ed:charge=§3Carga: %1
-lore.ed:upgrade_info=§7Mejora en Herramientas de Crafteo de Enderita con
-lore.ed:ender_pearls=§7perlas de ender para cargar usos de teletransporte.
-lore.ed:sword_teleport=§7¡Teletranspórtate agachándote + click derecho!
-lore.ed:shield_teleport=§7¡Teletransporta atacantes agachándote + click derecho!
+lore.ed:charge=§3Carga: %1/%2
+lore.ed:upgrade_info=§7§oMejorar en una mesa de herrería con
+lore.ed:ender_pearls=§7§operlas de ender para obtener usos.
+lore.ed:sword_teleport=§7§o¡Shift + click derecho para teletransportarte!
+lore.ed:shield_teleport=§7§o¡Shift + bloquear para teletransportar a tu atacante!
 lore.ed:shulker_more=y %1 más...
 actionbar.ed:shulker_destroy_hint=§aMantén SHIFT para destruir la shulker
 lore.ed:armor_toughness=§9+4 Resistencia de la armadura

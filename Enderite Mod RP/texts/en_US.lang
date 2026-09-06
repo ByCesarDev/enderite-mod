@@ -92,11 +92,11 @@ ed:subtitle.shulker.open=Enderite shulker opening
 ed:subtitle.shulker.close=Enderite shulker closing
 
 ## Script Lore Translations
-lore.ed:charge=§3Charge: %1
-lore.ed:upgrade_info=§7Upgrade in Enderite Crafting Tools with
-lore.ed:ender_pearls=§7ender pearls to load teleportation uses.
-lore.ed:sword_teleport=§7Teleport with sneaking + right click!
-lore.ed:shield_teleport=§7Teleport attackers with sneaking + right click!
+lore.ed:charge=§3Charge: %1/%2
+lore.ed:upgrade_info=§7§oUpgrade in smithing table with
+lore.ed:ender_pearls=§7§oenderpearls to load teleportation uses.
+lore.ed:sword_teleport=§7§oTeleport with sneaking + right click!
+lore.ed:shield_teleport=§7§oTeleport attacker with sneaking + block!
 lore.ed:shulker_more=and %1 more...
 actionbar.ed:shulker_destroy_hint=§aHold SHIFT to destroy the shulker box
 lore.ed:armor_toughness=§9+4 Armor Toughness

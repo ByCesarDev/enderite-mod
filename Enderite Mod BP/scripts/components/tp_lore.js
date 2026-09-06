@@ -32,10 +32,18 @@ function applyTPLore(itemStack) {
     if (capacity <= 0) return false;
 
     const currentCharge = getTeleportCharge(itemStack);
-    const expectedChargeLine = `§3Charge: ${currentCharge} / ${capacity}`;
-    const currentLore = itemStack.getLore() ?? [];
-    const hasCorrectLore = currentLore.some(line => typeof line === 'string' && line.trim() === expectedChargeLine);
-    if (hasCorrectLore) return false;
+    
+    // Verificar si el lore ya está al día con la carga actual
+    let needsUpdate = true;
+    try {
+      const rawLore = itemStack.getRawLore() ?? [];
+      const chargeEntry = rawLore.find(l => l?.translate === "lore.ed:charge");
+      if (chargeEntry?.with?.[0] === String(currentCharge) && chargeEntry?.with?.[1] === String(capacity)) {
+        needsUpdate = false;
+      }
+    } catch (e) {}
+
+    if (!needsUpdate) return false;
 
     updateSwordLore(itemStack, currentCharge, capacity);
     return true;
