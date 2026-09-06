@@ -52,7 +52,7 @@
 							"damage": 16,
 							"knockback": true,
 							"semi_random_diff_damage": true,
-							"destroy_on_hit": false,
+							"destroy_on_hit": true,
 							"max_critical_damage": 20,
 							"min_critical_damage": 19,
 							"power_multiplier": 1.5
@@ -68,7 +68,6 @@
 					"uncertainty_base": 1,
 					"uncertainty_multiplier": 0,
 					"anchor": 1,
-					"should_bounce": true,
 					"offset": [
 						0,
 						-0.1,
@@ -84,8 +83,7 @@
 			},
 			"minecraft:type_family": {
 				"family": [
-					"arrow",
-					"enderman"
+					"arrow"
 				]
 			},
 			"minecraft:scale": {

@@ -1,68 +1,86 @@
 import { system, world, EntityEquippableComponent, EquipmentSlot } from "@minecraft/server";
 
+const BOW_TYPES = new Set(["ed:enderite_bow", "ed:enderite_cross_bow"]);
 
-let tags = ["enderite"]
-
-system.runInterval(() => {
+// Activar la animación de tensado de arco al comenzar a usarlo
+world.afterEvents.itemUse.subscribe((event) => {
     try {
-        let w = world.getDimension("overworld");
-        for (let p of world.getPlayers()) {
-            let equip = p.getComponent(EntityEquippableComponent.componentId);
-            let hand = equip.getEquipment(EquipmentSlot.Mainhand);
-            const runCmd = (cmd) => (p.runCommand ? p.runCommand(cmd) : p.runCommandAsync(cmd));
-            runCmd(`function arrow`)
-            runCmd(`function gamerule`)
-            for (let bows of tags) {
-                if (p.hasTag("using")) {
-                    if (p.hasTag(bows) && hand.typeId == `ed:${bows}_bow`) {
-                        runCmd(`playanimation @s animation.weapons.bow_and_arrow root 0.001 "!query.is_using_item"`)
-                    }
+        const player = event.source;
+        const item = event.itemStack;
+        if (!item || !player) return;
 
+        if (item.typeId === "ed:enderite_bow") {
+            try {
+                if (typeof player.playAnimation === "function") {
+                    player.playAnimation("animation.weapons.bow_and_arrow", {
+                        blendOutTime: 0.001,
+                        stopExpression: "!query.is_using_item"
+                    });
+                } else {
+                    player.runCommandAsync('playanimation @s animation.weapons.bow_and_arrow root 0.001 "!query.is_using_item"');
                 }
-                if (p.hasComponent("health").currentValue == 0) {
-
-                    p.removeTag(bows);
-                }
+            } catch (e) {
+                try {
+                    player.runCommandAsync('playanimation @s animation.weapons.bow_and_arrow root 0.001 "!query.is_using_item"');
+                } catch (err) {}
             }
         }
-    } catch (e) {
-
-    }
-})
-
-
-world.afterEvents.itemUse.subscribe((use) => {
-    try {
-        let p = use.source;
-        let bow = "_bow";
-        let item = use.itemStack.typeId;
-        if (item.toLowerCase().includes(bow)) {
-            p.addTag("using");
-        }
-    } catch (e) {
-
-    }
+    } catch (e) {}
 });
 
-world.afterEvents.itemStopUse.subscribe((stop) => {
+// Consumo de durabilidad al disparar (itemStopUse), preservando encantamientos, lore y nombres
+world.afterEvents.itemStopUse.subscribe((event) => {
     try {
-        let p = stop.source;
-        let item = stop.itemStack;
-        let durability = item.getComponent("durability").damage;
-        let maxDurability = item.getComponent("durability").maxDurability;
-        p.removeTag("using");
+        const player = event.source;
+        const item = event.itemStack;
+        const useDuration = event.useDuration ?? 0;
 
-        const runCmd = (cmd) => (p.runCommand ? p.runCommand(cmd) : p.runCommandAsync(cmd));
-        for (let bows of tags) {
-            if (item.typeId == `ed:${bows}_bow` && p.hasTag("using")) {
-                runCmd(`replaceitem entity @s slot.weapon.mainhand 0 ${item.typeId} 1 ${durability + 2}`)
-                if (durability == maxDurability) {
-                    runCmd(`replaceitem entity @s slot.weapon.mainhand 0 air`)
-                    runCmd("playsound random.item_break @s ~~~")
-                }
-            }
+        if (!item || !player || !BOW_TYPES.has(item.typeId)) return;
+
+        // Si fue una cancelación inmediata (sin tensado efectivo), no descontar durabilidad
+        if (item.typeId === "ed:enderite_bow" && useDuration < 6) {
+            return;
         }
-    } catch (e) {
 
-    }
-})
+        // Modo creativo no consume durabilidad
+        let isCreative = false;
+        try {
+            const gm = player.getGameMode();
+            isCreative = String(gm).toLowerCase() === "creative";
+        } catch (e) {}
+        if (isCreative) return;
+
+        system.run(() => {
+            try {
+                const equippable = player.getComponent(EntityEquippableComponent.componentId);
+                if (!equippable) return;
+
+                let slot = EquipmentSlot.Mainhand;
+                let currentItem = equippable.getEquipment(slot);
+                if (!currentItem || currentItem.typeId !== item.typeId) {
+                    slot = EquipmentSlot.Offhand;
+                    currentItem = equippable.getEquipment(slot);
+                    if (!currentItem || currentItem.typeId !== item.typeId) return;
+                }
+
+                const durability = currentItem.getComponent("durability");
+                if (!durability) return;
+
+                // Soporte nativo para Unbreaking
+                const enchantable = currentItem.getComponent("enchantable");
+                const unbreaking = enchantable?.getEnchantment?.("unbreaking")?.level ?? 0;
+                if (unbreaking > 0 && Math.random() > (1 / (unbreaking + 1))) {
+                    return;
+                }
+
+                if (durability.damage + 1 >= durability.maxDurability) {
+                    player.dimension.playSound("random.break", player.location);
+                    equippable.setEquipment(slot, undefined);
+                } else {
+                    durability.damage += 1;
+                    equippable.setEquipment(slot, currentItem);
+                }
+            } catch (e) {}
+        });
+    } catch (e) {}
+});

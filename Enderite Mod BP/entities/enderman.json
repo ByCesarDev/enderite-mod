@@ -42,8 +42,7 @@
 				"family": [
 					"enderman",
 					"monster",
-					"mob",
-					"ed:arrow_enderite"
+					"mob"
 				]
 			},
 			"minecraft:breathable": {
