@@ -1,4 +1,4 @@
-import { system, world, EntityEquippableComponent, EquipmentSlot, ItemStack } from "@minecraft/server";
+import { system, world, EntityEquippableComponent, EquipmentSlot, ItemStack, MolangVariableMap } from "@minecraft/server";
 
 const BOW_DEBUG = true;
 
@@ -14,6 +14,9 @@ const VIRTUAL_ARROW_LORE = "§5Infinity Arrow§r";
 // Rastrear el estado activo de tensado del arco por jugador (fuente de verdad independiente de eventos)
 export const playerDrawState = new Map(); // playerId -> { startTick, weaponTypeId, powerLevel, infinityLevel, shooterName }
 
+// Búfer para retener temporalmente el draw tras itemStopUse (10 ticks) para resolver carreras con entitySpawn o projectileHitEntity
+const recentReleasedDrawState = new Map(); // playerId -> { startTick, elapsedTicks, weaponTypeId, powerLevel, infinityLevel, shooterName, releaseTick }
+
 // Rastrear el último disparo con ballesta para agrupar Multishot y deducir durabilidad una sola vez por gatillazo
 const crossbowFireMap = new Map(); // playerId -> fireTick
 
@@ -25,7 +28,13 @@ const activeCritProjectiles = new Map(); // projectileId -> Entity
 // Rastreo de flechas clavadas en bloques para recolección vanilla segura
 const stuckPickableArrows = new Map(); // projectileId -> { projectile, dimension, stickTick }
 
-// Loop de partículas críticas (1 tick): emite minecraft:basic_crit_particle durante el vuelo
+// Rastreo de impactos en bloque procesados para idempotencia estricta (tanto pickable como no_pickup)
+const processedBlockImpacts = new Map(); // projectileId -> hitTick
+
+// Rastreo de efectos colaterales de disparo ya aplicados para garantizar ejecución única (point-blank vs entitySpawn)
+const appliedShotEffects = new Map(); // projectileId -> tick
+
+// Loop de partículas críticas (1 tick): emite minecraft:basic_crit_particle con dirección Molang durante el vuelo
 system.runInterval(() => {
     try {
         for (const [id, proj] of activeCritProjectiles.entries()) {
@@ -35,8 +44,9 @@ system.runInterval(() => {
             }
 
             let speedSq = 1;
+            let vel = { x: 0, y: 0, z: 0 };
             try {
-                const vel = proj.getVelocity();
+                vel = proj.getVelocity() ?? vel;
                 speedSq = vel.x * vel.x + vel.y * vel.y + vel.z * vel.z;
             } catch (e) {}
 
@@ -46,7 +56,13 @@ system.runInterval(() => {
             }
 
             try {
-                proj.dimension.spawnParticle("minecraft:basic_crit_particle", proj.location);
+                const vars = new MolangVariableMap();
+                vars.setVector3("variable.direction", {
+                    x: -vel.x * 0.25,
+                    y: -vel.y * 0.25,
+                    z: -vel.z * 0.25
+                });
+                proj.dimension.spawnParticle("minecraft:basic_crit_particle", proj.location, vars);
             } catch (e) {
                 activeCritProjectiles.delete(id);
             }
@@ -55,6 +71,30 @@ system.runInterval(() => {
 }, 1);
 
 const isEntityValid = (e) => Boolean(e && (typeof e.isValid === 'function' ? e.isValid() : e.isValid));
+
+/**
+ * Obtiene y consume el estado de tensado activo o recientemente liberado de un jugador.
+ */
+function consumePlayerDraw(playerId) {
+    if (!playerId) return undefined;
+
+    if (playerDrawState.has(playerId)) {
+        const draw = playerDrawState.get(playerId);
+        playerDrawState.delete(playerId);
+        const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
+        return { ...draw, elapsedTicks };
+    }
+
+    if (recentReleasedDrawState.has(playerId)) {
+        const draw = recentReleasedDrawState.get(playerId);
+        recentReleasedDrawState.delete(playerId);
+        if (system.currentTick - draw.releaseTick <= 10) {
+            return draw;
+        }
+    }
+
+    return undefined;
+}
 
 /**
  * Helper para leer encantamientos de Power e Infinity del arco sostenido en mano principal u offhand.
@@ -108,76 +148,6 @@ export function getEnderiteBowPower(ticks) {
 }
 
 /**
- * Resuelve el disparo actual de forma determinista y a prueba de condiciones de carrera (point-blank).
- * Si el impacto ocurre antes de que entitySpawn termine de registrar el proyectil,
- * se resuelve directamente desde el draw activo del tirador sin usar fallbacks antiguos contaminados.
- */
-export function resolveCurrentShot(attacker, projectileId) {
-    // 1. Proyectil ya registrado en projectileShotMap
-    let shot = consumeProjectileShotData(projectileId) ?? getProjectileShotData(projectileId);
-    if (shot) return shot;
-
-    // 2. Disparo a quemarropa: el atacante está tensando activamente el arco en este instante
-    if (attacker && playerDrawState.has(attacker.id)) {
-        const draw = playerDrawState.get(attacker.id);
-        playerDrawState.delete(attacker.id);
-        const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
-        const rawPower = getEnderiteBowPowerRaw(elapsedTicks);
-        const chargeRatio = Math.min(Math.max(rawPower, 0.1), 1.0);
-        const isCritical = chargeRatio >= 1.0;
-        shot = {
-            projectileId: projectileId ?? "point_blank",
-            shooterId: attacker.id,
-            shooterName: attacker.name,
-            weaponTypeId: "ed:enderite_bow",
-            chargeRatio,
-            isCritical,
-            powerLevel: draw.powerLevel,
-            infinityLevel: draw.infinityLevel,
-            fireTick: system.currentTick
-        };
-        applyWeaponDurabilityDamage(attacker, "ed:enderite_bow");
-        debug(`Resolved point-blank shot directly from active draw for ${attacker.name}: ticks=${elapsedTicks}, ratio=${chargeRatio.toFixed(2)}, isCrit=${isCritical}`);
-        return shot;
-    }
-
-    // 3. Atacante disparando Ballesta
-    if (attacker) {
-        const eq = attacker.getComponent(EntityEquippableComponent.componentId);
-        const mainhand = eq?.getEquipment(EquipmentSlot.Mainhand);
-        const offhand = eq?.getEquipment(EquipmentSlot.Offhand);
-        const isCrossbow = (mainhand?.typeId === "ed:enderite_cross_bow") || (offhand?.typeId === "ed:enderite_cross_bow");
-        if (isCrossbow) {
-            shot = {
-                projectileId: projectileId ?? "point_blank",
-                shooterId: attacker.id,
-                shooterName: attacker.name,
-                weaponTypeId: "ed:enderite_cross_bow",
-                chargeRatio: 1.0,
-                isCritical: false,
-                powerLevel: 0,
-                infinityLevel: 0,
-                fireTick: system.currentTick
-            };
-            return shot;
-        }
-    }
-
-    // 4. Fallback conservador (NUNCA crítico, NUNCA datos antiguos)
-    return {
-        projectileId: projectileId ?? "fallback",
-        shooterId: attacker?.id ?? "unknown",
-        shooterName: attacker?.name ?? "unknown",
-        weaponTypeId: "ed:enderite_bow",
-        chargeRatio: 0.5,
-        isCritical: false,
-        powerLevel: 0,
-        infinityLevel: 0,
-        fireTick: system.currentTick
-    };
-}
-
-/**
  * Descuenta durabilidad del arma equipada respetando el encantamiento Unbreaking.
  */
 function applyWeaponDurabilityDamage(player, weaponTypeId) {
@@ -227,6 +197,158 @@ function applyWeaponDurabilityDamage(player, weaponTypeId) {
             debug(`Error updating durability in system.run: ${e}`);
         }
     });
+}
+
+/**
+ * Aplica los efectos colaterales de un disparo de forma centralizada e idempotente:
+ * - Durabilidad del arma (respetando modo creativo y Unbreaking)
+ * - Reembolso seguro de munición Infinity para el tirador
+ * - Etiquetas de protección del proyectil (creative_arrow, infinity_arrow, no_pickup)
+ * - Rastro de partículas para disparos críticos
+ */
+function applyShotSideEffects(shooter, projectile, shotData) {
+    if (!shotData || !shotData.projectileId) return;
+    if (appliedShotEffects.has(shotData.projectileId)) {
+        debug(`Side effects already applied for projId: ${shotData.projectileId}; skipping.`);
+        return;
+    }
+    appliedShotEffects.set(shotData.projectileId, system.currentTick);
+
+    if (!shooter || !isEntityValid(shooter)) return;
+
+    let isShooterCreative = false;
+    try {
+        isShooterCreative = String(shooter.getGameMode()).toLowerCase() === "creative";
+    } catch (e) {}
+
+    if (projectile && isEntityValid(projectile)) {
+        if (isShooterCreative) {
+            projectile.addTag("creative_arrow");
+            projectile.addTag("no_pickup");
+        }
+    }
+
+    if (shotData.weaponTypeId === "ed:enderite_bow") {
+        applyWeaponDurabilityDamage(shooter, "ed:enderite_bow");
+
+        if (shotData.infinityLevel > 0) {
+            if (projectile && isEntityValid(projectile)) {
+                projectile.addTag("infinity_arrow");
+                projectile.addTag("no_pickup");
+                debug(`Tagged projectile ${shotData.projectileId} as 'infinity_arrow' (no pickup) strictly for ${shooter.name}.`);
+            }
+
+            if (!isShooterCreative) {
+                try {
+                    const inv = shooter.getComponent("inventory")?.container;
+                    if (inv) {
+                        inv.addItem(new ItemStack("ed:enderite_arrow", 1));
+                        debug(`Infinity safely refunded 1 ed:enderite_arrow to ${shooter.name}.`);
+                    }
+                } catch (e) {
+                    debug(`Error refunding arrow for Infinity: ${e}`);
+                }
+            }
+        }
+
+        if (shotData.isCritical && projectile && isEntityValid(projectile)) {
+            projectile.addTag("critical_shot");
+            activeCritProjectiles.set(shotData.projectileId, projectile);
+            debug(`Registered active critical particle trail for projId: ${shotData.projectileId}`);
+        }
+    } else if (shotData.weaponTypeId === "ed:enderite_cross_bow") {
+        // Agrupar Multishot: solo cobrar durabilidad una vez por gatillazo (ventana de 4 ticks para absorber ráfagas)
+        const lastFireTick = crossbowFireMap.get(shooter.id) ?? -999;
+        if (system.currentTick - lastFireTick > 4) {
+            crossbowFireMap.set(shooter.id, system.currentTick);
+            applyWeaponDurabilityDamage(shooter, "ed:enderite_cross_bow");
+            debug(`Confirmed Crossbow trigger pull for ${shooter.name} (durability applied).`);
+        } else {
+            debug(`Multishot arrow for ${shooter.name} grouped within trigger pull (skipping duplicate durability).`);
+        }
+    }
+}
+
+/**
+ * Resuelve el disparo actual de forma determinista y a prueba de condiciones de carrera (point-blank).
+ * Si el impacto ocurre antes de que entitySpawn termine de registrar el proyectil,
+ * se resuelve directamente desde el draw activo del tirador sin usar fallbacks antiguos contaminados.
+ */
+export function resolveCurrentShot(attacker, projectileOrId, projectileEntity) {
+    const projectileId = (typeof projectileOrId === 'string') ? projectileOrId : projectileOrId?.id;
+    const proj = (typeof projectileOrId === 'object' && projectileOrId !== null) ? projectileOrId : projectileEntity;
+
+    // 1. Proyectil ya registrado en projectileShotMap
+    let shot = consumeProjectileShotData(projectileId) ?? getProjectileShotData(projectileId);
+    if (shot) return shot;
+
+    // 2. Disparo a quemarropa: el atacante está tensando activamente el arco o acaba de liberarlo
+    if (attacker) {
+        const draw = consumePlayerDraw(attacker.id);
+        if (draw) {
+            const rawPower = getEnderiteBowPowerRaw(draw.elapsedTicks);
+
+            // Umbral Java exacto: if (rawPower < 0.1) -> disparo cancelado, 0 daño
+            if (rawPower < 0.1) {
+                debug(`Point-blank shot cancelled: rawPower ${rawPower.toFixed(2)} < 0.1 (${draw.elapsedTicks} ticks) for ${attacker.name}.`);
+                if (projectileId) appliedShotEffects.set(projectileId, system.currentTick);
+                return { cancelled: true, projectileId: projectileId ?? "point_blank" };
+            }
+
+            const chargeRatio = Math.min(rawPower, 1.0);
+            const isCritical = chargeRatio >= 1.0;
+            shot = {
+                projectileId: projectileId ?? "point_blank",
+                shooterId: attacker.id,
+                shooterName: attacker.name,
+                weaponTypeId: "ed:enderite_bow",
+                chargeRatio,
+                isCritical,
+                powerLevel: draw.powerLevel,
+                infinityLevel: draw.infinityLevel,
+                fireTick: system.currentTick
+            };
+            applyShotSideEffects(attacker, proj, shot);
+            debug(`Resolved point-blank shot directly from active draw for ${attacker.name}: ticks=${draw.elapsedTicks}, ratio=${chargeRatio.toFixed(2)}, isCrit=${isCritical}`);
+            return shot;
+        }
+    }
+
+    // 3. Atacante disparando Ballesta
+    if (attacker) {
+        const eq = attacker.getComponent(EntityEquippableComponent.componentId);
+        const mainhand = eq?.getEquipment(EquipmentSlot.Mainhand);
+        const offhand = eq?.getEquipment(EquipmentSlot.Offhand);
+        const isCrossbow = (mainhand?.typeId === "ed:enderite_cross_bow") || (offhand?.typeId === "ed:enderite_cross_bow");
+        if (isCrossbow) {
+            shot = {
+                projectileId: projectileId ?? "point_blank",
+                shooterId: attacker.id,
+                shooterName: attacker.name,
+                weaponTypeId: "ed:enderite_cross_bow",
+                chargeRatio: 1.0,
+                isCritical: false,
+                powerLevel: 0,
+                infinityLevel: 0,
+                fireTick: system.currentTick
+            };
+            applyShotSideEffects(attacker, proj, shot);
+            return shot;
+        }
+    }
+
+    // 4. Fallback conservador (NUNCA crítico, NUNCA datos antiguos)
+    return {
+        projectileId: projectileId ?? "fallback",
+        shooterId: attacker?.id ?? "unknown",
+        shooterName: attacker?.name ?? "unknown",
+        weaponTypeId: "ed:enderite_bow",
+        chargeRatio: 0.5,
+        isCritical: false,
+        powerLevel: 0,
+        infinityLevel: 0,
+        fireTick: system.currentTick
+    };
 }
 
 // 1. Detección de inicio de tensado del arco (itemStartUse / itemUse)
@@ -282,6 +404,11 @@ world.afterEvents.itemStopUse.subscribe((event) => {
             const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
             debug(`Player ${player.name} released ${item.typeId} (charge: ${elapsedTicks} ticks).`);
             playerDrawState.delete(player.id);
+            recentReleasedDrawState.set(player.id, {
+                ...draw,
+                elapsedTicks,
+                releaseTick: system.currentTick
+            });
         }
     } catch (e) {
         debug(`Error in itemStopUse: ${e}`);
@@ -294,6 +421,13 @@ world.afterEvents.entitySpawn.subscribe((event) => {
         const entity = event.entity;
         if (!entity || entity.typeId !== "ed:arrow_enderite") return;
         if (!isEntityValid(entity)) return;
+
+        // Si este proyectil ya fue resuelto previamente (ej: impacto a quemarropa antes de entitySpawn)
+        if (appliedShotEffects.has(entity.id)) {
+            debug(`entitySpawn: projectile ${entity.id} was already processed by point-blank hit; skipping.`);
+            try { entity.remove(); } catch (e) {}
+            return;
+        }
 
         // 1. Identificar al tirador
         let shooter = null;
@@ -360,28 +494,17 @@ world.afterEvents.entitySpawn.subscribe((event) => {
             return;
         }
 
-        let isShooterCreative = false;
-        try {
-            isShooterCreative = String(shooter.getGameMode()).toLowerCase() === "creative";
-        } catch (e) {}
-
-        if (isShooterCreative) {
-            entity.addTag("creative_arrow");
-            entity.addTag("no_pickup");
-        }
-
         // 2. Determinar ShotData directamente desde el draw activo de Arco o desde Ballesta
         let shotData;
-        const draw = playerDrawState.get(shooter.id);
+        const draw = consumePlayerDraw(shooter.id);
 
         if (draw) {
-            playerDrawState.delete(shooter.id);
-            const elapsedTicks = Math.max(1, system.currentTick - draw.startTick);
-            const rawPower = getEnderiteBowPowerRaw(elapsedTicks);
+            const rawPower = getEnderiteBowPowerRaw(draw.elapsedTicks);
 
-            // Umbral Java exacto: if (f < 0.1F) -> cancelar disparo y descartar proyectil
+            // Umbral Java exacto: if (rawPower < 0.1) -> cancelar disparo y descartar proyectil
             if (rawPower < 0.1) {
-                debug(`Shot cancelled: rawPower ${rawPower.toFixed(2)} < 0.1 (${elapsedTicks} ticks); removing projectile.`);
+                debug(`Shot cancelled: rawPower ${rawPower.toFixed(2)} < 0.1 (${draw.elapsedTicks} ticks); removing projectile.`);
+                appliedShotEffects.set(entity.id, system.currentTick);
                 try { entity.remove(); } catch (e) {}
                 return;
             }
@@ -401,29 +524,9 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                 fireTick: system.currentTick
             };
 
-            debug(`Confirmed Bow shot for ${shooter.name} (projId: ${entity.id}): ticks=${elapsedTicks}, charge=${chargeRatio.toFixed(2)}, crit=${isCritical}, power=${draw.powerLevel}, infinity=${draw.infinityLevel}`);
+            debug(`Confirmed Bow shot for ${shooter.name} (projId: ${entity.id}): ticks=${draw.elapsedTicks}, charge=${chargeRatio.toFixed(2)}, crit=${isCritical}, power=${draw.powerLevel}, infinity=${draw.infinityLevel}`);
 
-            // Descontar durabilidad del arco únicamente ahora que la flecha fue disparada
-            applyWeaponDurabilityDamage(shooter, "ed:enderite_bow");
-
-            // Si el arco tenía Infinity, aislarlo estrictamente a este proyectil y reembolsar la munición
-            if (shotData.infinityLevel > 0) {
-                entity.addTag("infinity_arrow");
-                entity.addTag("no_pickup");
-                debug(`Tagged projectile ${entity.id} as 'infinity_arrow' (no pickup) strictly for ${shooter.name}.`);
-
-                if (!isShooterCreative) {
-                    try {
-                        const inv = shooter.getComponent("inventory")?.container;
-                        if (inv) {
-                            inv.addItem(new ItemStack("ed:enderite_arrow", 1));
-                            debug(`Infinity safely refunded 1 ed:enderite_arrow to ${shooter.name}.`);
-                        }
-                    } catch (e) {
-                        debug(`Error refunding arrow for Infinity: ${e}`);
-                    }
-                }
-            }
+            applyShotSideEffects(shooter, entity, shotData);
         } else {
             // No había draw de arco: verificar si el tirador disparó con Ballesta
             const eq = shooter.getComponent(EntityEquippableComponent.componentId);
@@ -444,13 +547,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                     fireTick: system.currentTick
                 };
 
-                // Agrupar Multishot: solo cobrar durabilidad una vez por gatillazo/ráfaga
-                const lastFireTick = crossbowFireMap.get(shooter.id) ?? -999;
-                if (system.currentTick - lastFireTick > 1) {
-                    crossbowFireMap.set(shooter.id, system.currentTick);
-                    applyWeaponDurabilityDamage(shooter, "ed:enderite_cross_bow");
-                    debug(`Confirmed Crossbow trigger pull for ${shooter.name} (durability applied).`);
-                }
+                applyShotSideEffects(shooter, entity, shotData);
             } else {
                 // Fallback conservador si no se detectó el arma (NUNCA crítico)
                 shotData = {
@@ -465,13 +562,6 @@ world.afterEvents.entitySpawn.subscribe((event) => {
                     fireTick: system.currentTick
                 };
             }
-        }
-
-        // Si el disparo es crítico (tensado al 100%), registrar para rastro de partículas
-        if (shotData.isCritical) {
-            entity.addTag("critical_shot");
-            activeCritProjectiles.set(entity.id, entity);
-            debug(`Registered active critical particle trail for projId: ${entity.id}`);
         }
 
         // 3. Vincular los datos de disparo directamente al ID del proyectil
@@ -489,9 +579,10 @@ world.afterEvents.projectileHitBlock.subscribe((event) => {
             activeCritProjectiles.delete(proj.id);
             projectileShotMap.delete(proj.id);
 
-            if (stuckPickableArrows.has(proj.id)) {
+            if (processedBlockImpacts.has(proj.id)) {
                 return; // Idempotente: evitar re-procesamiento si el motor notifica varias veces el impacto
             }
+            processedBlockImpacts.set(proj.id, system.currentTick);
 
             const cannotPickup = proj.hasTag("no_pickup") || 
                                  proj.hasTag("infinity_arrow") || 
@@ -503,6 +594,7 @@ world.afterEvents.projectileHitBlock.subscribe((event) => {
                     try {
                         if (isEntityValid(proj)) proj.remove();
                     } catch (e) {}
+                    processedBlockImpacts.delete(proj.id);
                 }, 1200);
                 return;
             }
@@ -526,6 +618,7 @@ system.runInterval(() => {
             const proj = data.projectile;
             if (!isEntityValid(proj)) {
                 stuckPickableArrows.delete(id);
+                processedBlockImpacts.delete(id);
                 continue;
             }
 
@@ -533,6 +626,7 @@ system.runInterval(() => {
             if (currentTick - data.stickTick > 1200) {
                 try { proj.remove(); } catch (e) {}
                 stuckPickableArrows.delete(id);
+                processedBlockImpacts.delete(id);
                 continue;
             }
 
@@ -582,6 +676,7 @@ system.runInterval(() => {
                 } catch (e) {}
 
                 stuckPickableArrows.delete(id);
+                processedBlockImpacts.delete(id);
                 debug(`Arrow ${id} safely picked up by ${player.name}.`);
                 break; // Un único jugador recoge la flecha
             }
@@ -660,10 +755,26 @@ system.runInterval(() => {
                 playerDrawState.delete(playerId);
             }
         }
+        for (const [playerId, draw] of recentReleasedDrawState.entries()) {
+            if (currentTick - draw.releaseTick > 100) {
+                recentReleasedDrawState.delete(playerId);
+            }
+        }
         for (const [playerId, fireTick] of crossbowFireMap.entries()) {
             if (currentTick - fireTick > 100) {
                 crossbowFireMap.delete(playerId);
             }
         }
+        for (const [id, tick] of processedBlockImpacts.entries()) {
+            if (currentTick - tick > 1200) {
+                processedBlockImpacts.delete(id);
+            }
+        }
+        for (const [id, tick] of appliedShotEffects.entries()) {
+            if (currentTick - tick > 1200) {
+                appliedShotEffects.delete(id);
+            }
+        }
     } catch (e) {}
 }, 200);
+

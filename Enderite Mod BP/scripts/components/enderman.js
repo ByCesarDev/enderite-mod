@@ -39,7 +39,12 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
             }
 
             // Resolver los datos de disparo asociados a este proyectil (a prueba de race condition / point-blank)
-            const shot = resolveCurrentShot(attacker, projectile.id);
+            const shot = resolveCurrentShot(attacker, projectile.id, projectile);
+
+            if (shot?.cancelled) {
+                debug(`[projectileHitEntity] Shot cancelled due to insufficient bow charge (< 0.1 rawPower). 0 damage applied.`);
+                return;
+            }
 
             let damage;
             if (shot) {
