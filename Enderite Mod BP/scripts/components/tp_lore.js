@@ -1,5 +1,5 @@
 import { world, system } from "@minecraft/server";
-import { SWORD_CAPACITIES, SHIELD_CAPACITIES, getTeleportCharge, updateSwordLore } from "../core/teleport.js";
+import { SWORD_CAPACITIES, SHIELD_CAPACITIES, getTeleportCapacity, getTeleportCharge, updateTeleportLore } from "../core/teleport.js";
 
 const TP_ITEMS = {
   ...SWORD_CAPACITIES,
@@ -26,9 +26,9 @@ function applyTPLore(itemStack) {
 
   if (!isSword && !isShield && !isArmor) return false;
 
-  // Manejo de espadas con carga dinámica y espada base
-  if (isSword) {
-    const capacity = SWORD_CAPACITIES[itemStack.typeId] ?? 0;
+  // Manejo de items teleportables (espadas y escudos) con carga dinámica
+  if (isSword || isShield) {
+    const capacity = getTeleportCapacity(itemStack);
     const currentCharge = getTeleportCharge(itemStack);
     
     // Verificar si el lore ya está al día con la carga actual
@@ -52,60 +52,32 @@ function applyTPLore(itemStack) {
 
     if (!needsUpdate) return false;
 
-    updateSwordLore(itemStack, currentCharge, capacity);
+    updateTeleportLore(itemStack, currentCharge, capacity);
     return true;
   }
 
-  // Manejo de armaduras y escudos
+  // Manejo de armaduras
   try {
-    const rawLore = itemStack.getRawLore() ?? [];
-    const hasLeadingEmpty = !isArmor && rawLore.length > 0 && typeof rawLore[0]?.text === 'string' && rawLore[0].text.trim() === "";
     const currentLore = itemStack.getLore();
-    const targetLength = isArmor ? 2 : 4;
-    if (!hasLeadingEmpty && currentLore && currentLore.length === targetLength) {
+    const targetLength = 2;
+    if (currentLore && currentLore.length === targetLength) {
        return false;
     }
   } catch {}
 
   try {
-    let lore = [];
-    if (isArmor) {
-        lore = [
-            { translate: "lore.ed:armor_toughness" },
-            { translate: "lore.ed:knockback_resistance" }
-        ];
-    } else {
-        const capacity = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
-        const chargeEntry = capacity > 0
-            ? { translate: "lore.ed:charge", with: [String(capacity), String(capacity)] }
-            : { translate: "lore.ed:charge_zero" };
-        lore = [
-            chargeEntry,
-            { translate: "lore.ed:upgrade_info" },
-            { translate: "lore.ed:ender_pearls" },
-            { translate: "lore.ed:shield_teleport" }
-        ];
-    }
-    
+    const lore = [
+        { translate: "lore.ed:armor_toughness" },
+        { translate: "lore.ed:knockback_resistance" }
+    ];
     itemStack.setLore(lore);
     return true;
   } catch (e) {
     try {
-      if (isArmor) {
-        itemStack.setLore([
-          "§9+4 Armor Toughness",
-          "§9+1 Knockback Resistance"
-        ]);
-      } else {
-        const charge = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
-        const chargeText = charge > 0 ? `§3Charge: ${charge}/${charge}` : "§3Charge: 0";
-        itemStack.setLore([
-          chargeText,
-          "§7Upgrade in smithing table with",
-          "§7enderpearls to load teleportation uses.",
-          "§7Teleport attacker with sneaking + block!"
-        ]);
-      }
+      itemStack.setLore([
+        "§9+4 Armor Toughness",
+        "§9+1 Knockback Resistance"
+      ]);
       return true;
     } catch {}
   }

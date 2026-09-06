@@ -1,12 +1,15 @@
-import { world, system, EquipmentSlot, ItemStack } from '@minecraft/server';
+import { world, system, EquipmentSlot, ItemStack, EntityEquippableComponent } from '@minecraft/server';
+import {
+    SHIELD_CAPACITIES,
+    getTeleportCapacity,
+    getTeleportCharge,
+    setTeleportCharge,
+    updateTeleportLore,
+    teleportShieldAttacker,
+    isEntityValid
+} from '../core/teleport.js';
 
-const CUSTOM_SHIELDS = [
-    'enderite:shield',
-    'enderite:shield_tp',
-    'enderite:shield_tp_lv2',
-    'enderite:shield_tp_lv3',
-    'enderite:shield_tp_lv4'
-];
+const CUSTOM_SHIELDS = Object.keys(SHIELD_CAPACITIES);
 
 const shieldNames = {
     'enderite:shield': "Enderite Shield",
@@ -16,347 +19,72 @@ const shieldNames = {
     'enderite:shield_tp_lv4': "Enderite Shield"
 };
 
-const shieldDurability = {
-    'enderite:shield': 9.5,
-    'enderite:shield_tp': 9.5,
-    'enderite:shield_tp_lv2': 9.5,
-    'enderite:shield_tp_lv3': 9.5,
-    'enderite:shield_tp_lv4': 9.5
-};
+/**
+ * Correlación determinista de atacante real:
+ * Registra la entidad que atacó o disparó al jugador recientemente.
+ * playerId -> { attacker, tick }
+ */
+const recentShieldAttacks = new Map();
 
-const shieldCharges = {
-    'enderite:shield': 0,
-    'enderite:shield_tp': 16,
-    'enderite:shield_tp_lv2': 32,
-    'enderite:shield_tp_lv3': 48,
-    'enderite:shield_tp_lv4': 64
-};
-
-// Helper to find the attacker targeting the player or closest hostile entity
-function findAttacker(player) {
-    const dimension = player.dimension;
-    const location = player.location;
-
-    // Look for entities within 12 blocks
-    const targetEntities = dimension.getEntities({
-        location: location,
-        maxDistance: 12
-    });
-
-    let bestAttacker = null;
-    let closestDistance = Infinity;
-
-    for (const entity of targetEntities) {
-        if (entity.id === player.id) continue;
-        
-        try {
-            if (entity.target?.id === player.id) {
-                const dist = Math.sqrt(
-                    Math.pow(entity.location.x - location.x, 2) + 
-                    Math.pow(entity.location.z - location.z, 2)
-                );
-                if (dist < closestDistance) {
-                    closestDistance = dist;
-                    bestAttacker = entity;
-                }
-            }
-        } catch (e) {}
-    }
-
-    if (bestAttacker) return bestAttacker;
-
-    // If no entity has the player as target, find the nearest living mob or player within 6 blocks
-    for (const entity of targetEntities) {
-        if (entity.id === player.id) continue;
-        if (!entity.getComponent("health")) continue;
-
-        const dist = Math.sqrt(
-            Math.pow(entity.location.x - location.x, 2) + 
-            Math.pow(entity.location.z - location.z, 2)
-        );
-        if (dist < 6 && dist < closestDistance) {
-            closestDistance = dist;
-            bestAttacker = entity;
-        }
-    }
-
-    return bestAttacker;
-}
-
-// Helper to get a block safely without throwing chunk errors
-function getBlockSafe(dimension, x, y, z) {
+// Capturar ataques directos cuerpo a cuerpo
+world.afterEvents.entityHurt.subscribe(event => {
     try {
-        return dimension.getBlock({ x: Math.floor(x), y: Math.floor(y), z: Math.floor(z) });
-    } catch (e) {
-        return undefined;
-    }
-}
+        const { hurtEntity, damageSource } = event;
+        if (!hurtEntity || hurtEntity.typeId !== "minecraft:player") return;
 
-// Helper to determine if a block is solid
-function isBlockSolid(block) {
-    if (!block || !block.isValid) return false;
-    
-    try {
-        if (typeof block.isSolid === 'boolean') {
-            return block.isSolid;
+        const attacker = damageSource?.damagingEntity;
+        if (attacker && isEntityValid(attacker) && attacker.id !== hurtEntity.id) {
+            recentShieldAttacks.set(hurtEntity.id, {
+                attacker,
+                tick: system.currentTick
+            });
         }
     } catch (e) {}
+});
 
-    if (block.isAir) return false;
-
+// Capturar impactos de proyectiles (flechas, bolas de fuego, etc.)
+world.afterEvents.projectileHitEntity.subscribe(event => {
     try {
-        if (block.isLiquid) return false;
+        const hitEntity = event.getEntityHit()?.entity;
+        if (!hitEntity || hitEntity.typeId !== "minecraft:player") return;
+
+        const projectile = event.projectile;
+        const source = event.source;
+        let attacker = source;
+
+        if (!attacker && projectile && isEntityValid(projectile)) {
+            try {
+                attacker = projectile.getComponent("projectile")?.owner;
+            } catch (e) {}
+        }
+
+        if (attacker && isEntityValid(attacker) && attacker.id !== hitEntity.id) {
+            recentShieldAttacks.set(hitEntity.id, {
+                attacker,
+                tick: system.currentTick
+            });
+        }
     } catch (e) {}
-
-    const typeId = block.typeId;
-    if (!typeId) return false;
-
-    const PASSABLE_IDS = [
-        "minecraft:air",
-        "minecraft:water",
-        "minecraft:lava",
-        "minecraft:tallgrass",
-        "minecraft:grass",
-        "minecraft:double_plant",
-        "minecraft:yellow_flower",
-        "minecraft:red_flower",
-        "minecraft:reeds",
-        "minecraft:sugar_cane",
-        "minecraft:sapling",
-        "minecraft:vine",
-        "minecraft:ladder",
-        "minecraft:snow_layer",
-        "minecraft:fire",
-        "minecraft:tripwire",
-        "minecraft:torch",
-        "minecraft:soul_torch",
-        "minecraft:redstone_torch",
-        "minecraft:unlit_redstone_torch",
-        "minecraft:lever",
-        "minecraft:stone_button",
-        "minecraft:wooden_button",
-        "minecraft:spruce_button",
-        "minecraft:birch_button",
-        "minecraft:jungle_button",
-        "minecraft:acacia_button",
-        "minecraft:dark_oak_button",
-        "minecraft:crimson_button",
-        "minecraft:warped_button",
-        "minecraft:polished_blackstone_button",
-        "minecraft:wheat",
-        "minecraft:carrots",
-        "minecraft:potatoes",
-        "minecraft:beetroot",
-        "minecraft:sweet_berry_bush",
-        "minecraft:cave_vines",
-        "minecraft:cave_vines_body_with_berries",
-        "minecraft:cave_vines_head_with_berries",
-        "minecraft:glow_lichen",
-        "minecraft:hanging_roots",
-        "minecraft:pointed_dripstone",
-        "minecraft:small_dripleaf",
-        "minecraft:big_dripleaf",
-        "minecraft:big_dripleaf_stem",
-        "minecraft:spore_blossom",
-        "minecraft:azalea",
-        "minecraft:flowering_azalea",
-        "minecraft:pink_petals",
-        "minecraft:nether_sprouts",
-        "minecraft:crimson_roots",
-        "minecraft:warped_roots",
-        "minecraft:seagrass",
-        "minecraft:kelp",
-        "minecraft:sea_pickle",
-        "minecraft:carpet",
-        "minecraft:light_block",
-        "minecraft:structure_void",
-        "minecraft:barrier"
-    ];
-
-    if (PASSABLE_IDS.includes(typeId)) return false;
-
-    if (typeId.endsWith("_button") || 
-        typeId.endsWith("_torch") || 
-        typeId.endsWith("_sapling") || 
-        typeId.endsWith("_flower") || 
-        typeId.endsWith("_carpet") || 
-        typeId.includes("rail") || 
-        typeId.endsWith("_pressure_plate") ||
-        typeId.includes("gate") ||
-        typeId.includes("sign") ||
-        typeId.includes("banner") ||
-        typeId.endsWith("_fan") ||
-        typeId.includes("coral")) {
-        return false;
-    }
-
-    return true;
-}
-
-// Teleport the attacker backward based on the shield's charge, checking for collisions and safe landing
-function teleportAttacker(player, activeShield) {
-    const charge = shieldCharges[activeShield] || 0;
-    if (charge <= 0) return;
-
-    const attacker = findAttacker(player);
-    if (!attacker) return;
-
-    let dirX = 0;
-    let dirZ = 0;
-    const dx = attacker.location.x - player.location.x;
-    const dz = attacker.location.z - player.location.z;
-    const distanceToAttacker = Math.sqrt(dx * dx + dz * dz);
-    
-    if (distanceToAttacker > 0) {
-        dirX = dx / distanceToAttacker;
-        dirZ = dz / distanceToAttacker;
-    } else {
-        const view = player.getViewVector ? player.getViewVector() : player.getViewDirection();
-        const horizontalLength = Math.sqrt(view.x * view.x + view.z * view.z);
-        dirX = horizontalLength > 0 ? view.x / horizontalLength : 1;
-        dirZ = horizontalLength > 0 ? view.z / horizontalLength : 0;
-    }
-
-    const dimension = player.dimension;
-    let safeLocation = {
-        x: attacker.location.x,
-        y: attacker.location.y,
-        z: attacker.location.z
-    };
-
-    let prevBY = Math.floor(attacker.location.y);
-
-    const FLYING_MOBS = [
-        "minecraft:phantom",
-        "minecraft:ghast",
-        "minecraft:vex",
-        "minecraft:allay",
-        "minecraft:bat",
-        "minecraft:bee",
-        "minecraft:wither",
-        "minecraft:ender_dragon"
-    ];
-    const isFlying = FLYING_MOBS.includes(attacker.typeId);
-
-    // Step along the backward trajectory, checking each block coordinate
-    for (let i = 1; i <= charge; i++) {
-        const tx = attacker.location.x + dirX * i;
-        const tz = attacker.location.z + dirZ * i;
-        const bx = Math.floor(tx);
-        const bz = Math.floor(tz);
-
-        let foundSafeHeight = false;
-        let bestY = prevBY;
-
-        // Search vertical offsets near previous height to find ground or safe airspace
-        const dySearch = [0, 1, -1, 2, -2, -3, -4, 3];
-
-        for (const dy of dySearch) {
-            const checkY = prevBY + dy;
-            
-            const blockBelow = getBlockSafe(dimension, bx, checkY - 1, bz);
-            const blockFeet = getBlockSafe(dimension, bx, checkY, bz);
-            const blockHead = getBlockSafe(dimension, bx, checkY + 1, bz);
-
-            const feetPassable = blockFeet && !isBlockSolid(blockFeet);
-            const headPassable = blockHead && !isBlockSolid(blockHead);
-
-            if (feetPassable && headPassable) {
-                // If it's a flying mob, they can float. Otherwise, we require a solid floor block below.
-                const floorValid = isFlying || (blockBelow && isBlockSolid(blockBelow));
-                
-                if (floorValid) {
-                    bestY = checkY;
-                    foundSafeHeight = true;
-                    break;
-                }
-            }
-        }
-
-        if (foundSafeHeight) {
-            // Found a safe position, update the candidate target location
-            safeLocation = {
-                x: tx,
-                y: bestY,
-                z: tz
-            };
-            prevBY = bestY;
-        } else {
-            // Hit a wall or cliff, stop pathing further
-            break;
-        }
-    }
-
-    // Check if we actually moved from the starting position
-    const didMove = Math.abs(safeLocation.x - attacker.location.x) > 0.1 || Math.abs(safeLocation.z - attacker.location.z) > 0.1;
-    if (!didMove) return;
-
-    const originLocation = {
-        x: attacker.location.x,
-        y: attacker.location.y,
-        z: attacker.location.z
-    };
-
-    try {
-        // Teleport the attacker to the furthest safe location found
-        attacker.teleport(safeLocation, { checkForBlocks: false });
-        
-        // Play ender sound effects
-        player.dimension.playSound("mob.endermen.portal", player.location);
-        player.dimension.playSound("mob.endermen.portal", attacker.location);
-        
-        const runCmd = (cmd) => (player.runCommand ? player.runCommand(cmd) : player.runCommandAsync(cmd));
-        
-        // 1. Spawn particles on the player (shield block effect)
-        runCmd(`particle minecraft:portal_reverse_particle ${player.location.x} ${player.location.y + 1} ${player.location.z}`);
-        
-        // 2. Spawn vanish particles at origin location (where attacker was)
-        runCmd(`particle minecraft:dragon_breath_trail ${originLocation.x} ${originLocation.y + 1} ${originLocation.z}`);
-        runCmd(`particle minecraft:portal_reverse_particle ${originLocation.x} ${originLocation.y + 1} ${originLocation.z}`);
-        
-        // 3. Spawn a highly dense, towering purple column at destination (where attacker arrived)
-        // This generates a beautifully distributed cylinder of petals, sparks, and mist
-        for (let h = 0.1; h <= 2.2; h += 0.4) {
-            const offsets = [
-                { dx: 0, dz: 0 },
-                { dx: 0.35, dz: 0.35 },
-                { dx: -0.35, dz: 0.35 },
-                { dx: 0.35, dz: -0.35 },
-                { dx: -0.35, dz: -0.35 }
-            ];
-            for (const offset of offsets) {
-                const px = attacker.location.x + offset.dx;
-                const py = attacker.location.y + h;
-                const pz = attacker.location.z + offset.dz;
-                
-                runCmd(`particle minecraft:cherry_leaves_particle ${px} ${py} ${pz}`);
-                runCmd(`particle minecraft:portal_reverse_particle ${px} ${py} ${pz}`);
-            }
-        }
-        // Center core mist for extra density
-        runCmd(`particle minecraft:dragon_breath_trail ${attacker.location.x} ${attacker.location.y + 0.5} ${attacker.location.z}`);
-        runCmd(`particle minecraft:dragon_breath_trail ${attacker.location.x} ${attacker.location.y + 1.5} ${attacker.location.z}`);
-        
-    } catch (error) {
-        console.warn("Failed to teleport attacker: " + error);
-    }
-}
+});
 
 let tickCount = 0;
 system.runInterval(() => {
     tickCount++;
-    let players = world.getAllPlayers();
-    players.forEach(player => {
-        const equippable = player?.getComponent('equippable');
-        if (!equippable) return;
+    const players = world.getAllPlayers();
+
+    for (const player of players) {
+        if (!isEntityValid(player)) continue;
+
+        const equippable = player.getComponent(EntityEquippableComponent.componentId);
+        if (!equippable) continue;
 
         const offhandItem = equippable.getEquipment(EquipmentSlot.Offhand);
         const mainhandItem = equippable.getEquipment(EquipmentSlot.Mainhand);
         const inventory = player.getComponent("inventory");
 
         let shieldSlot;
-        
-        const hasEnderiteShield = 
+
+        const hasEnderiteShield =
             CUSTOM_SHIELDS.includes(mainhandItem?.typeId) ||
             CUSTOM_SHIELDS.includes(offhandItem?.typeId) ||
             CUSTOM_SHIELDS.includes(mainhandItem?.getDynamicProperty("shield:variant")) ||
@@ -377,127 +105,175 @@ system.runInterval(() => {
             shieldSlot = EquipmentSlot.Mainhand;
         }
 
+        // Detección de bloqueo confirmado por consumo real de durabilidad
         if (shieldSlot !== undefined) {
-            let currentItem = equippable.getEquipment(shieldSlot);
-            let initialDamage = currentItem?.getComponent("durability")?.damage;
+            const currentItem = equippable.getEquipment(shieldSlot);
+            const initialDamage = currentItem?.getComponent("durability")?.damage;
 
             system.runTimeout(() => {
-                let newItem = equippable?.getEquipment(shieldSlot);
-                const variant = newItem?.getDynamicProperty("shield:variant") || newItem?.typeId;
-                if (newItem?.getComponent('durability')?.damage > initialDamage && player?.isSneaking) {
-                    // Teleport the attacker immediately when the block registers
-                    teleportAttacker(player, variant);
+                try {
+                    const newItem = equippable?.getEquipment(shieldSlot);
+                    const currentDamage = newItem?.getComponent("durability")?.damage;
 
-                    let randomValue = Math.random() * 10;
-                    let maxDurability = shieldDurability[variant] ?? 9.5;
-                    if (randomValue <= maxDurability) {
-                        let clonedItem = newItem.clone();
-                        if (shieldSlot !== EquipmentSlot.Mainhand) {
-                            equippable.setEquipment(shieldSlot, clonedItem);
-                        } else if (newItem.getDynamicProperty('unique:id') === newItem.getDynamicProperty("unique:id")) {
-                            equippable.setEquipment(shieldSlot, clonedItem);
+                    if (typeof currentDamage === 'number' && typeof initialDamage === 'number' &&
+                        currentDamage > initialDamage && player?.isSneaking) {
+                        
+                        // Bloqueo confirmado: obtener el atacante correlacionado
+                        const recent = recentShieldAttacks.get(player.id);
+                        if (recent && (system.currentTick - recent.tick <= 6) && isEntityValid(recent.attacker)) {
+                            teleportShieldAttacker(player, recent.attacker, newItem, shieldSlot);
+                            recentShieldAttacks.delete(player.id);
                         }
                     }
-                }
+                } catch (e) {}
             }, 1);
         }
 
-        // Run inventory restoration only once every 10 ticks (2 times per second) to prevent lag
+        // Restauración de items en inventario cada 10 ticks (2 veces por segundo)
         if (tickCount % 10 === 0 && inventory?.container) {
-            for (let i = 0; i <= 35; i++) {
+            for (let i = 0; i < inventory.container.size; i++) {
                 const item = inventory.container.getItem(i);
                 if (!item) continue;
 
-                const variant = item.getDynamicProperty("shield:variant");
-                if (CUSTOM_SHIELDS.includes(variant)) {
-                    // Check if it's currently held in mainhand or offhand
+                let variant;
+                try {
+                    variant = item.getDynamicProperty("shield:variant");
+                } catch (e) {}
+
+                if (variant && CUSTOM_SHIELDS.includes(variant)) {
+                    // Si está en uso en manos mientras el jugador está agachado, dejarlo como proxy
                     const isHeld = (mainhandItem && item.getDynamicProperty("unique:id") === mainhandItem.getDynamicProperty("unique:id")) ||
                                    (offhandItem && item.getDynamicProperty("unique:id") === offhandItem.getDynamicProperty("unique:id"));
-                    
-                    // We only restore it if the player is not sneaking, OR if it's sitting in the inventory (not held)
-                    const shouldRestore = !player.isSneaking || !isHeld;
-                    if (!shouldRestore) continue;
+                    if (player.isSneaking && isHeld) continue;
 
-                    let newItem = new ItemStack(variant);
-                    let enchantments = item.getComponent("enchantable").getEnchantments();
-
+                    const newItem = new ItemStack(variant);
                     const itemDamage = item?.getComponent("durability")?.damage ?? 0;
-                    if (newItem.getComponent("durability").maxDurability < itemDamage) {
+                    const maxDur = newItem.getComponent("durability")?.maxDurability ?? 768;
+
+                    if (maxDur < itemDamage) {
                         inventory.container.setItem(i, new ItemStack("minecraft:air"));
-                        player.playSound("random.break", player.location);
+                        try { player.playSound("random.break", player.location); } catch (e) {}
                         continue;
                     }
 
-                    newItem.getComponent("durability").damage = itemDamage;
-                    if (enchantments) {
-                        newItem.getComponent("enchantable")?.addEnchantments(enchantments);
-                    }
+                    const newDurability = newItem.getComponent("durability");
+                    if (newDurability) newDurability.damage = itemDamage;
+
+                    const enchantments = item.getComponent("enchantable")?.getEnchantments();
+                    if (enchantments) newItem.getComponent("enchantable")?.addEnchantments(enchantments);
+
+                    // Preservar carga y lore
+                    const charge = getTeleportCharge(item);
+                    setTeleportCharge(newItem, charge);
+                    updateTeleportLore(newItem, charge, SHIELD_CAPACITIES[variant] ?? 0);
 
                     inventory.container.setItem(i, newItem);
                 }
             }
         }
 
+        // Swapping Offhand a proxy minecraft:shield al agacharse
         if (CUSTOM_SHIELDS.includes(offhandItem?.typeId) && player.isSneaking) {
-            let shieldColorCode = "§f§3"; // Color específico para Enderite
-            player.nameTag = shieldColorCode;
+            player.nameTag = "§f§3";
+            try { player.setDynamicProperty("score:score_op", 11); } catch (e) {}
 
-            player.setDynamicProperty("score:score_op", 11);
+            const newShield = new ItemStack('minecraft:shield');
+            const origVariant = offhandItem.typeId;
+            newShield.setDynamicProperty("shield:variant", origVariant);
+            newShield.nameTag = shieldNames[origVariant] || "§r§dEnderite Shield";
 
-            let newShield = new ItemStack('minecraft:shield');
-            newShield.setDynamicProperty("shield:variant", offhandItem.typeId);
-            newShield.nameTag = shieldNames[offhandItem.typeId] || "§r§dEnderite Shield";
-            newShield.setLore([
-                { text: " " },
-                { translate: "lore.ed:charge", with: [(shieldCharges[offhandItem.typeId] || 0).toString()] },
-                { translate: "lore.ed:upgrade_info" },
-                { translate: "lore.ed:ender_pearls" },
-                { translate: "lore.ed:shield_teleport" }
-            ]);
             const offhandDamage = offhandItem?.getComponent("durability")?.damage ?? 0;
             const newShieldDurability = newShield.getComponent("durability");
             if (newShieldDurability) newShieldDurability.damage = offhandDamage;
-            let enchantments = offhandItem?.getComponent("enchantable")?.getEnchantments();
+
+            const enchantments = offhandItem?.getComponent("enchantable")?.getEnchantments();
             if (enchantments) newShield.getComponent("enchantable")?.addEnchantments(enchantments);
+
+            // Transferir carga y lore dinámico
+            const capacity = SHIELD_CAPACITIES[origVariant] ?? 0;
+            const charge = getTeleportCharge(offhandItem);
+            setTeleportCharge(newShield, charge);
+            updateTeleportLore(newShield, charge, capacity);
+
             equippable.setEquipment(EquipmentSlot.Offhand, newShield);
         }
 
+        // Restauración Offhand a enderite:shield al soltar agacharse
         if (offhandItem?.typeId === 'minecraft:shield' && !player.isSneaking && CUSTOM_SHIELDS.includes(offhandVariant)) {
-            let newShield = new ItemStack(offhandVariant);
+            const newShield = new ItemStack(offhandVariant);
             const offhandDamage = offhandItem?.getComponent("durability")?.damage ?? 0;
-            if (newShield.getComponent("durability").maxDurability < offhandDamage) {
+            const maxDur = newShield.getComponent("durability")?.maxDurability ?? 768;
+
+            if (maxDur < offhandDamage) {
                 equippable.setEquipment(EquipmentSlot.Offhand, new ItemStack('minecraft:air'));
-                player.playSound('random.break', player.location);
+                try { player.playSound('random.break', player.location); } catch (e) {}
+            } else {
+                const newShieldDurability = newShield.getComponent("durability");
+                if (newShieldDurability) newShieldDurability.damage = offhandDamage;
+
+                const enchantments = offhandItem?.getComponent("enchantable")?.getEnchantments();
+                if (enchantments) newShield.getComponent("enchantable")?.addEnchantments(enchantments);
+
+                // Transferir carga y lore dinámico
+                const capacity = SHIELD_CAPACITIES[offhandVariant] ?? 0;
+                const charge = getTeleportCharge(offhandItem);
+                setTeleportCharge(newShield, charge);
+                updateTeleportLore(newShield, charge, capacity);
+
+                equippable.setEquipment(EquipmentSlot.Offhand, newShield);
             }
-            const newShieldDurability = newShield.getComponent("durability");
-            if (newShieldDurability) newShieldDurability.damage = offhandDamage;
-            let enchantments = offhandItem?.getComponent("enchantable")?.getEnchantments();
-            if (enchantments) newShield.getComponent("enchantable")?.addEnchantments(enchantments);
-            equippable.setEquipment(EquipmentSlot.Offhand, newShield);
         }
 
+        // Swapping Mainhand a proxy minecraft:shield al agacharse (si no hay escudo en offhand)
         if (CUSTOM_SHIELDS.includes(mainhandItem?.typeId) && player.isSneaking && !offhandItem?.typeId?.includes("shield")) {
-            let shieldColorCode = "§f§3"; // Color específico para Enderite
-            player.nameTag = shieldColorCode;
+            player.nameTag = "§f§3";
+            try { player.setDynamicProperty("score:score_op", 11); } catch (e) {}
 
-            player.setDynamicProperty("score:score_op", 11);
+            const newShield = new ItemStack('minecraft:shield');
+            const origVariant = mainhandItem.typeId;
+            newShield.setDynamicProperty("shield:variant", origVariant);
+            newShield.nameTag = shieldNames[origVariant] || "§r§dEnderite Shield";
 
-            let newShield = new ItemStack('minecraft:shield');
-            newShield.setDynamicProperty("shield:variant", mainhandItem.typeId);
-            newShield.nameTag = shieldNames[mainhandItem.typeId] || "§r§dEnderite Shield";
-            newShield.setLore([
-                { text: " " },
-                { translate: "lore.ed:charge", with: [(shieldCharges[mainhandItem.typeId] || 0).toString()] },
-                { translate: "lore.ed:upgrade_info" },
-                { translate: "lore.ed:ender_pearls" },
-                { translate: "lore.ed:shield_teleport" }
-            ]);
             const mainhandDamage = mainhandItem?.getComponent("durability")?.damage ?? 0;
             const newShieldDurability = newShield.getComponent("durability");
             if (newShieldDurability) newShieldDurability.damage = mainhandDamage;
-            let enchantments = mainhandItem?.getComponent("enchantable")?.getEnchantments();
+
+            const enchantments = mainhandItem?.getComponent("enchantable")?.getEnchantments();
             if (enchantments) newShield.getComponent("enchantable")?.addEnchantments(enchantments);
+
+            // Transferir carga y lore dinámico
+            const capacity = SHIELD_CAPACITIES[origVariant] ?? 0;
+            const charge = getTeleportCharge(mainhandItem);
+            setTeleportCharge(newShield, charge);
+            updateTeleportLore(newShield, charge, capacity);
+
             equippable.setEquipment(EquipmentSlot.Mainhand, newShield);
         }
-    });
+
+        // Restauración Mainhand a enderite:shield al soltar agacharse
+        if (mainhandItem?.typeId === 'minecraft:shield' && !player.isSneaking && CUSTOM_SHIELDS.includes(mainhandVariant)) {
+            const newShield = new ItemStack(mainhandVariant);
+            const mainhandDamage = mainhandItem?.getComponent("durability")?.damage ?? 0;
+            const maxDur = newShield.getComponent("durability")?.maxDurability ?? 768;
+
+            if (maxDur < mainhandDamage) {
+                equippable.setEquipment(EquipmentSlot.Mainhand, new ItemStack('minecraft:air'));
+                try { player.playSound('random.break', player.location); } catch (e) {}
+            } else {
+                const newShieldDurability = newShield.getComponent("durability");
+                if (newShieldDurability) newShieldDurability.damage = mainhandDamage;
+
+                const enchantments = mainhandItem?.getComponent("enchantable")?.getEnchantments();
+                if (enchantments) newShield.getComponent("enchantable")?.addEnchantments(enchantments);
+
+                // Transferir carga y lore dinámico
+                const capacity = SHIELD_CAPACITIES[mainhandVariant] ?? 0;
+                const charge = getTeleportCharge(mainhandItem);
+                setTeleportCharge(newShield, charge);
+                updateTeleportLore(newShield, charge, capacity);
+
+                equippable.setEquipment(EquipmentSlot.Mainhand, newShield);
+            }
+        }
+    }
 });

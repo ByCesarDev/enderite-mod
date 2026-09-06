@@ -18,10 +18,19 @@ export const SHIELD_CAPACITIES = {
 
 export const TELEPORT_DISTANCE = 30;
 export const SWORD_COOLDOWN_TICKS = 30; // 1.5 segundos
+export const SHIELD_COOLDOWN_TICKS = 128; // 6.4 segundos (Java parity)
 export const TELEPORT_CHARGE_PROPERTY = "ed:teleport_charge";
 
-// Rastreo de cooldown de espada por jugador (30 ticks)
+// Rastreo de cooldown por jugador
 export const swordCooldownMap = new Map(); // playerId -> lastTeleportTick
+export const shieldCooldownMap = new Map(); // playerId -> lastShieldTeleportTick
+
+export const UNAFFECTED_BY_ENDERITE_SHIELD = new Set([
+    "minecraft:ender_dragon",
+    "minecraft:wither",
+    "minecraft:elder_guardian",
+    "minecraft:warden"
+]);
 
 const HAZARDOUS_BLOCKS = new Set([
     "minecraft:lava",
@@ -101,7 +110,15 @@ export function isEntityValid(e) {
 
 export function getTeleportCapacity(itemOrTypeId) {
     if (!itemOrTypeId) return 0;
-    const typeId = typeof itemOrTypeId === 'string' ? itemOrTypeId : itemOrTypeId.typeId;
+    let typeId = typeof itemOrTypeId === 'string' ? itemOrTypeId : itemOrTypeId.typeId;
+    if (typeId === 'minecraft:shield' && typeof itemOrTypeId === 'object' && itemOrTypeId.getDynamicProperty) {
+        try {
+            const variant = itemOrTypeId.getDynamicProperty("shield:variant");
+            if (typeof variant === 'string') {
+                typeId = variant;
+            }
+        } catch (e) {}
+    }
     return SWORD_CAPACITIES[typeId] ?? SHIELD_CAPACITIES[typeId] ?? 0;
 }
 
@@ -130,7 +147,7 @@ export function setTeleportCharge(itemStack, charge) {
     } catch (e) {}
 }
 
-export function updateSwordLore(itemStack, currentCharge, capacity) {
+export function updateTeleportLore(itemStack, currentCharge, capacity) {
     if (!itemStack) return;
     try {
         const managedKeys = new Set([
@@ -159,14 +176,23 @@ export function updateSwordLore(itemStack, currentCharge, capacity) {
                     trimmed.startsWith("§7Upgrade in") || trimmed.startsWith("§7Mejora en") ||
                     trimmed.startsWith("§7ender pearls") || trimmed.startsWith("§7perlas de ender") ||
                     trimmed.startsWith("§7Teleport with") || trimmed.startsWith("§7¡Teletranspórtate") ||
-                    trimmed.startsWith("§7Shift") || trimmed.startsWith("§7¡Shift")) {
+                    trimmed.startsWith("§7Teleport attacker") || trimmed.startsWith("§7Shift") || trimmed.startsWith("§7¡Shift")) {
                     return false;
                 }
             }
             return true;
         });
 
-        const isShield = Boolean(itemStack.typeId && itemStack.typeId.includes("shield"));
+        let isShield = Boolean(itemStack.typeId && itemStack.typeId.includes("shield"));
+        if (!isShield && itemStack.getDynamicProperty) {
+            try {
+                const variant = itemStack.getDynamicProperty("shield:variant");
+                if (typeof variant === 'string' && variant.includes("shield")) {
+                    isShield = true;
+                }
+            } catch (e) {}
+        }
+
         const chargeEntry = capacity > 0
             ? { translate: "lore.ed:charge", with: [String(currentCharge), String(capacity)] }
             : { translate: "lore.ed:charge_zero" };
@@ -181,6 +207,8 @@ export function updateSwordLore(itemStack, currentCharge, capacity) {
         itemStack.setLore([...preserved, ...enderiteLore]);
     } catch (e) {}
 }
+
+export const updateSwordLore = updateTeleportLore;
 
 export function getBlockSafe(dimension, x, y, z) {
     try {
@@ -512,3 +540,150 @@ system.runInterval(() => {
         }
     } catch (e) {}
 }, 4);
+
+/**
+ * Paridad Java Enderite Shield v1.9.1 (EnderiteShieldPlayerEntityMixin.java):
+ * Cuando el jugador bloquea agachado un ataque con el Escudo de Enderita:
+ * 1. Verifica blacklist de bosses (Ender Dragon, Wither, Elder Guardian, Warden).
+ * 2. Verifica cooldown de 128 ticks (6.4 segundos).
+ * 3. Exige charge > 0 (en Creative TAMBIÉN consume carga por paridad Java).
+ * 4. Calcula centro a 10 bloques en la dirección de la mirada del jugador (yaw/pitch).
+ * 5. Ejecuta hasta 16 intentos aleatorios de posición segura.
+ * 6. Si tiene éxito: consume 1 carga, activa cooldown 128 ticks, reproduce sonido y partículas.
+ * 7. Si falla: NO descuenta carga ni activa cooldown.
+ */
+export function teleportShieldAttacker(player, attacker, shieldItem, shieldSlot = EquipmentSlot.Offhand) {
+    if (!isEntityValid(player) || !isEntityValid(attacker) || !shieldItem) return false;
+
+    // 1. Blacklist oficial de bosses
+    if (UNAFFECTED_BY_ENDERITE_SHIELD.has(attacker.typeId)) {
+        return false;
+    }
+
+    // 2. Cooldown de 128 ticks (6.4 segundos)
+    const lastTick = shieldCooldownMap.get(player.id) ?? -999;
+    if (system.currentTick - lastTick < SHIELD_COOLDOWN_TICKS) {
+        return false;
+    }
+
+    // 3. Carga > 0 (en Creative TAMBIÉN se exige y se descuenta según Java)
+    const capacity = getTeleportCapacity(shieldItem);
+    if (capacity <= 0) return false;
+
+    const currentCharge = getTeleportCharge(shieldItem);
+    if (currentCharge <= 0) {
+        return false;
+    }
+
+    const dimension = player.dimension;
+    const origin = {
+        x: attacker.location.x,
+        y: attacker.location.y,
+        z: attacker.location.z
+    };
+
+    // 4. Vector de dirección de mirada del jugador (Java: yaw y pitch)
+    const view = player.getViewDirection ? player.getViewDirection() : { x: 0, y: 0, z: 1 };
+    const vLen = Math.hypot(view.x, view.y, view.z) || 1.0;
+    const dX = view.x / vLen;
+    const dY = view.y / vLen;
+    const dZ = view.z / vLen;
+    const distance = 10.0;
+
+    // Limites de altura de la dimension
+    let minY = -64, maxY = 319;
+    try {
+        if (dimension.heightRange) {
+            minY = dimension.heightRange.min;
+            maxY = dimension.heightRange.max;
+        }
+    } catch (e) {}
+
+    // Desmontar si está montado
+    try {
+        if (attacker.hasComponent && attacker.hasComponent("minecraft:riding")) {
+            attacker.triggerEvent("minecraft:stop_riding");
+        }
+    } catch (e) {}
+
+    // 5. Hasta 16 intentos aleatorios de posición segura
+    let teleportSuccess = false;
+    for (let i = 0; i < 16; i++) {
+        const rawX = origin.x + dX * distance + (Math.random() - 0.5) * 16.0;
+        const rawY = origin.y + dY * distance + (Math.floor(Math.random() * 16) - 8);
+        const rawZ = origin.z + dZ * distance + (Math.random() - 0.5) * 16.0;
+
+        const targetY = Math.min(Math.max(minY + 1, Math.floor(rawY)), maxY - 2);
+        const targetX = Math.floor(rawX) + 0.5;
+        const targetZ = Math.floor(rawZ) + 0.5;
+
+        // Probar offsets verticales alrededor de targetY para encontrar suelo seguro
+        for (const offsetY of [0, -1, 1, -2, 2, -3]) {
+            const candY = targetY + offsetY;
+            if (candY < minY + 1 || candY > maxY - 2) continue;
+
+            if (isSafeStandingPosition(dimension, targetX, candY, targetZ)) {
+                try {
+                    attacker.teleport({ x: targetX, y: candY, z: targetZ }, { checkForBlocks: false });
+                    teleportSuccess = true;
+
+                    // Sonido según atacante (Fox vs Chorus Fruit)
+                    const isFox = attacker.typeId === "minecraft:fox";
+                    const soundId = isFox ? "mob.fox.teleport" : "item.chorus_fruit.teleport";
+
+                    try {
+                        dimension.playSound(soundId, origin);
+                        dimension.playSound(soundId, { x: targetX, y: candY, z: targetZ });
+                    } catch (e) {
+                        try { dimension.playSound("item.chorus_fruit.teleport", origin); } catch (e2) {}
+                    }
+
+                    // Partículas discretas de portal vanilla en origen y destino
+                    try {
+                        for (let p = 0; p < 8; p++) {
+                            const ox = (Math.random() - 0.5) * 0.8;
+                            const oy = Math.random() * 1.8;
+                            const oz = (Math.random() - 0.5) * 0.8;
+                            dimension.spawnParticle("minecraft:basic_portal_particle", {
+                                x: origin.x + ox,
+                                y: origin.y + oy,
+                                z: origin.z + oz
+                            });
+                            dimension.spawnParticle("minecraft:basic_portal_particle", {
+                                x: targetX + ox,
+                                y: candY + oy,
+                                z: targetZ + oz
+                            });
+                        }
+                    } catch (e) {}
+
+                    break;
+                } catch (e) {
+                    // Si el teleport falló para este offset, continuar probando
+                }
+            }
+        }
+
+        if (teleportSuccess) break;
+    }
+
+    if (!teleportSuccess) {
+        return false; // Los 16 intentos fallaron -> no se consume carga ni cooldown
+    }
+
+    // 6. Éxito confirmado: aplicar cooldown y descontar 1 carga
+    shieldCooldownMap.set(player.id, system.currentTick);
+
+    const newCharge = Math.max(0, currentCharge - 1);
+    setTeleportCharge(shieldItem, newCharge);
+    updateTeleportLore(shieldItem, newCharge, capacity);
+
+    try {
+        const equippable = player.getComponent(EntityEquippableComponent.componentId);
+        if (equippable) {
+            equippable.setEquipment(shieldSlot, shieldItem);
+        }
+    } catch (e) {}
+
+    return true;
+}
