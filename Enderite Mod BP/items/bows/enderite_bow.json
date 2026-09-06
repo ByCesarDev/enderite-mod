@@ -1,4 +1,4 @@
-﻿{
+{
 	"format_version": "1.20.80",
 	"minecraft:item": {
 		"description": {
@@ -15,6 +15,26 @@
 			
 			"minecraft:durability": {
 				"max_durability": 768
+			},
+			"minecraft:enchantable": {
+				"value": 17,
+				"slot": "bow"
+			},
+			"minecraft:repairable": {
+				"repair_items": [
+					{
+						"items": [
+							"ed:enderite_ingot"
+						],
+						"repair_amount": "query.max_durability*0.25"
+					},
+					{
+						"items": [
+							"ed:enderite_bow"
+						],
+						"repair_amount": "context.other->query.remaining_durability+0.12*context.other->query.max_durability"
+					}
+				]
 			},
 			"minecraft:shooter": {
 				"max_draw_duration": 3,
