@@ -143,21 +143,7 @@ world.afterEvents.itemUse.subscribe((event) => {
             if (!playerDrawStartMap.has(player.id)) {
                 playerDrawStartMap.set(player.id, system.currentTick);
             }
-            debug(`Player ${player.name} started drawing ${item.typeId}. Triggering animation.`);
-            try {
-                if (typeof player.playAnimation === "function") {
-                    player.playAnimation("animation.weapons.bow_and_arrow", {
-                        blendOutTime: 0.001,
-                        stopExpression: "!query.is_using_item"
-                    });
-                } else {
-                    player.runCommandAsync('playanimation @s animation.weapons.bow_and_arrow root 0.001 "!query.is_using_item"');
-                }
-            } catch (e) {
-                try {
-                    player.runCommandAsync('playanimation @s animation.weapons.bow_and_arrow root 0.001 "!query.is_using_item"');
-                } catch (err) {}
-            }
+            debug(`Player ${player.name} drawing ${item.typeId}.`);
         }
     } catch (e) {
         debug(`Error in itemUse: ${e}`);
