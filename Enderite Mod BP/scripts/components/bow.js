@@ -17,12 +17,12 @@ const playerDrawStartMap = new Map(); // playerId -> startTick
 // Intenciones de disparo de arco pendientes hasta que se confirma la aparición del proyectil en el mundo
 const pendingBowShots = new Map(); // playerId -> { shooterId, shooterName, weaponTypeId, chargeRatio, isCritical, powerLevel, infinityLevel, fireTick, location, dimensionId }
 
-// Registro del disparo por ID de proyectil (projectile.id -> ShotData)
-// Desacoplado del jugador para que disparos consecutivos o a larga distancia conserven sus datos exactos
 export const projectileShotMap = new Map(); // projectileId -> ShotData
 
 // Compatibilidad retroactiva si algún script externo consulta lastShotData
 export const lastShotData = new Map(); // playerId -> ShotData
+
+const isEntityValid = (e) => Boolean(e && (typeof e.isValid === 'function' ? e.isValid() : e.isValid));
 
 /**
  * Obtiene los datos de disparo asociados a un proyectil específico.
@@ -40,6 +40,20 @@ export function consumeProjectileShotData(projectileId) {
     const data = projectileShotMap.get(projectileId);
     projectileShotMap.delete(projectileId);
     return data;
+}
+
+/**
+ * Permite consumir la intención de disparo de arco en casos de impactos a quemarropa (point-blank)
+ * donde projectileHitEntity ocurre antes de que entitySpawn termine de registrar el proyectil.
+ */
+export function consumePendingBowShot(playerId) {
+    if (!playerId) return undefined;
+    const pending = pendingBowShots.get(playerId);
+    if (pending && (system.currentTick - pending.fireTick) <= 20) {
+        pendingBowShots.delete(playerId);
+        return pending;
+    }
+    return undefined;
 }
 
 /**
@@ -216,7 +230,8 @@ world.afterEvents.itemStopUse.subscribe((event) => {
 world.afterEvents.entitySpawn.subscribe((event) => {
     try {
         const entity = event.entity;
-        if (entity?.typeId !== "ed:arrow_enderite") return;
+        if (!entity || entity.typeId !== "ed:arrow_enderite") return;
+        if (!isEntityValid(entity)) return;
 
         // 1. Identificar al tirador
         let shooter = null;
@@ -229,19 +244,23 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
         // Si no está disponible en projComp.owner, buscar al jugador más cercano en la misma dimensión
         if (!shooter) {
-            const entityLoc = entity.location;
-            const dim = entity.dimension;
-            let closestDistSq = 25.0; // radio de búsqueda: 5 bloques
-            for (const p of dim.getPlayers()) {
-                const dx = p.location.x - entityLoc.x;
-                const dy = p.location.y - entityLoc.y;
-                const dz = p.location.z - entityLoc.z;
-                const distSq = dx * dx + dy * dy + dz * dz;
-                if (distSq < closestDistSq) {
-                    closestDistSq = distSq;
-                    shooter = p;
+            try {
+                if (isEntityValid(entity)) {
+                    const entityLoc = entity.location;
+                    const dim = entity.dimension;
+                    let closestDistSq = 25.0; // radio de búsqueda: 5 bloques
+                    for (const p of dim.getPlayers()) {
+                        const dx = p.location.x - entityLoc.x;
+                        const dy = p.location.y - entityLoc.y;
+                        const dz = p.location.z - entityLoc.z;
+                        const distSq = dx * dx + dy * dy + dz * dz;
+                        if (distSq < closestDistSq) {
+                            closestDistSq = distSq;
+                            shooter = p;
+                        }
+                    }
                 }
-            }
+            } catch (e) {}
         }
 
         if (!shooter) {

@@ -1,5 +1,5 @@
 import { world, system, EntityDamageCause } from '@minecraft/server';
-import { consumeProjectileShotData, getProjectileShotData } from './bow.js';
+import { consumeProjectileShotData, getProjectileShotData, consumePendingBowShot, lastShotData } from './bow.js';
 
 const ENDERMAN_DEBUG = true;
 
@@ -39,7 +39,31 @@ world.afterEvents.projectileHitEntity.subscribe((event) => {
             }
 
             // Obtener y consumir los datos de disparo asociados a este proyectil específico
-            const shot = consumeProjectileShotData(projectile.id) ?? getProjectileShotData(projectile.id);
+            let shot = consumeProjectileShotData(projectile.id) ?? getProjectileShotData(projectile.id);
+
+            // Fallback inmediato para disparos a quemarropa (point-blank):
+            // Si el proyectil impactó antes de que entitySpawn terminara el registro,
+            // consumir la intención de disparo pendiente del tirador para conservar el cálculo exacto
+            if (!shot && attacker) {
+                const pending = consumePendingBowShot(attacker.id);
+                if (pending) {
+                    shot = {
+                        projectileId: projectile?.id ?? 'pending',
+                        shooterId: attacker.id,
+                        shooterName: attacker.name,
+                        weaponTypeId: pending.weaponTypeId,
+                        chargeRatio: pending.chargeRatio,
+                        isCritical: pending.isCritical,
+                        powerLevel: pending.powerLevel,
+                        infinityLevel: pending.infinityLevel,
+                        fireTick: pending.fireTick
+                    };
+                    debug(`[projectileHitEntity] Point-blank shot resolved from pendingBowShots for ${attacker.name}`);
+                } else if (lastShotData.has(attacker.id)) {
+                    shot = lastShotData.get(attacker.id);
+                    debug(`[projectileHitEntity] Point-blank shot resolved from lastShotData for ${attacker.name}`);
+                }
+            }
 
             let damage;
             if (shot) {
