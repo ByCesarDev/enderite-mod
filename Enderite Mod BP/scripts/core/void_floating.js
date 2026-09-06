@@ -58,6 +58,13 @@ export const ENDERITE_ITEM_IDS = new Set([
     "ed:enderite_nautilus_armor"
 ]);
 
+export const VOID_LORE_KEYS = new Set([
+    "lore.ed:void_floating_1",
+    "lore.ed:void_floating_2",
+    "lore.ed:void_floating_3",
+    "enchantment.enderitemod.void_floating"
+]);
+
 /**
  * Validates whether an item is an authentic Enderite item.
  * @param {import("@minecraft/server").ItemStack} itemStack
@@ -69,13 +76,166 @@ export function isEnderiteItem(itemStack) {
 }
 
 /**
- * Tracked floating item entities and their current damped vertical velocity.
- * @type {Map<string, { entity: import("@minecraft/server").Entity, yVelocity: number }>}
+ * Reads the Void Floating enchantment level (0 to 3) stored on an item.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @returns {number} 0, 1, 2, or 3
+ */
+export function getVoidFloatingLevel(itemStack) {
+    if (!itemStack) return 0;
+    try {
+        if (itemStack.getDynamicProperty) {
+            const prop = itemStack.getDynamicProperty("ed:void_floating_level");
+            if (typeof prop === "number" && prop >= 1 && prop <= 3) {
+                return Math.floor(prop);
+            }
+        }
+    } catch {}
+    return 0;
+}
+
+/**
+ * Sets the Void Floating enchantment level on an item and updates its localized lore.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @param {number} level 0 to 3 (0 clears the enchantment)
+ */
+export function setVoidFloatingLevel(itemStack, level) {
+    if (!itemStack) return;
+    const clampedLevel = Math.max(0, Math.min(3, Math.floor(level || 0)));
+
+    try {
+        if (itemStack.setDynamicProperty) {
+            if (clampedLevel > 0) {
+                itemStack.setDynamicProperty("ed:void_floating_level", clampedLevel);
+            } else {
+                itemStack.setDynamicProperty("ed:void_floating_level", undefined);
+            }
+        }
+    } catch {}
+
+    try {
+        let rawLore = [];
+        try {
+            rawLore = itemStack.getRawLore() ?? [];
+        } catch {
+            rawLore = (itemStack.getLore() ?? []).map(t => ({ text: t }));
+        }
+
+        const preserved = rawLore.filter(line => {
+            if (!line) return false;
+            if (line.translate && VOID_LORE_KEYS.has(line.translate)) return false;
+            if (typeof line.text === 'string') {
+                const trimmed = line.text.trim();
+                if (trimmed.includes("Void Floating") || trimmed.includes("Flotar en vacío")) {
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if (clampedLevel > 0) {
+            preserved.unshift({ translate: `lore.ed:void_floating_${clampedLevel}` });
+        }
+
+        itemStack.setLore(preserved);
+    } catch {}
+}
+
+/**
+ * Checks whether an item has an authentic Enderite Armor Trim.
+ * Stub returning false until Enderite Trim is ported.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @returns {boolean}
+ */
+export function hasEnderiteTrim(itemStack) {
+    return false;
+}
+
+/**
+ * Calculates the exact void survival chance (0.0 to 1.0) based on Java v1.9.1 parity.
+ * Enderite items always survive (1.0).
+ * Other items survive with chance = (level + trimBonus) / 3.0.
+ * @param {import("@minecraft/server").ItemStack} itemStack
+ * @returns {number}
+ */
+export function getVoidSurvivalChance(itemStack) {
+    if (!itemStack) return 0;
+    if (isEnderiteItem(itemStack)) {
+        return 1.0;
+    }
+    const level = getVoidFloatingLevel(itemStack);
+    const trimBonus = hasEnderiteTrim(itemStack) ? 1 : 0;
+    const i = level + trimBonus;
+    if (i <= 0) return 0;
+    return Math.min(1.0, i / 3.0);
+}
+
+/**
+ * Tracked item entities and their active floating/void monitoring state.
+ * @type {Map<string, {
+ *   entity: import("@minecraft/server").Entity,
+ *   itemStack: import("@minecraft/server").ItemStack,
+ *   isEnderite: boolean,
+ *   voidLevel: number,
+ *   isFloating: boolean,
+ *   yVelocity: number
+ * }>}
  */
 export const trackedFloatingEntities = new Map();
 
 /**
- * Registers an item entity into the floating physics engine if eligible.
+ * Teleports a surviving item entity out of the void to minY + 10, sets zero velocity,
+ * and enters active hovering physics matching Java EnderiteDropDamageMixin.
+ * @param {import("@minecraft/server").Entity} entity
+ * @param {import("@minecraft/server").ItemStack} [itemStack]
+ * @returns {boolean}
+ */
+export function rescueVoidItem(entity, itemStack) {
+    if (!entity?.isValid) return false;
+
+    try {
+        const dim = entity.dimension;
+        const loc = entity.location;
+        const targetY = dim.heightRange.min + 10;
+        const targetLoc = { x: loc.x, y: targetY, z: loc.z };
+
+        entity.clearVelocity();
+        entity.teleport(targetLoc, { checkForBlocks: false });
+        entity.clearVelocity();
+
+        const item = itemStack ?? entity.getComponent("item")?.itemStack;
+        const isEnderite = isEnderiteItem(item);
+        const voidLevel = getVoidFloatingLevel(item);
+
+        trackedFloatingEntities.set(entity.id, {
+            entity,
+            itemStack: item,
+            isEnderite,
+            voidLevel,
+            isFloating: true,
+            yVelocity: 0
+        });
+
+        // Discreet visual effect: portal particle and subtle chorus teleport sound
+        try {
+            dim.spawnParticle("minecraft:basic_portal_particle", {
+                x: targetLoc.x,
+                y: targetLoc.y + 0.2,
+                z: targetLoc.z
+            });
+            dim.playSound("item.chorus_fruit.teleport", targetLoc, {
+                pitch: 1.2,
+                volume: 0.8
+            });
+        } catch {}
+
+        return true;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Registers an item entity into the floating/void monitoring engine if eligible.
  * @param {import("@minecraft/server").Entity} entity
  */
 export function registerFloatingItemEntity(entity) {
@@ -85,12 +245,20 @@ export function registerFloatingItemEntity(entity) {
     try {
         const itemComp = entity.getComponent("item");
         const itemStack = itemComp?.itemStack;
-        if (!isEnderiteItem(itemStack)) return;
+        if (!itemStack) return;
 
-        // Java parity: Enderite drops are naturally fire/lava immune
-        try {
-            entity.triggerEvent("become_fire_immune");
-        } catch {}
+        const isEnderite = isEnderiteItem(itemStack);
+        const voidLevel = getVoidFloatingLevel(itemStack);
+
+        // Only track items that are Enderite items or have Void Floating enchantment
+        if (!isEnderite && voidLevel <= 0) return;
+
+        if (isEnderite) {
+            // Java parity: Enderite drops are naturally fire/lava immune
+            try {
+                entity.triggerEvent("become_fire_immune");
+            } catch {}
+        }
 
         let initialVy = 0;
         try {
@@ -99,7 +267,12 @@ export function registerFloatingItemEntity(entity) {
 
         trackedFloatingEntities.set(entity.id, {
             entity,
-            yVelocity: initialVy
+            itemStack,
+            isEnderite,
+            voidLevel,
+            // Enderite items float immediately on spawn; void floating items fall with normal gravity until rescued
+            isFloating: isEnderite,
+            yVelocity: isEnderite ? initialVy : 0
         });
     } catch {}
 }
@@ -111,9 +284,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
     } catch {}
 });
 
-// 2. Physics Engine: Java parity for EnderiteDropMixin
-// Instead of an unnatural +0.06 Y teleport upwards, vertical velocity is damped by 0.96 each tick
-// and gravity acceleration is neutralized, allowing the item to smoothly hover in place.
+// 2. Physics & Void-Check Engine: Java parity for EnderiteDropMixin & EnderiteDropDamageMixin
 system.runInterval(() => {
     if (trackedFloatingEntities.size === 0) return;
 
@@ -125,19 +296,38 @@ system.runInterval(() => {
         }
 
         try {
-            // Damping equivalent to: this.setDeltaMovement(this.getDeltaMovement().multiply(1.0D, 0.96D, 1.0D))
-            state.yVelocity *= 0.96;
-            if (Math.abs(state.yVelocity) < 0.001) {
-                state.yVelocity = 0;
+            const loc = entity.location;
+            const dim = entity.dimension;
+            const minY = dim.heightRange.min;
+
+            // Check void condition: getY() < level.getMinY()
+            if (loc.y < minY) {
+                const item = state.itemStack ?? entity.getComponent("item")?.itemStack;
+                const chance = getVoidSurvivalChance(item);
+                if (chance >= 1.0 || Math.random() < chance) {
+                    rescueVoidItem(entity, item);
+                } else {
+                    // Failed survival roll: untrack and allow void to consume it
+                    trackedFloatingEntities.delete(id);
+                }
+                continue;
             }
 
-            const currentVel = entity.getVelocity();
-            entity.clearVelocity();
-            entity.applyImpulse({
-                x: currentVel.x,
-                y: state.yVelocity,
-                z: currentVel.z
-            });
+            // Apply zero-gravity & vertical damping for items in active floating state
+            if (state.isFloating) {
+                state.yVelocity *= 0.96;
+                if (Math.abs(state.yVelocity) < 0.001) {
+                    state.yVelocity = 0;
+                }
+
+                const currentVel = entity.getVelocity();
+                entity.clearVelocity();
+                entity.applyImpulse({
+                    x: currentVel.x,
+                    y: state.yVelocity,
+                    z: currentVel.z
+                });
+            }
         } catch {
             trackedFloatingEntities.delete(id);
         }

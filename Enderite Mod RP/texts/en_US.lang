@@ -92,6 +92,9 @@ ed:subtitle.shulker.open=Enderite shulker opening
 ed:subtitle.shulker.close=Enderite shulker closing
 
 ## Script Lore Translations
+lore.ed:void_floating_1=§7Void Floating I
+lore.ed:void_floating_2=§7Void Floating II
+lore.ed:void_floating_3=§7Void Floating III
 lore.ed:charge=§3Charge: %1/%2
 lore.ed:charge_zero=§3Charge: 0
 lore.ed:upgrade_info=§7§oUpgrade in smithing table with

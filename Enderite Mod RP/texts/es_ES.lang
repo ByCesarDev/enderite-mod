@@ -92,6 +92,9 @@ ed:subtitle.shulker.open=Abriendo shulker de enderita
 ed:subtitle.shulker.close=Cerrando shulker de enderita
 
 ## Traducciones de Lore de Scripts
+lore.ed:void_floating_1=§7Flotar en vacío I
+lore.ed:void_floating_2=§7Flotar en vacío II
+lore.ed:void_floating_3=§7Flotar en vacío III
 lore.ed:charge=§3Carga: %1/%2
 lore.ed:charge_zero=§3Carga: 0
 lore.ed:upgrade_info=§7§oMejorar en una mesa de herrería con
