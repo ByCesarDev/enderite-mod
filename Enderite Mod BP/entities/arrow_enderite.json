@@ -1,21 +1,11 @@
 {
-	"format_version": "1.26.20",
+	"format_version": "1.26.30",
 	"minecraft:entity": {
 		"description": {
 			"identifier": "ed:arrow_enderite",
 			"is_spawnable": false,
 			"is_summonable": true,
-			"is_experimental": false,
-			"scripts": {
-				"animate": [
-					{
-						"particle": "!query.is_on_ground"
-					}
-				]
-			},
-			"animations": {
-				"particle": "controller.animation.arrow_particle"
-			}
+			"is_experimental": false
 		},
 		"component_groups": {
 			"spawn_item": {
@@ -39,6 +29,18 @@
 			"minecraft:player_arrow": {
 				"minecraft:projectile": {
 					"isolated_physics": true,
+					"should_bounce": true,
+					"hit_sound": "bow.hit",
+					"power": 5,
+					"gravity": 0.05,
+					"uncertainty_base": 1,
+					"uncertainty_multiplier": 0,
+					"anchor": 1,
+					"offset": [
+						0,
+						-0.1,
+						0
+					],
 					"on_hit": {
 						"definition_event": {
 							"affect_projectile": true,
@@ -48,6 +50,7 @@
 							}
 						},
 						"impact_damage": {
+							"apply_knockback_to_blocking_targets": true,
 							"damage": 16,
 							"knockback": true,
 							"semi_random_diff_damage": true,
@@ -60,18 +63,7 @@
 							"shake_time": 0.35
 						},
 						"arrow_effect": {}
-					},
-					"hit_sound": "bow.hit",
-					"power": 5,
-					"gravity": 0.05,
-					"uncertainty_base": 1,
-					"uncertainty_multiplier": 0,
-					"anchor": 1,
-					"offset": [
-						0,
-						-0.1,
-						0
-					]
+					}
 				}
 			}
 		},
@@ -80,14 +72,18 @@
 				"width": 0.25,
 				"height": 0.25
 			},
+			"minecraft:dimension_bound": {},
+			"minecraft:damage_sensor": {
+				"triggers": {
+					"cause": "all",
+					"deals_damage": "no"
+				}
+			},
 			"minecraft:type_family": {
 				"family": [
 					"projectile",
 					"enderite_arrow"
 				]
-			},
-			"minecraft:scale": {
-				"value": 0.5
 			},
 			"minecraft:physics": {}
 		},
