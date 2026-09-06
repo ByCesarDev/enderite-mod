@@ -1,16 +1,9 @@
 import { world, system } from "@minecraft/server";
+import { SWORD_CAPACITIES, SHIELD_CAPACITIES, getTeleportCharge, updateSwordLore } from "../core/teleport.js";
 
 const TP_ITEMS = {
-  "ed:enderite_sword": 0,
-  "ed:enderite_sword_tp": 16,
-  "ed:enderite_sword_tp_l2": 32,
-  "ed:enderite_sword_tp_l3": 48,
-  "ed:enderite_sword_tp_l4": 64,
-  "enderite:shield": 0,
-  "enderite:shield_tp": 16,
-  "enderite:shield_tp_lv2": 32,
-  "enderite:shield_tp_lv3": 48,
-  "enderite:shield_tp_lv4": 64,
+  ...SWORD_CAPACITIES,
+  ...SHIELD_CAPACITIES
 };
 
 const ARMOR_ITEMS = new Set([
@@ -21,20 +14,36 @@ const ARMOR_ITEMS = new Set([
   "ed:enderite_elytra_chesplate",
   "ed:enderite_elytra_chesplate_broken",
   "elytra:chesplate",
-  "elytra:chesplate_broken" // ID from the json earlier might be this
+  "elytra:chesplate_broken"
 ]);
 
 function applyTPLore(itemStack) {
   if (!itemStack) return false;
 
-  const isTP = itemStack.typeId in TP_ITEMS;
+  const isSword = itemStack.typeId in SWORD_CAPACITIES;
+  const isShield = itemStack.typeId in SHIELD_CAPACITIES;
   const isArmor = ARMOR_ITEMS.has(itemStack.typeId);
 
-  if (!isTP && !isArmor) return false;
+  if (!isSword && !isShield && !isArmor) return false;
 
+  // Manejo de espadas teleportables con carga dinámica
+  if (isSword) {
+    const capacity = SWORD_CAPACITIES[itemStack.typeId];
+    if (capacity <= 0) return false;
+
+    const currentCharge = getTeleportCharge(itemStack);
+    const expectedChargeLine = `§3Charge: ${currentCharge} / ${capacity}`;
+    const currentLore = itemStack.getLore() ?? [];
+    const hasCorrectLore = currentLore.some(line => typeof line === 'string' && line.trim() === expectedChargeLine);
+    if (hasCorrectLore) return false;
+
+    updateSwordLore(itemStack, currentCharge, capacity);
+    return true;
+  }
+
+  // Manejo de armaduras y escudos
   try {
     const currentLore = itemStack.getLore();
-    // Armaduras tienen 2 lineas, TP tools tienen 5
     const targetLength = isArmor ? 2 : 5;
     if (currentLore && currentLore.length >= targetLength) {
        return false;
@@ -49,14 +58,13 @@ function applyTPLore(itemStack) {
             { translate: "lore.ed:knockback_resistance" }
         ];
     } else {
-        const charge = TP_ITEMS[itemStack.typeId];
-        const isShield = itemStack.typeId.includes("shield");
+        const charge = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
         lore = [
             { text: " " },
             { translate: "lore.ed:charge", with: [charge.toString()] },
             { translate: "lore.ed:upgrade_info" },
             { translate: "lore.ed:ender_pearls" },
-            { translate: isShield ? "lore.ed:shield_teleport" : "lore.ed:sword_teleport" }
+            { translate: "lore.ed:shield_teleport" }
         ];
     }
     
@@ -66,18 +74,17 @@ function applyTPLore(itemStack) {
     try {
       if (isArmor) {
         itemStack.setLore([
-          "§9+4 Armor Toughness", // Fallback if translations fail
+          "§9+4 Armor Toughness",
           "§9+1 Knockback Resistance"
         ]);
       } else {
-        const charge = TP_ITEMS[itemStack.typeId];
-        const isShield = itemStack.typeId.includes("shield");
+        const charge = SHIELD_CAPACITIES[itemStack.typeId] ?? 0;
         itemStack.setLore([
           " ",
           "§3Charge: " + charge,
           "§7Upgrade in Enderite Crafting Tools with",
           "§7ender pearls to load teleportation uses.",
-          isShield ? "§7Teleport attackers with sneaking + right click!" : "§7Teleport with sneaking + right click!"
+          "§7Teleport attackers with sneaking + right click!"
         ]);
       }
       return true;
