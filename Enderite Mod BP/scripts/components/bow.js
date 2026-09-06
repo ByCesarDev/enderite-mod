@@ -48,11 +48,12 @@ world.afterEvents.itemStopUse.subscribe((event) => {
 
         if (!item || !player || !BOW_TYPES.has(item.typeId)) return;
 
-        debug(`Player ${player.name} released ${item.typeId} (useDuration: ${useDuration} ticks).`);
+        const elapsedTicks = (useDuration > 1000000000) ? (2000000000 - useDuration) : useDuration;
+        debug(`Player ${player.name} released ${item.typeId} (charge: ${elapsedTicks} ticks, raw: ${useDuration}).`);
 
-        // Si fue una cancelación inmediata (sin tensado efectivo), no descontar durabilidad
-        if (item.typeId === "ed:enderite_bow" && useDuration < 6) {
-            debug(`Shot cancelled or duration too short (${useDuration} < 6 ticks); durability preserved.`);
+        // Si fue una cancelación inmediata (sin tensado efectivo < 6 ticks), no descontar durabilidad
+        if (item.typeId === "ed:enderite_bow" && elapsedTicks < 6) {
+            debug(`Shot cancelled or duration too short (${elapsedTicks} < 6 ticks); durability preserved.`);
             return;
         }
 
