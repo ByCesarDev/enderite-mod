@@ -431,8 +431,8 @@ export function handleDroppedItem(entity) {
 // 1. Primary reactive listener for item drops (death drops, player Q, containers)
 world.afterEvents.entityItemDrop.subscribe((event) => {
     try {
-        const droppedEntities = event.items ? event.items : (event.item ? [event.item] : []);
-        for (const droppedEntity of droppedEntities) {
+        if (!event?.items) return;
+        for (const droppedEntity of event.items) {
             handleDroppedItem(droppedEntity);
         }
     } catch {}
