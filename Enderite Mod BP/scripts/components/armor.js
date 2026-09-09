@@ -6,13 +6,7 @@ import {
     EntityDamageCause
 } from "@minecraft/server";
 
-const ARMOR_DEBUG = true;
-
-function debug(message) {
-    if (ARMOR_DEBUG) {
-        console.warn(`[Enderite Armor] ${message}`);
-    }
-}
+// ── Constants ──────────────────────────────────────────────────────────
 
 const ARMOR_SLOTS = [
     EquipmentSlot.Head,
@@ -26,104 +20,10 @@ const TOUGHNESS_PREFIX = "ed:toughness-";
 const KNOCKBACK_PREFIX = "ed:knockback-";
 const MAX_KNOCKBACK_VALUE = 10;
 
-// Mapa para deducir la armadura total y poder revertir la fórmula del motor
-const VANILLA_ARMOR_MAP = {
-    "minecraft:leather_helmet": 1,
-    "minecraft:leather_chestplate": 3,
-    "minecraft:leather_leggings": 2,
-    "minecraft:leather_boots": 1,
-    "minecraft:chainmail_helmet": 2,
-    "minecraft:chainmail_chestplate": 5,
-    "minecraft:chainmail_leggings": 4,
-    "minecraft:chainmail_boots": 1,
-    "minecraft:iron_helmet": 2,
-    "minecraft:iron_chestplate": 6,
-    "minecraft:iron_leggings": 5,
-    "minecraft:iron_boots": 2,
-    "minecraft:golden_helmet": 2,
-    "minecraft:golden_chestplate": 5,
-    "minecraft:golden_leggings": 3,
-    "minecraft:golden_boots": 1,
-    "minecraft:diamond_helmet": 3,
-    "minecraft:diamond_chestplate": 8,
-    "minecraft:diamond_leggings": 6,
-    "minecraft:diamond_boots": 3,
-    "minecraft:netherite_helmet": 3,
-    "minecraft:netherite_chestplate": 8,
-    "minecraft:netherite_leggings": 6,
-    "minecraft:netherite_boots": 3,
-    "minecraft:turtle_helmet": 2,
-    
-    // Enderita custom (ahora con protection base para que salga en el HUD)
-    "ed:enderite_helmet": 4,
-    "ed:enderite_chestplate": 9,
-    "ed:enderite_leggings": 7,
-    "ed:enderite_boots": 4,
-    "ed:enderite_elytra_chesplate": 9,
-    "ed:enderite_elytra_chesplate_broken": 9
-};
-
-function getNumberFromTag(item, prefix) {
-    for (const tag of item.getTags()) {
-        if (!tag.startsWith(prefix)) continue;
-        const value = Number(tag.slice(prefix.length));
-        if (Number.isFinite(value) && value >= 0) {
-            return value;
-        }
-    }
-    return 0;
-}
-
-function readArmorStats(entity) {
-    const equippable = entity.getComponent(EntityComponentTypes.Equippable);
-
-    if (!equippable) {
-        return { totalArmor: 0, nativeArmor: 0, toughness: 0, customPieces: 0 };
-    }
-
-    let totalArmor = 0;
-    let nativeArmor = 0;
-    let toughness = 0;
-    let customPieces = 0;
-
-    for (const slot of ARMOR_SLOTS) {
-        const item = equippable.getEquipment(slot);
-        if (!item) continue;
-        
-        const mappedArmor = (VANILLA_ARMOR_MAP[item.typeId] || 0);
-
-        // En Bedrock 1.21.30, las armaduras custom con 'wearable' llenan la barra visual (HUD)
-        // pero NO aplican reducción de daño nativo. Solo las 'minecraft:' lo hacen.
-        if (item.typeId.startsWith("minecraft:")) {
-            nativeArmor += mappedArmor;
-        }
-        totalArmor += mappedArmor;
-
-        if (item.hasTag(CUSTOM_ARMOR_TAG)) {
-            customPieces++;
-            toughness += getNumberFromTag(item, TOUGHNESS_PREFIX);
-        }
-    }
-
-    return {
-        totalArmor: Math.min(totalArmor, 20),
-        nativeArmor: Math.min(nativeArmor, 20),
-        toughness: Math.max(toughness, 0),
-        customPieces,
-    };
-}
-
-function calculateArmorDamage(rawDamage, armor, toughness) {
-    const effectiveArmor = Math.min(
-        20,
-        Math.max(
-            armor / 5,
-            armor - rawDamage / (2 + toughness / 4)
-        )
-    );
-    return rawDamage * (1 - effectiveArmor / 25);
-}
-
+/**
+ * Damage causes that bypass armor entirely (same list as Java).
+ * The script should never modify damage for these causes.
+ */
 const IGNORED_CAUSES = new Set([
     EntityDamageCause.void,
     EntityDamageCause.suicide,
@@ -139,59 +39,155 @@ const IGNORED_CAUSES = new Set([
     EntityDamageCause.stalactite
 ]);
 
-// --------------------------------------------------------------------
-// MODO DE DIAGNÓSTICO
-// --------------------------------------------------------------------
-world.beforeEvents.entityHurt.subscribe((event) => {
-    if (!ARMOR_DEBUG) return;
-    const health = event.hurtEntity.getComponent(EntityComponentTypes.Health);
-    debug(`[BEFORE] damage=${event.damage.toFixed(2)}, health=${health?.currentValue?.toFixed(2)}`);
-});
+// ── Utility ────────────────────────────────────────────────────────────
 
-world.afterEvents.entityHurt.subscribe((event) => {
-    if (!ARMOR_DEBUG) return;
-    const health = event.hurtEntity.getComponent(EntityComponentTypes.Health);
-    debug(`[AFTER] damage=${event.damage.toFixed(2)}, health=${health?.currentValue?.toFixed(2)}`);
-});
-// --------------------------------------------------------------------
+/**
+ * Reads a numeric value from an item's tags with a given prefix.
+ * Example: tag "ed:toughness-4" with prefix "ed:toughness-" returns 4.
+ * @param {import("@minecraft/server").ItemStack} item
+ * @param {string} prefix
+ * @returns {number}
+ */
+function getNumberFromTag(item, prefix) {
+    for (const tag of item.getTags()) {
+        if (!tag.startsWith(prefix)) continue;
+        const value = Number(tag.slice(prefix.length));
+        if (Number.isFinite(value) && value >= 0) {
+            return value;
+        }
+    }
+    return 0;
+}
+
+// ── Pure Armor Math (Java & Bedrock formulas are algebraically identical) ──
+
+/**
+ * Calculates the damage after armor reduction using the standard Java/Bedrock formula.
+ *
+ * Java:    effectiveArmor = min(20, max(armor/5, armor - damage/(2 + toughness/4)))
+ * Bedrock: effectiveArmor = min(20, max(armor/5, armor - 4*damage/(toughness+8)))
+ * These are algebraically identical: 2 + toughness/4 = (8 + toughness)/4.
+ *
+ * Important: `armor` is NOT capped to 20 before entering the formula.
+ * Full Enderite has 24 armor; the cap of 20 applies to effectiveArmor, not the attribute.
+ *
+ * @param {number} rawDamage - Incoming damage before armor reduction
+ * @param {number} armor - Total armor points (e.g. 24 for full Enderite)
+ * @param {number} toughness - Total armor toughness
+ * @returns {number} Damage after armor reduction
+ */
+function calculateArmorDamage(rawDamage, armor, toughness) {
+    const effectiveArmor = Math.min(
+        20,
+        Math.max(
+            armor / 5,
+            armor - 4 * rawDamage / (toughness + 8)
+        )
+    );
+    return rawDamage * (1 - effectiveArmor / 25);
+}
+
+/**
+ * Reads the total Enderite toughness from equipped armor pieces.
+ * Only counts pieces tagged with `ed:custom_armor` and reads `ed:toughness-N`.
+ *
+ * Bedrock's native `totalToughness` does not include custom armor toughness
+ * (there is no `minecraft:wearable.toughness` field), so this is the gap
+ * that our script fills.
+ *
+ * @param {import("@minecraft/server").EntityEquippableComponent} equippable
+ * @returns {number} Extra toughness from Enderite pieces (e.g. 16 for full set)
+ */
+function getEnderiteToughness(equippable) {
+    let total = 0;
+    for (const slot of ARMOR_SLOTS) {
+        const item = equippable.getEquipment(slot);
+        if (!item || !item.hasTag(CUSTOM_ARMOR_TAG)) continue;
+        total += getNumberFromTag(item, TOUGHNESS_PREFIX);
+    }
+    return total;
+}
+
+/**
+ * Binary search solver: finds an input damage value X such that
+ * calculateArmorDamage(X, armor, nativeToughness) ≈ targetDamage.
+ *
+ * This lets us "pre-distort" the damage so that after Bedrock's native
+ * armor pipeline processes it (using only the toughness it knows about),
+ * the player receives exactly the damage Java would have calculated
+ * with the full toughness (native + Enderite).
+ *
+ * ~30 iterations, deterministic, precision < 0.001.
+ *
+ * @param {number} targetDamage - The exact damage we want the player to receive
+ * @param {number} armor - Total armor points visible to the engine
+ * @param {number} nativeToughness - Toughness the engine already knows about
+ * @returns {number} The adjusted input to feed to event.damage
+ */
+function solveNativeDamageInput(targetDamage, armor, nativeToughness) {
+    if (targetDamage <= 0) return 0;
+
+    let lo = 0;
+    let hi = targetDamage * 10;
+
+    for (let i = 0; i < 50; i++) {
+        const mid = (lo + hi) / 2;
+        const result = calculateArmorDamage(mid, armor, nativeToughness);
+        if (Math.abs(result - targetDamage) < 0.0005) return mid;
+        if (result < targetDamage) lo = mid;
+        else hi = mid;
+    }
+    return (lo + hi) / 2;
+}
+
+// ── Toughness Compensation ─────────────────────────────────────────────
+//
+// Strategy:
+//   Bedrock natively handles: armor points + vanilla toughness + enchantments.
+//   We ONLY intervene when the entity has Enderite armor pieces, because
+//   minecraft:wearable has no toughness field for custom items.
+//
+//   For each hit on an entity wearing Enderite:
+//   1. Read the total armor and native toughness from the engine.
+//   2. Add the Enderite toughness (from ed:toughness-N tags).
+//   3. Calculate what Java would produce with the full toughness.
+//   4. Use binary search to find what input would make Bedrock's native
+//      pipeline (with only native toughness) produce that same result.
+//   5. Set event.damage to that adjusted input. No double mitigation.
 
 world.beforeEvents.entityHurt.subscribe((event) => {
     const entity = event.hurtEntity;
-
-    if (!entity?.isValid || event.damage <= 0) {
-        return;
-    }
+    if (!entity?.isValid || event.damage <= 0) return;
 
     const cause = event.damageSource.cause;
-    if (IGNORED_CAUSES.has(cause)) {
-        return;
-    }
+    if (IGNORED_CAUSES.has(cause)) return;
 
-    const { totalArmor, nativeArmor, toughness, customPieces } = readArmorStats(entity);
+    const equippable = entity.getComponent(EntityComponentTypes.Equippable);
+    if (!equippable) return;
 
-    // Sistema Flexible: si no hay al menos una pieza custom, el motor vanilla trabaja solo
-    if (customPieces === 0 || totalArmor <= 0) {
-        return;
-    }
+    const enderiteToughness = getEnderiteToughness(equippable);
+
+    // No Enderite pieces equipped → Bedrock handles everything natively, no intervention
+    if (enderiteToughness <= 0) return;
 
     const rawDamage = event.damage;
-    
-    // Daño objetivo que queremos que el jugador reciba (matemática de Java)
-    const targetDamage = calculateArmorDamage(rawDamage, totalArmor, toughness);
+    const armor = equippable.totalArmor;
+    const nativeToughness = equippable.totalToughness;
+    const desiredToughness = nativeToughness + enderiteToughness;
 
-    // Bedrock Vanilla solo reduce el daño de las armaduras 'minecraft:'.
-    const engineReduction = Math.min(nativeArmor * 0.04, 0.80);
-    const engineMultiplier = 1 - engineReduction;
-    
-    // Inflamos el daño SOLO basándonos en la armadura nativa que usen.
-    const inflatedDamage = targetDamage / engineMultiplier;
+    // What Java would produce with the complete toughness
+    const targetDamage = calculateArmorDamage(rawDamage, armor, desiredToughness);
 
-    debug(`Causa: ${cause} | Daño Base: ${rawDamage.toFixed(2)}`);
-    debug(`Stats -> Armadura Total: ${totalArmor} (Nativa: ${nativeArmor}), Toughness Custom: ${toughness}`);
-    debug(`Meta Ideal: ${targetDamage.toFixed(2)} | Inflado (para Vanilla): ${inflatedDamage.toFixed(2)}`);
+    // What input to give Bedrock so its native pipeline produces targetDamage
+    const adjustedInput = solveNativeDamageInput(targetDamage, armor, nativeToughness);
 
-    event.damage = Math.max(0, inflatedDamage);
+    event.damage = Math.max(0, adjustedInput);
 });
+
+// ── Knockback Resistance ───────────────────────────────────────────────
+// Java: 0.1 per Enderite piece, 0.4 for full set.
+// Bedrock has no native knockback_resistance for custom wearable items.
+// This will be improved in P6-B to only reduce knockback delta, not total velocity.
 
 function getKnockbackResistance(entity) {
     const equippable = entity.getComponent(EntityComponentTypes.Equippable);
@@ -207,7 +203,7 @@ function getKnockbackResistance(entity) {
         customPieces++;
         total += getNumberFromTag(item, KNOCKBACK_PREFIX);
     }
-    
+
     if (customPieces === 0) return 0;
     return Math.min(total / MAX_KNOCKBACK_VALUE, 1);
 }
