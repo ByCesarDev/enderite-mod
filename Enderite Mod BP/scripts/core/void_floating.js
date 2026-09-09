@@ -244,19 +244,69 @@ export function getVoidSurvivalChance(itemStack) {
  *   isEnderite: boolean,
  *   voidLevel: number,
  *   isFloating: boolean,
- *   yVelocity: number
+ *   yVelocity: number,
+ *   hoverY?: number,
+ *   voidResolved?: boolean
  * }>}
  */
 export const trackedFloatingEntities = new Map();
 
 /**
- * Teleports a surviving item entity out of the void to minY + 10, sets zero velocity,
- * and enters active hovering physics matching Java EnderiteDropDamageMixin.
+ * Resolves the void survival risk for an entity.
+ * Idempotent: guarantees that survival chance is rolled exactly once per entity.
  * @param {import("@minecraft/server").Entity} entity
  * @param {import("@minecraft/server").ItemStack} [itemStack]
+ * @param {object} [existingState]
+ * @returns {boolean} true if survived/rescued, false if destroyed by void
+ */
+export function resolveVoidRisk(entity, itemStack, existingState) {
+    if (!entity?.isValid) return false;
+
+    const item = itemStack ?? entity.getComponent("item")?.itemStack;
+    if (!item) return false;
+
+    let state = existingState ?? trackedFloatingEntities.get(entity.id);
+    if (!state) {
+        const isEnderite = isEnderiteItem(item);
+        const voidLevel = getVoidFloatingLevel(item);
+        state = {
+            entity,
+            itemStack: item,
+            isEnderite,
+            voidLevel,
+            isFloating: isEnderite,
+            yVelocity: 0,
+            voidResolved: false
+        };
+        trackedFloatingEntities.set(entity.id, state);
+    }
+
+    // Idempotency guard: never roll more than once
+    if (state.voidResolved) {
+        return state.isFloating;
+    }
+    state.voidResolved = true;
+
+    const chance = getVoidSurvivalChance(item);
+    if (chance >= 1.0 || Math.random() < chance) {
+        rescueVoidItem(entity, item, state);
+        return true;
+    } else {
+        // Failed survival roll: untrack and allow native void to destroy entity
+        trackedFloatingEntities.delete(entity.id);
+        return false;
+    }
+}
+
+/**
+ * Teleports a surviving item entity out of the void to minY + 10, sets zero velocity,
+ * locks its hover altitude, and enters active hovering physics matching Java EnderiteDropDamageMixin.
+ * @param {import("@minecraft/server").Entity} entity
+ * @param {import("@minecraft/server").ItemStack} [itemStack]
+ * @param {object} [existingState]
  * @returns {boolean}
  */
-export function rescueVoidItem(entity, itemStack) {
+export function rescueVoidItem(entity, itemStack, existingState) {
     if (!entity?.isValid) return false;
 
     try {
@@ -273,14 +323,22 @@ export function rescueVoidItem(entity, itemStack) {
         const isEnderite = isEnderiteItem(item);
         const voidLevel = getVoidFloatingLevel(item);
 
-        trackedFloatingEntities.set(entity.id, {
+        const state = existingState ?? trackedFloatingEntities.get(entity.id) ?? {
             entity,
             itemStack: item,
             isEnderite,
             voidLevel,
-            isFloating: true,
             yVelocity: 0
-        });
+        };
+
+        state.entity = entity;
+        state.itemStack = item;
+        state.isFloating = true;
+        state.yVelocity = 0;
+        state.hoverY = targetY; // Lock the hover altitude so it cannot sink!
+        state.voidResolved = true;
+
+        trackedFloatingEntities.set(entity.id, state);
 
         // Discreet visual effect: portal particle and subtle chorus teleport sound
         try {
@@ -302,12 +360,11 @@ export function rescueVoidItem(entity, itemStack) {
 }
 
 /**
- * Registers an item entity into the floating/void monitoring engine if eligible.
+ * Handles a dropped item entity immediately (death drops, Q-drops, container drops).
  * @param {import("@minecraft/server").Entity} entity
  */
-export function registerFloatingItemEntity(entity) {
+export function handleDroppedItem(entity) {
     if (!entity?.isValid || entity.typeId !== "minecraft:item") return;
-    if (trackedFloatingEntities.has(entity.id)) return;
 
     try {
         const itemComp = entity.getComponent("item");
@@ -334,31 +391,56 @@ export function registerFloatingItemEntity(entity) {
             } catch {}
         }
 
-        let initialVy = 0;
-        try {
-            initialVy = entity.getVelocity()?.y ?? 0;
-        } catch {}
+        const loc = entity.location;
+        const dim = entity.dimension;
+        const minY = dim.heightRange.min;
 
-        trackedFloatingEntities.set(entity.id, {
-            entity,
-            itemStack,
-            isEnderite,
-            voidLevel,
-            // Enderite items float immediately on spawn; void floating items fall with normal gravity until rescued
-            isFloating: isEnderite,
-            yVelocity: isEnderite ? initialVy : 0
-        });
+        // Check if born in or near the void (e.g. player died in the void)
+        if (loc.y <= minY + 2.0) {
+            resolveVoidRisk(entity, itemStack);
+            return;
+        }
+
+        // Otherwise, register for normal tracking if not already tracked
+        if (!trackedFloatingEntities.has(entity.id)) {
+            let initialVy = 0;
+            try {
+                initialVy = entity.getVelocity()?.y ?? 0;
+            } catch {}
+
+            trackedFloatingEntities.set(entity.id, {
+                entity,
+                itemStack,
+                isEnderite,
+                voidLevel,
+                isFloating: isEnderite,
+                yVelocity: isEnderite ? initialVy : 0,
+                voidResolved: false
+            });
+        }
     } catch {}
 }
 
-// 1. Reactive listener on item spawn
-world.afterEvents.entitySpawn.subscribe((event) => {
+// 1. Primary reactive listener for item drops (death drops, player Q, containers)
+world.afterEvents.entityItemDrop.subscribe((event) => {
     try {
-        registerFloatingItemEntity(event.entity);
+        const droppedEntities = event.items ? event.items : (event.item ? [event.item] : []);
+        for (const droppedEntity of droppedEntities) {
+            handleDroppedItem(droppedEntity);
+        }
     } catch {}
 });
 
-// 2. Physics & Void-Check Engine: Java parity for EnderiteDropMixin & EnderiteDropDamageMixin
+// 2. Secondary listener for generic item entity spawns (/summon, creative, etc.)
+world.afterEvents.entitySpawn.subscribe((event) => {
+    try {
+        if (event.entity?.typeId === "minecraft:item") {
+            handleDroppedItem(event.entity);
+        }
+    } catch {}
+});
+
+// 3. Physics & Preemptive Void-Check Engine: Java parity for EnderiteDropMixin & EnderiteDropDamageMixin
 system.runInterval(() => {
     if (trackedFloatingEntities.size === 0) return;
 
@@ -374,33 +456,52 @@ system.runInterval(() => {
             const dim = entity.dimension;
             const minY = dim.heightRange.min;
 
-            // Check void condition: getY() < level.getMinY()
-            if (loc.y < minY) {
+            let vy = 0;
+            try {
+                vy = entity.getVelocity()?.y ?? 0;
+            } catch {}
+
+            // Preemptive void crossing check:
+            // If falling down and near or about to cross minY in the next tick,
+            // OR already near/below the threshold:
+            const isAboutToCross = (vy < 0 && (loc.y <= minY + 1.5 || loc.y + vy <= minY));
+            const isAlreadyBelow = loc.y <= minY + 0.5;
+
+            if (!state.voidResolved && (isAboutToCross || isAlreadyBelow)) {
                 const item = state.itemStack ?? entity.getComponent("item")?.itemStack;
-                const chance = getVoidSurvivalChance(item);
-                if (chance >= 1.0 || Math.random() < chance) {
-                    rescueVoidItem(entity, item);
-                } else {
-                    // Failed survival roll: untrack and allow void to consume it
-                    trackedFloatingEntities.delete(id);
-                }
+                resolveVoidRisk(entity, item, state);
                 continue;
             }
 
-            // Apply zero-gravity & vertical damping for items in active floating state
+            // Zero-gravity and vertical dampening emulation for floating items
             if (state.isFloating) {
-                state.yVelocity *= 0.96;
-                if (Math.abs(state.yVelocity) < 0.001) {
-                    state.yVelocity = 0;
-                }
+                if (state.hoverY !== undefined) {
+                    // Settled or rescued hover state: lock altitude so item never sinks
+                    if (Math.abs(loc.y - state.hoverY) > 0.01) {
+                        entity.clearVelocity();
+                        entity.teleport({ x: loc.x, y: state.hoverY, z: loc.z }, { checkForBlocks: false });
+                    } else {
+                        entity.clearVelocity();
+                        // Counteract vanilla Bedrock 0.04 gravity so it doesn't jitter
+                        entity.applyImpulse({ x: 0, y: 0.04, z: 0 });
+                    }
+                } else {
+                    // Active deceleration phase (e.g. when thrown by player)
+                    state.yVelocity *= 0.96;
+                    if (Math.abs(state.yVelocity) < 0.005) {
+                        state.yVelocity = 0;
+                        state.hoverY = loc.y; // Lock height once settled
+                    }
 
-                const currentVel = entity.getVelocity();
-                entity.clearVelocity();
-                entity.applyImpulse({
-                    x: currentVel.x,
-                    y: state.yVelocity,
-                    z: currentVel.z
-                });
+                    const currentVel = entity.getVelocity();
+                    entity.clearVelocity();
+                    // Counteract vanilla Bedrock gravity (0.04) while applying remaining decelerating yVelocity
+                    entity.applyImpulse({
+                        x: currentVel.x,
+                        y: state.yVelocity + 0.04,
+                        z: currentVel.z
+                    });
+                }
             }
         } catch {
             trackedFloatingEntities.delete(id);
@@ -408,7 +509,7 @@ system.runInterval(() => {
     }
 }, 1);
 
-// 3. Lightweight fallback sweeper for chunk loading / pre-existing dropped items (every 5 seconds)
+// 4. Lightweight fallback sweeper for chunk loading / pre-existing dropped items (every 5 seconds)
 system.runInterval(() => {
     try {
         const dimensions = ["overworld", "nether", "the_end"];
@@ -416,13 +517,13 @@ system.runInterval(() => {
             const dimension = world.getDimension(dimId);
             const itemEntities = dimension.getEntities({ type: "minecraft:item" });
             for (const entity of itemEntities) {
-                registerFloatingItemEntity(entity);
+                handleDroppedItem(entity);
             }
         }
     } catch {}
 }, 100);
 
-// 4. Anvil Interaction for Void Floating Books (Zero Experiments)
+// 5. Anvil Interaction for Void Floating Books (Zero Experiments)
 world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
     try {
         const { player, block, itemStack } = event;
