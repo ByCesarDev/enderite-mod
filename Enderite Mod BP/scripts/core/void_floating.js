@@ -127,6 +127,11 @@ export function calculateCombinedVoidLevel(currentLevel, bookLevel) {
  */
 export function getVoidFloatingLevel(itemStack) {
     if (!itemStack) return 0;
+
+    // Check if it's an enchanted book with Void Floating
+    const bookLevel = getVoidFloatingBookLevel(itemStack);
+    if (bookLevel > 0) return bookLevel;
+
     try {
         if (itemStack.getDynamicProperty) {
             const prop = itemStack.getDynamicProperty("ed:void_floating_level");
@@ -375,7 +380,9 @@ export function handleDroppedItem(entity) {
         const bookLevel = getVoidFloatingBookLevel(itemStack);
         if (bookLevel > 0) {
             ensureVoidBookLore(itemStack, bookLevel);
-            itemComp.itemStack = itemStack;
+            try {
+                itemComp.itemStack = itemStack;
+            } catch {}
         }
 
         const isEnderite = isEnderiteItem(itemStack);
