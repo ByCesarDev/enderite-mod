@@ -1,4 +1,4 @@
-import { world, system, EquipmentSlot, ItemStack } from "@minecraft/server";
+import { world, system, EquipmentSlot, ItemStack, GameMode } from "@minecraft/server";
 
 const MAX_LOGICAL_DURABILITY = 1024;
 const BROKEN_LOGICAL_DAMAGE = 1023;
@@ -16,6 +16,11 @@ function generateElytraId() {
 const VISUAL_COMBINED = "§6";
 const VISUAL_SEPARATED = "§7";
 const PROP_ORIGINAL_NAMETAG = "ed:elytra_original_nametag";
+
+// Track gliding ticks per player for deterministic flight wear (20 ticks = 1s = 1 flight roll)
+const glidingTicks = new Map();
+// Track totalExperience per player for Mending repair of ed:elytra_damage
+const playerXp = new Map();
 
 const PROXY_TRANSLATIONS = {
     "es_mx": {
@@ -494,6 +499,57 @@ system.runInterval(() => {
         const chest = equippable.getEquipment(EquipmentSlot.Chest);
         const wasWearingProxy = playersWearingProxy.has(player.id);
 
+        // Mending repair on ed:elytra_damage / broken state from XP gain
+        const currentXp = player.totalExperience;
+        const prevXp = playerXp.get(player.id);
+        playerXp.set(player.id, currentXp);
+
+        if (prevXp !== undefined && currentXp > prevXp && chest) {
+            const gainedXp = currentXp - prevXp;
+            const enchantable = chest.getComponent("enchantable");
+            const hasMending = Boolean(enchantable?.getEnchantment("mending"));
+
+            if (hasMending) {
+                // Subcase A: Active runtime proxy equipped
+                if (chest.typeId === "minecraft:elytra" && chest.getDynamicProperty(PROP_VARIANT)) {
+                    let logicalDamage = chest.getDynamicProperty(PROP_DAMAGE) ?? 0;
+                    if (logicalDamage > 0) {
+                        const repairAmount = Math.min(logicalDamage, gainedXp * 2);
+                        const xpUsed = Math.ceil(repairAmount / 2);
+                        logicalDamage -= repairAmount;
+                        chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
+                        equippable.setEquipment(EquipmentSlot.Chest, chest);
+                        player.addExperience(-xpUsed);
+                        playerXp.set(player.id, player.totalExperience);
+                    }
+                }
+                // Subcase B: Broken elytra custom item equipped in chest slot
+                else if (chest.typeId === "elytra:chesplate_broken" || chest.typeId === "elytra:enderite_broken") {
+                    const durComp = chest.getComponent("durability");
+                    if (durComp && durComp.damage > 0) {
+                        const repairAmount = Math.min(durComp.damage, gainedXp * 2);
+                        const xpUsed = Math.ceil(repairAmount / 2);
+                        const newDamage = durComp.damage - repairAmount;
+                        player.addExperience(-xpUsed);
+                        playerXp.set(player.id, player.totalExperience);
+
+                        if (newDamage < BROKEN_LOGICAL_DAMAGE) {
+                            // Item repaired out of broken state!
+                            durComp.damage = newDamage;
+                            const unbroken = restoreRepairedBrokenItem(chest);
+                            const proxy = createElytraProxy(unbroken, player);
+                            equippable.setEquipment(EquipmentSlot.Chest, proxy);
+                            playersWearingProxy.add(player.id);
+                            syncProxyVisual(player, unbroken.typeId === "elytra:chesplate" ? "combined" : "separated");
+                        } else {
+                            durComp.damage = newDamage;
+                            equippable.setEquipment(EquipmentSlot.Chest, chest);
+                        }
+                    }
+                }
+            }
+        }
+
         // CASE 1: Player equipped custom unbroken elytra -> Convert to runtime proxy
         if (chest && (chest.typeId === "elytra:enderite" || chest.typeId === "elytra:chesplate")) {
             const proxy = createElytraProxy(chest, player);
@@ -553,14 +609,44 @@ system.runInterval(() => {
                 }
 
                 let logicalDamage = chest.getDynamicProperty(PROP_DAMAGE) ?? 0;
+
+                // Reset physical proxy damage every tick to keep proxy pristine
                 const dur = chest.getComponent("durability");
                 if (dur && dur.damage > 0) {
-                    logicalDamage += dur.damage;
-                    dur.damage = 0; // Reset physical proxy wear back to 0
+                    dur.damage = 0;
                     updatedProxy = true;
                 }
 
-                // Check breakage independently of whether physical dur.damage was > 0
+                // Deterministic flight durability wear (Java parity)
+                const isSurvival = player.getGameMode() !== GameMode.creative && player.getGameMode() !== GameMode.spectator;
+                if (player.isGliding && isSurvival) {
+                    const gTicks = (glidingTicks.get(player.id) ?? 0) + 1;
+                    if (gTicks >= 20) {
+                        glidingTicks.set(player.id, 0);
+
+                        const enchantable = chest.getComponent("enchantable");
+                        const unbreaking = enchantable?.getEnchantment("unbreaking");
+                        const level = unbreaking?.level ?? 0;
+
+                        // Java parity: Combined is armor (#enderitemod:enderite_armor),
+                        // so it uses armor Unbreaking chance: 0.6 + 0.4 / (level + 1).
+                        // Separated is elytra tool, using: 1.0 / (level + 1).
+                        const takeDamageChance = level > 0
+                            ? (isCombined ? (0.6 + 0.4 / (level + 1)) : (1.0 / (level + 1)))
+                            : 1.0;
+
+                        if (Math.random() < takeDamageChance) {
+                            logicalDamage += 1;
+                            updatedProxy = true;
+                        }
+                    } else {
+                        glidingTicks.set(player.id, gTicks);
+                    }
+                } else if (!player.isGliding) {
+                    glidingTicks.delete(player.id);
+                }
+
+                // Check breakage independently of whether damage was flight or combat
                 if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
                     // Broken! Stops gliding, plays break sound, converts to broken custom item
                     try { player.playSound("random.break"); } catch {}
@@ -568,6 +654,7 @@ system.runInterval(() => {
                     const brokenItem = restoreCustomElytra(chest, brokenId, BROKEN_LOGICAL_DAMAGE);
                     equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
                     playersWearingProxy.delete(player.id);
+                    glidingTicks.delete(player.id);
                     restoreProxyVisual(player);
                     continue;
                 }
@@ -583,6 +670,7 @@ system.runInterval(() => {
         // CASE 3: Not wearing proxy this tick
         if (wasWearingProxy) {
             playersWearingProxy.delete(player.id);
+            glidingTicks.delete(player.id);
             restoreProxyVisual(player);
             // One-time safety cleanup of inventory slots during unequip transition
             cleanupInventoryProxies(player);
@@ -634,7 +722,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 
     system.run(() => {
         try {
-            if (!entity.isValid()) return;
+            if (!entity.isValid) return;
             const itemComp = entity.getComponent("item");
             if (!itemComp) return;
 
@@ -659,12 +747,15 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 // Clean up disconnected players
 world.afterEvents.playerLeave.subscribe((event) => {
     playersWearingProxy.delete(event.playerId);
+    glidingTicks.delete(event.playerId);
+    playerXp.delete(event.playerId);
 });
 
 // Safeguard on spawn: ensure player nameTag is restored if not wearing proxy
 world.afterEvents.playerSpawn.subscribe((event) => {
     const player = event.player;
     if (!player) return;
+    playerXp.set(player.id, player.totalExperience);
     const equippable = player.getComponent("equippable");
     const chest = equippable?.getEquipment(EquipmentSlot.Chest);
     const hasProxy = chest?.typeId === "minecraft:elytra" && chest.getDynamicProperty(PROP_VARIANT);
@@ -799,15 +890,22 @@ function locateAndApplyWear(proxyId, wear, playerId) {
                 maxDistance: 24
             });
             for (const ent of itemsNearby) {
-                if (!ent.isValid()) continue;
+                if (!ent.isValid) continue;
                 const itemComp = ent.getComponent("item");
                 const stack = itemComp?.itemStack;
                 if (stack && stack.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
                     const res = applyWearToCombinedItem(stack, wear);
                     if (res) {
-                        itemComp.itemStack = res.updatedItem;
+                        const itemDim = ent.dimension;
+                        const itemLoc = ent.location;
+                        const itemVel = ent.getVelocity();
+                        ent.remove();
+                        const spawned = itemDim.spawnItem(res.updatedItem, itemLoc);
+                        if (itemVel) {
+                            try { spawned.applyImpulse(itemVel); } catch {}
+                        }
                         if (res.didBreak) {
-                            try { dim.playSound("random.break", ent.location); } catch {}
+                            try { itemDim.playSound("random.break", itemLoc); } catch {}
                         }
                         return true;
                     }
@@ -876,7 +974,7 @@ function locateAndApplyWear(proxyId, wear, playerId) {
                 maxDistance: 8
             });
             for (const ent of nearbyEntities) {
-                if (!ent.isValid() || ent.typeId === "minecraft:player" || ent.typeId === "minecraft:item") continue;
+                if (!ent.isValid || ent.typeId === "minecraft:player" || ent.typeId === "minecraft:item") continue;
                 const c = ent.getComponent("inventory")?.container;
                 if (c) {
                     for (let i = 0; i < c.size; i++) {
