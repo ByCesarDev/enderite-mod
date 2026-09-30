@@ -1,249 +1,323 @@
 import { world, system, EquipmentSlot, ItemStack } from "@minecraft/server";
 
+const MAX_LOGICAL_DURABILITY = 1024;
+const BROKEN_LOGICAL_DAMAGE = 1023;
+
+const PROP_VARIANT = "ed:elytra_variant";
+const PROP_DAMAGE = "ed:elytra_damage";
+const PROP_HAS_CUSTOM_NAME = "ed:has_custom_name";
+
+/**
+ * Creates a runtime proxy ItemStack (minecraft:elytra) from a custom Enderite Elytra.
+ * Preserves variant, logical damage (0..1023), enchantments, custom name, and custom properties.
+ * @param {ItemStack} customItem
+ * @returns {ItemStack}
+ */
+function createElytraProxy(customItem) {
+    const isCombined = customItem.typeId === "elytra:chesplate";
+    const variant = isCombined ? "combined" : "separated";
+    const proxy = new ItemStack("minecraft:elytra", 1);
+
+    const durComp = customItem.getComponent("durability");
+    const currentDamage = durComp ? Math.min(durComp.damage, BROKEN_LOGICAL_DAMAGE - 1) : 0;
+
+    proxy.setDynamicProperty(PROP_VARIANT, variant);
+    proxy.setDynamicProperty(PROP_DAMAGE, currentDamage);
+
+    // Initial physical damage of proxy is 0
+    const proxyDur = proxy.getComponent("durability");
+    if (proxyDur) {
+        proxyDur.damage = 0;
+    }
+
+    // Copy enchantments
+    const customEnchantable = customItem.getComponent("enchantable");
+    if (customEnchantable) {
+        const enchants = customEnchantable.getEnchantments();
+        if (enchants && enchants.length > 0) {
+            const proxyEnchantable = proxy.getComponent("enchantable");
+            if (proxyEnchantable) {
+                for (const ench of enchants) {
+                    try {
+                        proxyEnchantable.addEnchantment(ench);
+                    } catch {}
+                }
+            }
+        }
+    }
+
+    // Copy custom name if renamed on anvil
+    if (customItem.nameTag) {
+        proxy.nameTag = customItem.nameTag;
+        proxy.setDynamicProperty(PROP_HAS_CUSTOM_NAME, true);
+    }
+
+    // Copy additional dynamic properties
+    try {
+        for (const propId of customItem.getDynamicPropertyIds()) {
+            if (!propId.startsWith("ed:elytra_") && propId !== PROP_HAS_CUSTOM_NAME) {
+                proxy.setDynamicProperty(propId, customItem.getDynamicProperty(propId));
+            }
+        }
+    } catch {}
+
+    return proxy;
+}
+
+/**
+ * Restores a custom Enderite Elytra ItemStack from a runtime proxy or broken state.
+ * @param {ItemStack} proxy
+ * @param {string|null} forcedTargetId
+ * @param {number|null} forcedDamage
+ * @returns {ItemStack|null}
+ */
+function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) {
+    const variant = proxy.getDynamicProperty(PROP_VARIANT);
+    if (!variant && !forcedTargetId) return null;
+
+    let targetId = forcedTargetId;
+    let damage = forcedDamage;
+
+    if (targetId === null) {
+        let logicalDamage = proxy.getDynamicProperty(PROP_DAMAGE) ?? 0;
+        const proxyDur = proxy.getComponent("durability");
+        if (proxyDur && proxyDur.damage > 0) {
+            logicalDamage += proxyDur.damage;
+        }
+
+        if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
+            damage = BROKEN_LOGICAL_DAMAGE;
+            targetId = variant === "combined" ? "elytra:chesplate_broken" : "elytra:enderite_broken";
+        } else {
+            damage = Math.max(0, logicalDamage);
+            targetId = variant === "combined" ? "elytra:chesplate" : "elytra:enderite";
+        }
+    }
+
+    const customItem = new ItemStack(targetId, 1);
+
+    const customDur = customItem.getComponent("durability");
+    if (customDur && typeof damage === "number") {
+        customDur.damage = Math.min(Math.max(0, damage), customDur.maxDurability - 1);
+    }
+
+    // Copy enchantments
+    const proxyEnchantable = proxy.getComponent("enchantable");
+    if (proxyEnchantable) {
+        const enchants = proxyEnchantable.getEnchantments();
+        if (enchants && enchants.length > 0) {
+            const customEnchantable = customItem.getComponent("enchantable");
+            if (customEnchantable) {
+                for (const ench of enchants) {
+                    try {
+                        customEnchantable.addEnchantment(ench);
+                    } catch {}
+                }
+            }
+        }
+    }
+
+    // Restore custom name if original had one
+    if (proxy.getDynamicProperty(PROP_HAS_CUSTOM_NAME) && proxy.nameTag) {
+        customItem.nameTag = proxy.nameTag;
+    }
+
+    // Copy additional dynamic properties
+    try {
+        for (const propId of proxy.getDynamicPropertyIds()) {
+            if (!propId.startsWith("ed:elytra_") && propId !== PROP_HAS_CUSTOM_NAME) {
+                customItem.setDynamicProperty(propId, proxy.getDynamicProperty(propId));
+            }
+        }
+    } catch {}
+
+    return customItem;
+}
+
+/**
+ * Converts a repaired broken elytra back into its functional custom form.
+ * @param {ItemStack} brokenItem
+ * @returns {ItemStack}
+ */
+function restoreRepairedBrokenItem(brokenItem) {
+    const unbrokenId = brokenItem.typeId.replace("_broken", "");
+    const unbrokenItem = new ItemStack(unbrokenId, 1);
+
+    const brokenDur = brokenItem.getComponent("durability");
+    const unbrokenDur = unbrokenItem.getComponent("durability");
+    if (brokenDur && unbrokenDur) {
+        unbrokenDur.damage = brokenDur.damage;
+    }
+
+    const brokenEnchantable = brokenItem.getComponent("enchantable");
+    if (brokenEnchantable) {
+        const enchants = brokenEnchantable.getEnchantments();
+        if (enchants && enchants.length > 0) {
+            const unbrokenEnchantable = unbrokenItem.getComponent("enchantable");
+            if (unbrokenEnchantable) {
+                for (const ench of enchants) {
+                    try {
+                        unbrokenEnchantable.addEnchantment(ench);
+                    } catch {}
+                }
+            }
+        }
+    }
+
+    if (brokenItem.nameTag) {
+        unbrokenItem.nameTag = brokenItem.nameTag;
+    }
+
+    try {
+        for (const propId of brokenItem.getDynamicPropertyIds()) {
+            unbrokenItem.setDynamicProperty(propId, brokenItem.getDynamicProperty(propId));
+        }
+    } catch {}
+
+    return unbrokenItem;
+}
+
+/**
+ * Scans a player's inventory once on unequip transition to convert any stray proxy items.
+ * @param {import("@minecraft/server").Player} player
+ */
+function cleanupInventoryProxies(player) {
+    const inv = player.getComponent("inventory");
+    if (!inv || !inv.container) return;
+
+    for (let i = 0; i < inv.container.size; i++) {
+        const item = inv.container.getItem(i);
+        if (item && item.typeId === "minecraft:elytra" && item.getDynamicProperty(PROP_VARIANT)) {
+            const restored = restoreCustomElytra(item);
+            if (restored) {
+                inv.container.setItem(i, restored);
+            }
+        }
+    }
+}
+
+// Track which players were wearing our proxy on previous tick
+const playersWearingProxy = new Set();
+
+/**
+ * Main lightweight runtime loop: Only inspects EquipmentSlot.Chest of each player every tick.
+ * Eliminates 36-slot inventory looping.
+ */
 system.runInterval(() => {
-	let players = world.getAllPlayers();
-	players.forEach((player) => {
-		const equippable = player?.getComponent("equippable");
-		const inventory = player.getComponent("inventory");
-		let chestSlot = equippable?.getEquipment(EquipmentSlot.Chest);
-		let damage = chestSlot?.getComponent("durability")?.damage;
+    for (const player of world.getAllPlayers()) {
+        const equippable = player.getComponent("equippable");
+        if (!equippable) continue;
 
-		// Elytras
-		const tierElytras = {
-			"elytra:chesplate": 9,
-			"elytra:enderite": 9,
-		};
+        const chest = equippable.getEquipment(EquipmentSlot.Chest);
+        const wasWearingProxy = playersWearingProxy.has(player.id);
 
-		if (
-			!player.hasTag("change_durability") &&
-			player.isGliding &&
-			chestSlot &&
-			tierElytras[chestSlot?.getDynamicProperty("elytra:variant")] > 0
-		) {
-			system.runTimeout(() => {
-				let NewchestSlot = equippable?.getEquipment(EquipmentSlot.Chest);
-				if (NewchestSlot && NewchestSlot.getComponent("durability").damage > damage) {
-					player.addTag("change_durability");
-				}
-			}, 1);
-		}
+        // CASE 1: Player equipped custom unbroken elytra -> Convert to runtime proxy
+        if (chest && (chest.typeId === "elytra:enderite" || chest.typeId === "elytra:chesplate")) {
+            const proxy = createElytraProxy(chest);
+            equippable.setEquipment(EquipmentSlot.Chest, proxy);
+            playersWearingProxy.add(player.id);
+            continue;
+        }
 
-		// Passive Effects
-		passiveEffects(player, equippable, chestSlot);
+        // CASE 2: Player is wearing runtime proxy -> Track flight wear deterministically
+        if (chest && chest.typeId === "minecraft:elytra") {
+            const variant = chest.getDynamicProperty(PROP_VARIANT);
+            if (variant) {
+                playersWearingProxy.add(player.id);
+                const dur = chest.getComponent("durability");
 
-		if (player.hasTag("change_durability")) {
-			let chance = Math.floor(Math.random() * 11);
-			let damageChance = tierElytras[chestSlot?.getDynamicProperty("elytra:variant")];
-			if (chance <= damageChance) {
-				let prevDurability = chestSlot.clone();
-				prevDurability.getComponent("durability").damage = damage - 1;
-				equippable.setEquipment(EquipmentSlot.Chest, prevDurability);
-			} else {
-				// Effect handling (if any)
-			}
-			player.removeTag("change_durability");
-		}
+                if (dur && dur.damage > 0) {
+                    let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + dur.damage;
 
-		// Broken Elytras
-		if (
-			chestSlot?.getComponent("durability")?.damage === 431 &&
-			chestSlot?.typeId === "minecraft:elytra" &&
-			chestSlot?.getDynamicPropertyTotalByteCount() > 0
-		) {
-			player.playSound("random.break");
-			turnItemInto(
-				chestSlot,
-				new ItemStack(chestSlot.getDynamicProperty("elytra:variant") + "_broken"),
-				EquipmentSlot.Chest,
-				undefined,
-				equippable
-			);
-		}
+                    if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
+                        // Broken! Stops gliding, plays break sound, converts to broken custom item
+                        try { player.playSound("random.break"); } catch {}
+                        const brokenId = variant === "combined" ? "elytra:chesplate_broken" : "elytra:enderite_broken";
+                        const brokenItem = restoreCustomElytra(chest, brokenId, BROKEN_LOGICAL_DAMAGE);
+                        equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
+                        playersWearingProxy.delete(player.id);
+                    } else {
+                        // Safe wear: 1 vanilla point consumed = 1 logical point out of 1024
+                        chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
+                        dur.damage = 0; // Reset physical proxy wear back to 0
+                        equippable.setEquipment(EquipmentSlot.Chest, chest);
+                    }
+                }
+                continue;
+            }
+        }
 
-		// Repaired Elytras
-		if (chestSlot?.getComponent("durability")?.damage < 431 && chestSlot?.typeId?.endsWith("_broken")) {
-			turnItemInto(
-				chestSlot,
-				new ItemStack(chestSlot?.typeId.replace(/_broken/g, "")),
-				EquipmentSlot.Chest,
-				undefined,
-				equippable
-			);
-		}
+        // CASE 3: Not wearing proxy this tick
+        if (wasWearingProxy) {
+            playersWearingProxy.delete(player.id);
+            // One-time safety cleanup of inventory slots during unequip transition
+            cleanupInventoryProxies(player);
+        }
+    }
+}, 1);
 
-		player.setDynamicProperty("score:score", (player.getDynamicProperty("score:score") || 0) + 1);
+// Reactive inventory handling: Converts proxy back to custom item when placed into inventory slots,
+// and converts repaired broken elytras back to functional ones.
+world.afterEvents.playerInventoryItemChange.subscribe((event) => {
+    const player = event.player;
+    const item = event.itemStack;
+    if (!player || !item) return;
 
-		if (player.getDynamicProperty("score:score") < 2 && !player.isSneaking) {
-			player.nameTag = player.name;
-		}
+    // Subcase A: Runtime proxy moved to inventory slot
+    if (item.typeId === "minecraft:elytra" && item.getDynamicProperty(PROP_VARIANT)) {
+        const inv = player.getComponent("inventory");
+        if (inv && inv.container) {
+            const restored = restoreCustomElytra(item);
+            if (restored) {
+                inv.container.setItem(event.slot, restored);
+            }
+        }
+        return;
+    }
 
-		if (player.getDynamicProperty("score:score") < 2 && player.isSneaking) {
-			player.nameTag = "";
-		}
-
-		if (player.getDynamicProperty("score:score") >= 11 && !player.hasTag("cooldown:score")) {
-			if (chestSlot?.getDynamicProperty("elytra:variant") === undefined) {
-				player.nameTag = "§f";
-			}
-
-			if (chestSlot?.getDynamicProperty("elytra:variant") === "elytra:chesplate") {
-				player.nameTag = "§6";
-			}
-
-			if (chestSlot?.getDynamicProperty("elytra:variant") === "elytra:enderite") {
-				player.nameTag = "§7";
-			}
-
-			player.setDynamicProperty("score:score", 0);
-		}
-
-		if (
-			chestSlot?.typeId?.startsWith("elytra:") &&
-			!chestSlot?.typeId?.endsWith("_broken") &&
-			chestSlot?.getComponent("durability")?.damage !== 431
-		) {
-			system.runTimeout(() => {
-				// Modified Elytra
-				player.setDynamicProperty("score:score", 12);
-
-				const protectionValues = {
-					"elytra:chesplate": 9,
-					"elytra:enderite": 9,
-				};
-
-				const parts = chestSlot?.typeId.split(":");
-				let modifiedElytra = new ItemStack("minecraft:elytra");
-
-				if (chestSlot) {
-					console.warn(`[Elytra] Converting ${chestSlot.typeId} to vanilla elytra`);
-					console.warn(`[Elytra] Item has dynamic properties: ${chestSlot.getDynamicPropertyTotalByteCount() > 0}`);
-
-					modifiedElytra.setDynamicProperty("elytra:variant", chestSlot.typeId);
-					modifiedElytra.setDynamicProperty("elytra:protection", protectionValues[chestSlot.typeId] || 9);
-					modifiedElytra.nameTag =
-						"§r§d" +
-						parts[1].charAt(0).toUpperCase() +
-						parts[1].substring(1) +
-						" " +
-						parts[0].charAt(0).toUpperCase() +
-						parts[0].substring(1);
-					modifiedElytra.getComponent("durability").damage = chestSlot.getComponent("durability").damage;
-
-					// Preservar armor trim si existe
-					const trimComponent = chestSlot.getComponent("trim");
-					console.warn(`[Elytra] Trim component exists: ${trimComponent !== undefined}`);
-					if (trimComponent) {
-						console.warn(`[Elytra] Trim material: ${trimComponent.material}, pattern: ${trimComponent.pattern}`);
-						modifiedElytra.getComponent("trim").material = trimComponent.material;
-						modifiedElytra.getComponent("trim").pattern = trimComponent.pattern;
-						console.warn(`[Elytra] Trim applied to new elytra`);
-					} else {
-						console.warn(`[Elytra] No trim component found on original item`);
-					}
-
-					turnItemInto(chestSlot, modifiedElytra, EquipmentSlot.Chest, undefined, equippable);
-				}
-			});
-		}
-
-		// Check inventory slots
-		for (let i = 0; i <= 35; i++) {
-			const getItem = inventory?.container?.getItem(i);
-			if (getItem !== undefined) {
-				const getSlot = getItem?.getDynamicProperty("elytra:variant");
-				let slotItem;
-				if (getSlot !== undefined) {
-					slotItem = new ItemStack(getSlot);
-				}
-				if (getItem.typeId?.endsWith("_broken") && getItem.getComponent("durability")?.damage !== 431) {
-					slotItem = new ItemStack(getItem.typeId.replace(/_broken/g, ""));
-				}
-				if (slotItem !== undefined) {
-					slotItem.getComponent("durability").damage = getItem.getComponent("durability").damage;
-
-					// Preservar armor trim si existe
-					const trimComponent = getItem.getComponent("trim");
-					if (trimComponent) {
-						slotItem.getComponent("trim").material = trimComponent.material;
-						slotItem.getComponent("trim").pattern = trimComponent.pattern;
-					}
-
-					turnItemInto(getItem, slotItem, i, inventory);
-				}
-			}
-		}
-	});
+    // Subcase B: Broken elytra repaired in an anvil or crafting grid
+    if (item.typeId.endsWith("_broken") && item.typeId.startsWith("elytra:")) {
+        const dur = item.getComponent("durability");
+        if (dur && dur.damage < BROKEN_LOGICAL_DAMAGE) {
+            const unbroken = restoreRepairedBrokenItem(item);
+            const inv = player.getComponent("inventory");
+            if (inv && inv.container) {
+                inv.container.setItem(event.slot, unbroken);
+            }
+        }
+    }
 });
 
-// Function to replace an item with another item
-function turnItemInto(itemToReplace, ItemToGet, slot, inventory, equippable) {
-	let damageReplace = itemToReplace.getComponent("durability");
-	let damageItemToGet = ItemToGet.getComponent("durability");
+// Reactive drop handling: If an item entity spawns in the world with a proxy, convert to custom item
+world.afterEvents.entitySpawn.subscribe((event) => {
+    const entity = event.entity;
+    if (!entity || entity.typeId !== "minecraft:item") return;
 
-	damageItemToGet.damage = damageReplace.damage;
+    system.run(() => {
+        try {
+            if (!entity.isValid()) return;
+            const itemComp = entity.getComponent("item");
+            if (!itemComp) return;
 
-	const enchantments = itemToReplace.getComponent("enchantable").getEnchantments();
-	enchantments.forEach((enchantment) => {
-		ItemToGet.getComponent("enchantable").addEnchantment(enchantment);
-	});
-
-	// Verificar trim antes de reemplazar
-	const trimBefore = ItemToGet.getComponent("trim");
-	console.warn(`[Elytra] TurnItemInto - Trim before: ${trimBefore ? trimBefore.material + ',' + trimBefore.pattern : 'none'}`);
-
-	if (slot !== EquipmentSlot.Chest && inventory) {
-		inventory.container.setItem(slot, ItemToGet);
-	} else if (equippable) {
-		equippable.setEquipment(slot, ItemToGet);
-	}
-}
-
-// Function to handle passive effects
-function passiveEffects(player, equippable, chestSlot) {
-	const worldEntities = player.dimension.getEntities({ tags: ['elytra:test'] });
-
-	// Wind Charge
-	let playervelocity = player.getVelocity();
-	let velocityX = Math.abs(parseFloat(playervelocity.x.toFixed(1)));
-	let velocityY = Math.abs(parseFloat(playervelocity.y.toFixed(1)));
-	let velocityZ = Math.abs(parseFloat(playervelocity.z.toFixed(1)));
-
-	if (
-		player.isGliding &&
-		(Math.abs(velocityX) > 0.9 || Math.abs(velocityY) > 0.9 || Math.abs(velocityZ) > 0.9)
-	) {
-		const nearestEntities = player.dimension.getEntities({ location: player.location, maxDistance: 2 });
-		nearestEntities.forEach((entity) => {
-			if (entity.id === player.id || entity.getComponent("health") === undefined) return;
-
-			const viewDirection = player.getViewVector ? player.getViewVector() : player.getViewDirection();
-			const directionX = viewDirection.x;
-			const directionZ = viewDirection.z;
-			// Handle effect here if needed
-		}, 1);
-	}
-}
-
-// Apply protection from custom elytras
-world.afterEvents.entityHurt.subscribe((event) => {
-	const player = event.hurtEntity;
-	if (player.typeId !== "minecraft:player") return;
-
-	const equippable = player.getComponent("equippable");
-	const chestSlot = equippable?.getEquipment(EquipmentSlot.Chest);
-
-	if (chestSlot?.getDynamicProperty("elytra:protection")) {
-		const protection = chestSlot.getDynamicProperty("elytra:protection");
-		const reduction = protection * 0.04;
-		const healAmount = Math.min(event.damage * reduction, event.damage - 1);
-		const health = player.getComponent("health");
-		health.current = Math.min(health.effectiveMax, health.current + healAmount);
-	}
+            const stack = itemComp.itemStack;
+            if (stack && stack.typeId === "minecraft:elytra" && stack.getDynamicProperty(PROP_VARIANT)) {
+                const restored = restoreCustomElytra(stack);
+                if (restored) {
+                    const dim = entity.dimension;
+                    const loc = entity.location;
+                    const vel = entity.getVelocity();
+                    entity.remove();
+                    const spawned = dim.spawnItem(restored, loc);
+                    if (vel) {
+                        try { spawned.applyImpulse(vel); } catch {}
+                    }
+                }
+            }
+        } catch {}
+    });
 });
 
-// Subscribe to player spawn events
-world.afterEvents.playerSpawn.subscribe(({ player, initialSpawn }) => {
-	if (initialSpawn === true) {
-		player.setDynamicProperty("score:score", 0);
-	}
+// Clean up disconnected players
+world.afterEvents.playerLeave.subscribe((event) => {
+    playersWearingProxy.delete(event.playerId);
 });

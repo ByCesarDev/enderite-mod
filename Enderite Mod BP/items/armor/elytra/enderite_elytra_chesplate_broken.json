@@ -44,7 +44,7 @@
 			},
 			"minecraft:wearable": {
 				"slot": "slot.armor.chest",
-				"protection": 8
+				"protection": 9
 			},
 			"minecraft:tags": {
 				"tags": [
@@ -52,8 +52,8 @@
 					"minecraft:transformable_items",
 					"minecraft:trimmable_armors",
 					"ed:custom_armor",
-					"ed:armor-8",
-					"ed:toughness-3",
+					"ed:armor-9",
+					"ed:toughness-4",
 					"ed:knockback-1"
 				]
 			}
