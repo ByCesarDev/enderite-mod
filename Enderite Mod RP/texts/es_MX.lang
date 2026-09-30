@@ -81,6 +81,7 @@ lore.ed:sword_teleport=§7§oShift + click derecho para teletransportarte!
 lore.ed:shield_teleport=§7§oShift + click derecho para teletransportar a tu atacante!
 lore.ed:shulker_more=y %1 más...
 actionbar.ed:shulker_destroy_hint=§aMantén SHIFT para destruir la shulker
+lore.ed:armor_protection=§9+9 Armadura
 lore.ed:armor_toughness=§9+4 Resistencia de la armadura
 lore.ed:knockback_resistance=§9+1 Resistencia al derribo
 

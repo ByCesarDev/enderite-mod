@@ -81,6 +81,7 @@ lore.ed:sword_teleport=§7§oTeleport with sneaking + right click!
 lore.ed:shield_teleport=§7§oTeleport attacker with sneaking + block!
 lore.ed:shulker_more=and %1 more...
 actionbar.ed:shulker_destroy_hint=§aHold SHIFT to destroy the shulker box
+lore.ed:armor_protection=§9+9 Armor
 lore.ed:armor_toughness=§9+4 Armor Toughness
 lore.ed:knockback_resistance=§9+1 Knockback Resistance
 

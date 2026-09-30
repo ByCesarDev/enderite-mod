@@ -12,8 +12,9 @@ const VISUAL_COMBINED = "§6";
 const VISUAL_SEPARATED = "§7";
 const PROP_ORIGINAL_NAMETAG = "ed:elytra_original_nametag";
 
-// Translatable lore matching .lang translations (lore.ed:armor_toughness, lore.ed:knockback_resistance)
+// Translatable lore matching .lang translations (lore.ed:armor_protection, lore.ed:armor_toughness, lore.ed:knockback_resistance)
 const COMBINED_ARMOR_LORE = [
+    { translate: "lore.ed:armor_protection" },
     { translate: "lore.ed:armor_toughness" },
     { translate: "lore.ed:knockback_resistance" }
 ];
@@ -57,10 +58,13 @@ function createElytraProxy(customItem) {
         }
     }
 
-    // Copy custom name if renamed on anvil
+    // Copy custom name if renamed on anvil, or set canonical display name for HUD/tooltip
     if (customItem.nameTag) {
         proxy.nameTag = customItem.nameTag;
         proxy.setDynamicProperty(PROP_HAS_CUSTOM_NAME, true);
+    } else {
+        proxy.nameTag = isCombined ? "Coraza con Élitros de Enderita" : "Élitros de Enderita";
+        proxy.setDynamicProperty(PROP_HAS_CUSTOM_NAME, false);
     }
 
     // Copy additional dynamic properties
@@ -72,15 +76,39 @@ function createElytraProxy(customItem) {
         }
     } catch {}
 
-    // Copy lore (armor toughness, knockback resistance, void floating, custom lines)
+    // Copy lore (armor protection, toughness, knockback, void floating, custom lines)
     try {
         const rawLore = typeof customItem.getRawLore === "function" ? customItem.getRawLore() : null;
         if (rawLore && rawLore.length > 0) {
-            proxy.setLore(rawLore);
+            if (isCombined) {
+                const hasProtection = rawLore.some(l => l?.translate === "lore.ed:armor_protection" || (typeof l === "string" && l.includes("+9")));
+                if (!hasProtection) {
+                    proxy.setLore([
+                        { translate: "lore.ed:armor_protection" },
+                        ...rawLore
+                    ]);
+                } else {
+                    proxy.setLore(rawLore);
+                }
+            } else {
+                proxy.setLore(rawLore);
+            }
         } else {
             const lore = customItem.getLore();
             if (lore && lore.length > 0) {
-                proxy.setLore(lore);
+                if (isCombined) {
+                    const hasProtection = lore.some(l => typeof l === "string" && l.includes("+9"));
+                    if (!hasProtection) {
+                        proxy.setLore([
+                            { translate: "lore.ed:armor_protection" },
+                            ...lore
+                        ]);
+                    } else {
+                        proxy.setLore(lore);
+                    }
+                } else {
+                    proxy.setLore(lore);
+                }
             } else if (isCombined) {
                 proxy.setLore(COMBINED_ARMOR_LORE);
             }
@@ -163,23 +191,35 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
         }
     } catch {}
 
-    // Restore lore
+    // Restore lore (filter out lore.ed:armor_protection since wearable component provides it natively)
     try {
+        const filterProtection = (lines) => lines.filter(l => {
+            if (l?.translate === "lore.ed:armor_protection") return false;
+            if (typeof l === "string" && (l.includes("+9 Armadura") || l.includes("+9 Armor"))) return false;
+            return true;
+        });
+
         const rawLore = typeof proxy.getRawLore === "function" ? proxy.getRawLore() : null;
         if (rawLore && rawLore.length > 0) {
-            customItem.setLore(rawLore);
+            customItem.setLore(filterProtection(rawLore));
         } else {
             const lore = proxy.getLore();
             if (lore && lore.length > 0) {
-                customItem.setLore(lore);
+                customItem.setLore(filterProtection(lore));
             } else if (targetId === "elytra:chesplate" || targetId === "elytra:chesplate_broken") {
-                customItem.setLore(COMBINED_ARMOR_LORE);
+                customItem.setLore([
+                    { translate: "lore.ed:armor_toughness" },
+                    { translate: "lore.ed:knockback_resistance" }
+                ]);
             }
         }
     } catch {
         if (targetId === "elytra:chesplate" || targetId === "elytra:chesplate_broken") {
             try {
-                customItem.setLore(COMBINED_ARMOR_LORE);
+                customItem.setLore([
+                    { translate: "lore.ed:armor_toughness" },
+                    { translate: "lore.ed:knockback_resistance" }
+                ]);
             } catch {}
         }
     }
