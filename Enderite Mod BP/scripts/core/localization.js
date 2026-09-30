@@ -288,28 +288,28 @@ export const COMBINED_CRAFTING_STRINGS = {
  */
 export const VOID_ANVIL_STRINGS = {
     es_mx: {
-        formTitle: "Flotar en Vacío - Yunque",
+        formTitle: "§dFlotar en Vacío - Yunque",
         formBody: "Selecciona un objeto de tu inventario para aplicar o mejorar Flotar en Vacío:",
         noItemsBody: "§cNo se encontraron objetos compatibles con durabilidad en tu inventario.",
-        btnClose: "Cerrar",
+        btnClose: "§4Cerrar",
         noVoid: "Sin Flotar",
         levelText: "Nivel",
         applied: "§a¡Se aplicó Flotar en Vacío {level} a {item}!"
     },
     es: {
-        formTitle: "Flotar en el Vacío - Yunque",
+        formTitle: "§dFlotar en el Vacío - Yunque",
         formBody: "Selecciona un objeto de tu inventario para aplicar o mejorar Flotar en el Vacío:",
         noItemsBody: "§cNo se encontraron objetos compatibles con durabilidad en tu inventario.",
-        btnClose: "Cerrar",
+        btnClose: "§4Cerrar",
         noVoid: "Sin Flotar",
         levelText: "Nivel",
         applied: "§a¡Se aplicó Flotar en el Vacío {level} a {item}!"
     },
     en: {
-        formTitle: "Void Floating - Anvil",
+        formTitle: "§dVoid Floating - Anvil",
         formBody: "Select an item from your inventory to apply or upgrade Void Floating:",
         noItemsBody: "§cNo compatible durability items found in your inventory.",
-        btnClose: "Close",
+        btnClose: "§4Close",
         noVoid: "No Void",
         levelText: "Level",
         applied: "§aApplied Void Floating {level} to {item}!"

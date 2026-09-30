@@ -625,8 +625,8 @@ export function openVoidFloatingAnvilUi(player, block, bookLevel) {
     for (const cand of candidates) {
         const formattedName = getItemDisplayName(cand.item, lang);
         const label = cand.currentLevel > 0
-            ? `${formattedName}\n§5${strings.levelText} ${cand.currentLevel} §0-> §2${strings.levelText} ${cand.targetLevel}`
-            : `${formattedName}\n§8[${strings.noVoid}] §0-> §2${strings.levelText} ${cand.targetLevel}`;
+            ? `${formattedName}\n§d${strings.levelText} ${cand.currentLevel} §f-> §a${strings.levelText} ${cand.targetLevel}`
+            : `${formattedName}\n§7[${strings.noVoid}] §f-> §a${strings.levelText} ${cand.targetLevel}`;
         form.button(label);
     }
 
