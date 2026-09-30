@@ -10,4 +10,5 @@ import './components/void_floating.js';
 import './components/tp_lore.js';
 import './components/armor.js';
 import './components/ore.js';
+import './components/item_conversion.js';
 import './debug/ore_debug.js';

@@ -39,8 +39,14 @@ La hoja de ruta completa:
 | **P8-B1** | Protección de Combined:**9 Armor + 4 Toughness + 0.1 KB**                   | **Aprobado** , commit`1321279`                   |
 | **P8-B2** | Desgaste por golpes protegibles, Unbreaking de armadura para esos golpes y ruptura | **En revisión (aprobación parcial del código, pendiente de pruebas in-game)** |
 | **P8-B3** | Unbreaking de armadura durante el vuelo y Mending sobre el daño lógico           | **En revisión (aprobación parcial del código, pendiente de pruebas in-game)** |
-| **P8-C**  | Upgrade, fabricación de Combined y combinación de encantamientos                 | **Siguiente paso**                                       |
+| **P8-C**  | Upgrade, fabricación de Combined y combinación de encantamientos                 | **En progreso (C1–C4 implementados, C5–C6 siguientes)**  |
 | **P8-D**  | Estado roto, validación visual y limpieza del sistema antiguo                     | Pendiente                                                |
+
+**Seguimiento de P8-C (Conversión y Smithing)**:
+- **P8-C1** (Implementado - `5e02d27`): Durabilidad y compatibilidad de encantamientos alineadas para los 9 clones (`ed:bow`, `ed:crossbow`, `ed:elytra`, `ed:netherite_axe`, `ed:netherite_hoe`, `ed:netherite_pickaxe`, `ed:netherite_shovel`, `ed:netherite_sword`, `ed:shears`).
+- **P8-C2** (Implementado): Módulo centralizado `scripts/components/item_conversion.js` con transferencia sin pérdidas de daño, niveles de encantamiento, nombre personalizado, lore, propiedades dinámicas (excluyendo proxies internos) y flags de inventario (`lockMode`, `keepOnDeath`). Validación estricta 1:1 antes de reemplazar. Exclusión crítica de proxies de vuelo `minecraft:elytra` con `ed:elytra_variant`.
+- **P8-C3** (Implementado): Interacción fiable agachándose (`isSneaking`) e interactuando sobre Mesa de Herrería (`minecraft:smithing_table`). Cancelación del menú nativo, debounce de 400ms, captura y revalidación de ranura/ítem, y escritura segura diferida con `system.run`.
+- **P8-C4** (Implementado): Eliminación de las 18 recetas shapeless de ida y vuelta que destruían encantamientos y desgaste. Retención de clones y recetas de herrería para Enderite.
 
 **Revisión en curso de P8-B2 & P8-B3**:
 - **P8-B2**:
