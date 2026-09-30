@@ -470,11 +470,17 @@ system.runInterval(() => {
                 }
 
                 let logicalDamage = chest.getDynamicProperty(PROP_DAMAGE) ?? 0;
+                const pendingWear = pendingCombatWear.get(player.id);
+                if (pendingWear) {
+                    pendingCombatWear.delete(player.id);
+                    logicalDamage += pendingWear;
+                    updatedProxy = true;
+                }
+
                 const dur = chest.getComponent("durability");
                 if (dur && dur.damage > 0) {
                     logicalDamage += dur.damage;
                     dur.damage = 0; // Reset physical proxy wear back to 0
-                    chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
                     updatedProxy = true;
                 }
 
@@ -491,6 +497,7 @@ system.runInterval(() => {
                 }
 
                 if (updatedProxy) {
+                    chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
                     equippable.setEquipment(EquipmentSlot.Chest, chest);
                 }
                 continue;
@@ -571,6 +578,7 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 // Clean up disconnected players
 world.afterEvents.playerLeave.subscribe((event) => {
     playersWearingProxy.delete(event.playerId);
+    pendingCombatWear.delete(event.playerId);
 });
 
 // Safeguard on spawn: ensure player nameTag is restored if not wearing proxy
@@ -585,9 +593,13 @@ world.afterEvents.playerSpawn.subscribe((event) => {
     }
 });
 
+// Queue of pending combat wear from beforeEvents: Map<playerId, number>
+const pendingCombatWear = new Map();
+
 /**
- * Applies combat durability damage to the combined elytra proxy according to Java armor rules:
+ * Enqueues combat durability damage to the combined elytra proxy according to Java armor rules:
  * - Triggered strictly on protectable combat damage (excludes causes that bypass armor).
+ * - Safe for restricted beforeEvents context (no mutations or setEquipment inside event handler).
  * - Wear = Math.floor(Math.max(1, rawDamage / 4))
  * - Armor Unbreaking chance: 0.6 + 0.4 / (level + 1)
  * - If wear >= 1023: breaks immediately into elytra:chesplate_broken
@@ -628,15 +640,34 @@ export function applyCombatDamageToCombinedElytra(player, rawDamage) {
 
     if (armorWear <= 0) return;
 
-    let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + armorWear;
-    if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
-        try { player.playSound("random.break"); } catch {}
-        const brokenItem = restoreCustomElytra(chest, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
-        equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
-        playersWearingProxy.delete(player.id);
-        restoreProxyVisual(player);
-    } else {
-        chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
-        equippable.setEquipment(EquipmentSlot.Chest, chest);
-    }
+    const playerId = player.id;
+    const prevWear = pendingCombatWear.get(playerId) ?? 0;
+    pendingCombatWear.set(playerId, prevWear + armorWear);
+
+    // Defer state mutation outside restricted beforeEvents context
+    system.run(() => {
+        const wearToApply = pendingCombatWear.get(playerId);
+        if (!wearToApply) return;
+        pendingCombatWear.delete(playerId);
+
+        if (!player.isValid) return;
+        const equip = player.getComponent("equippable");
+        if (!equip) return;
+
+        const currentChest = equip.getEquipment(EquipmentSlot.Chest);
+        if (!currentChest || currentChest.typeId !== "minecraft:elytra") return;
+        if (currentChest.getDynamicProperty(PROP_VARIANT) !== "combined") return;
+
+        let logicalDamage = (currentChest.getDynamicProperty(PROP_DAMAGE) ?? 0) + wearToApply;
+        if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
+            try { player.playSound("random.break"); } catch {}
+            const brokenItem = restoreCustomElytra(currentChest, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
+            equip.setEquipment(EquipmentSlot.Chest, brokenItem);
+            playersWearingProxy.delete(player.id);
+            restoreProxyVisual(player);
+        } else {
+            currentChest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
+            equip.setEquipment(EquipmentSlot.Chest, currentChest);
+        }
+    });
 }
