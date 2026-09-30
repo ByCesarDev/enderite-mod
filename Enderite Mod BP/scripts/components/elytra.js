@@ -7,6 +7,11 @@ const PROP_VARIANT = "ed:elytra_variant";
 const PROP_DAMAGE = "ed:elytra_damage";
 const PROP_HAS_CUSTOM_NAME = "ed:has_custom_name";
 
+// Visual bridge markers matching RP attachable query.get_name
+const VISUAL_COMBINED = "§6";
+const VISUAL_SEPARATED = "§7";
+const PROP_ORIGINAL_NAMETAG = "ed:elytra_original_nametag";
+
 /**
  * Creates a runtime proxy ItemStack (minecraft:elytra) from a custom Enderite Elytra.
  * Preserves variant, logical damage (0..1023), enchantments, custom name, and custom properties.
@@ -196,6 +201,35 @@ function cleanupInventoryProxies(player) {
     }
 }
 
+/**
+ * Synchronizes player nameTag visual bridge to communicate with RP attachable
+ * without modifying gameplay identity or dirtying the true player name.
+ * @param {import("@minecraft/server").Player} player
+ * @param {"combined"|"separated"} variant
+ */
+function syncProxyVisual(player, variant) {
+    if (player.getDynamicProperty(PROP_ORIGINAL_NAMETAG) === undefined) {
+        player.setDynamicProperty(PROP_ORIGINAL_NAMETAG, player.nameTag ?? player.name);
+    }
+
+    const targetVisual = variant === "combined" ? VISUAL_COMBINED : VISUAL_SEPARATED;
+    if (player.nameTag !== targetVisual) {
+        player.nameTag = targetVisual;
+    }
+}
+
+/**
+ * Restores original player nameTag when removing or breaking the proxy.
+ * @param {import("@minecraft/server").Player} player
+ */
+function restoreProxyVisual(player) {
+    const original = player.getDynamicProperty(PROP_ORIGINAL_NAMETAG);
+    if (typeof original === "string") {
+        player.nameTag = original;
+    }
+    player.setDynamicProperty(PROP_ORIGINAL_NAMETAG, undefined);
+}
+
 // Track which players were wearing our proxy on previous tick
 const playersWearingProxy = new Set();
 
@@ -216,6 +250,7 @@ system.runInterval(() => {
             const proxy = createElytraProxy(chest);
             equippable.setEquipment(EquipmentSlot.Chest, proxy);
             playersWearingProxy.add(player.id);
+            syncProxyVisual(player, chest.typeId === "elytra:chesplate" ? "combined" : "separated");
             continue;
         }
 
@@ -224,8 +259,9 @@ system.runInterval(() => {
             const variant = chest.getDynamicProperty(PROP_VARIANT);
             if (variant) {
                 playersWearingProxy.add(player.id);
-                const dur = chest.getComponent("durability");
+                syncProxyVisual(player, variant);
 
+                const dur = chest.getComponent("durability");
                 if (dur && dur.damage > 0) {
                     let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + dur.damage;
 
@@ -236,6 +272,7 @@ system.runInterval(() => {
                         const brokenItem = restoreCustomElytra(chest, brokenId, BROKEN_LOGICAL_DAMAGE);
                         equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
                         playersWearingProxy.delete(player.id);
+                        restoreProxyVisual(player);
                     } else {
                         // Safe wear: 1 vanilla point consumed = 1 logical point out of 1024
                         chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
@@ -250,6 +287,7 @@ system.runInterval(() => {
         // CASE 3: Not wearing proxy this tick
         if (wasWearingProxy) {
             playersWearingProxy.delete(player.id);
+            restoreProxyVisual(player);
             // One-time safety cleanup of inventory slots during unequip transition
             cleanupInventoryProxies(player);
         }
@@ -320,4 +358,16 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 // Clean up disconnected players
 world.afterEvents.playerLeave.subscribe((event) => {
     playersWearingProxy.delete(event.playerId);
+});
+
+// Safeguard on spawn: ensure player nameTag is restored if not wearing proxy
+world.afterEvents.playerSpawn.subscribe((event) => {
+    const player = event.player;
+    if (!player) return;
+    const equippable = player.getComponent("equippable");
+    const chest = equippable?.getEquipment(EquipmentSlot.Chest);
+    const hasProxy = chest?.typeId === "minecraft:elytra" && chest.getDynamicProperty(PROP_VARIANT);
+    if (!hasProxy) {
+        restoreProxyVisual(player);
+    }
 });
