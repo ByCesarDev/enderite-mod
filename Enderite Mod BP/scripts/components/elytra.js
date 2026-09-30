@@ -20,12 +20,39 @@ const COMBINED_ARMOR_LORE = [
 ];
 
 /**
+ * Resolves localized display name formatted with §r§d (reset italics, epic magenta rarity color)
+ * matching custom item tooltips and Bedrock UI.
+ * @param {boolean} isCombined
+ * @param {Player|null} player
+ * @returns {string}
+ */
+function getElytraProxyDisplayName(isCombined, player = null) {
+    const locale = player?.clientSystemInfo?.locale?.toLowerCase() ?? "";
+    if (isCombined) {
+        if (locale.startsWith("es_mx")) {
+            return "§r§dPechera con Élitros de Enderita";
+        } else if (locale.startsWith("es")) {
+            return "§r§dCoraza con Élitros de Enderita";
+        } else {
+            return "§r§dEnderite Elytra Chestplate";
+        }
+    } else {
+        if (locale.startsWith("es")) {
+            return "§r§dÉlitros de Enderita";
+        } else {
+            return "§r§dEnderite Elytra";
+        }
+    }
+}
+
+/**
  * Creates a runtime proxy ItemStack (minecraft:elytra) from a custom Enderite Elytra.
  * Preserves variant, logical damage (0..1023), enchantments, custom name, and custom properties.
  * @param {ItemStack} customItem
+ * @param {Player|null} player
  * @returns {ItemStack}
  */
-function createElytraProxy(customItem) {
+function createElytraProxy(customItem, player = null) {
     const isCombined = customItem.typeId === "elytra:chesplate";
     const variant = isCombined ? "combined" : "separated";
     const proxy = new ItemStack("minecraft:elytra", 1);
@@ -63,7 +90,7 @@ function createElytraProxy(customItem) {
         proxy.nameTag = customItem.nameTag;
         proxy.setDynamicProperty(PROP_HAS_CUSTOM_NAME, true);
     } else {
-        proxy.nameTag = isCombined ? "Coraza con Élitros de Enderita" : "Élitros de Enderita";
+        proxy.nameTag = getElytraProxyDisplayName(isCombined, player);
         proxy.setDynamicProperty(PROP_HAS_CUSTOM_NAME, false);
     }
 
@@ -177,9 +204,22 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
         }
     }
 
-    // Restore custom name if original had one
-    if (proxy.getDynamicProperty(PROP_HAS_CUSTOM_NAME) && proxy.nameTag) {
+    // Restore custom name if original had one, or if player renamed it on anvil while equipped
+    const hadCustomName = proxy.getDynamicProperty(PROP_HAS_CUSTOM_NAME);
+    if (hadCustomName && proxy.nameTag) {
         customItem.nameTag = proxy.nameTag;
+    } else if (proxy.nameTag) {
+        const defaultNames = [
+            "Coraza con Élitros de Enderita",
+            "Pechera con Élitros de Enderita",
+            "Enderite Elytra Chestplate",
+            "Élitros de Enderita",
+            "Enderite Elytra"
+        ];
+        const isDefault = defaultNames.some(name => proxy.nameTag.includes(name));
+        if (!isDefault) {
+            customItem.nameTag = proxy.nameTag;
+        }
     }
 
     // Copy additional dynamic properties
@@ -356,7 +396,7 @@ system.runInterval(() => {
 
         // CASE 1: Player equipped custom unbroken elytra -> Convert to runtime proxy
         if (chest && (chest.typeId === "elytra:enderite" || chest.typeId === "elytra:chesplate")) {
-            const proxy = createElytraProxy(chest);
+            const proxy = createElytraProxy(chest, player);
             equippable.setEquipment(EquipmentSlot.Chest, proxy);
             playersWearingProxy.add(player.id);
             syncProxyVisual(player, chest.typeId === "elytra:chesplate" ? "combined" : "separated");
@@ -369,6 +409,32 @@ system.runInterval(() => {
             if (variant) {
                 playersWearingProxy.add(player.id);
                 syncProxyVisual(player, variant);
+
+                // Parity self-heal: ensure proxy has localized §r§d name and armor protection lore
+                const isCombined = variant === "combined";
+                let updatedProxy = false;
+                const expectedName = getElytraProxyDisplayName(isCombined, player);
+                const hasCustomName = chest.getDynamicProperty(PROP_HAS_CUSTOM_NAME);
+                if (!hasCustomName && chest.nameTag !== expectedName) {
+                    chest.nameTag = expectedName;
+                    updatedProxy = true;
+                }
+                if (isCombined) {
+                    try {
+                        const rawLore = typeof chest.getRawLore === "function" ? chest.getRawLore() : null;
+                        const hasProt = rawLore
+                            ? rawLore.some(l => l?.translate === "lore.ed:armor_protection" || (typeof l === "string" && l.includes("+9")))
+                            : (chest.getLore()?.some(l => typeof l === "string" && l.includes("+9")) ?? false);
+                        if (!hasProt) {
+                            const curLore = rawLore ?? chest.getLore() ?? [];
+                            chest.setLore([{ translate: "lore.ed:armor_protection" }, ...curLore]);
+                            updatedProxy = true;
+                        }
+                    } catch {}
+                }
+                if (updatedProxy) {
+                    equippable.setEquipment(EquipmentSlot.Chest, chest);
+                }
 
                 const dur = chest.getComponent("durability");
                 if (dur && dur.damage > 0) {
@@ -478,5 +544,54 @@ world.afterEvents.playerSpawn.subscribe((event) => {
     const hasProxy = chest?.typeId === "minecraft:elytra" && chest.getDynamicProperty(PROP_VARIANT);
     if (!hasProxy) {
         restoreProxyVisual(player);
+    }
+});
+
+// Durability wear on hurt (Java parity: combined takes combat damage like a chestplate; separated has damageOnHurt = false)
+world.afterEvents.entityHurt.subscribe((event) => {
+    const hurtEntity = event.hurtEntity;
+    if (!hurtEntity || hurtEntity.typeId !== "minecraft:player") return;
+
+    const equippable = hurtEntity.getComponent("equippable");
+    if (!equippable) return;
+
+    const chest = equippable.getEquipment(EquipmentSlot.Chest);
+    if (!chest || chest.typeId !== "minecraft:elytra") return;
+
+    const variant = chest.getDynamicProperty(PROP_VARIANT);
+    if (variant !== "combined") return;
+
+    // Vanilla armor wear calculation: Math.max(1, Math.floor(damage / 4))
+    const rawDamage = event.damage;
+    let armorWear = Math.max(1, Math.floor(rawDamage / 4));
+
+    // Factor in Unbreaking enchantment if present
+    const enchantable = chest.getComponent("enchantable");
+    if (enchantable) {
+        const unbreaking = enchantable.getEnchantment("unbreaking");
+        if (unbreaking && unbreaking.level > 0) {
+            let actualWear = 0;
+            const takeDamageChance = 0.6 + 0.4 / (unbreaking.level + 1);
+            for (let i = 0; i < armorWear; i++) {
+                if (Math.random() < takeDamageChance) {
+                    actualWear++;
+                }
+            }
+            armorWear = actualWear;
+        }
+    }
+
+    if (armorWear <= 0) return;
+
+    let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + armorWear;
+    if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
+        try { hurtEntity.playSound("random.break"); } catch {}
+        const brokenItem = restoreCustomElytra(chest, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
+        equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
+        playersWearingProxy.delete(hurtEntity.id);
+        restoreProxyVisual(hurtEntity);
+    } else {
+        chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
+        equippable.setEquipment(EquipmentSlot.Chest, chest);
     }
 });

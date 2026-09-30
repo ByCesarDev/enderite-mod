@@ -56,6 +56,35 @@ function applyTPLore(itemStack) {
   }
 
   // Manejo de armaduras
+  if (isCombinedProxy) {
+    try {
+      const rawLore = typeof itemStack.getRawLore === "function" ? itemStack.getRawLore() : null;
+      if (rawLore && rawLore.length >= 3) {
+        const hasProtection = rawLore.some(l => l?.translate === "lore.ed:armor_protection" || (typeof l === "string" && l.includes("+9")));
+        if (hasProtection) return false;
+      } else {
+        const currentLore = itemStack.getLore();
+        if (currentLore && currentLore.length >= 3) {
+          const hasProtection = currentLore.some(l => typeof l === "string" && l.includes("+9"));
+          if (hasProtection) return false;
+        }
+      }
+    } catch {}
+
+    try {
+      const existingLore = (typeof itemStack.getRawLore === "function" ? itemStack.getRawLore() : null) ?? itemStack.getLore() ?? [];
+      const filtered = existingLore.filter(l => l?.translate !== "lore.ed:armor_protection" && !(typeof l === "string" && l.includes("+9")));
+      itemStack.setLore([
+        { translate: "lore.ed:armor_protection" },
+        ...filtered
+      ]);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // Manejo de armaduras estándar
   try {
     const currentLore = itemStack.getLore();
     const targetLength = 2;
