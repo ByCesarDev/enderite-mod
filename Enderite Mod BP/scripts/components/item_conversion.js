@@ -328,34 +328,27 @@ world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
     }
 });
 
-// 2. Item use on block before event (cancels using/equipping item on smithing table)
-world.beforeEvents.itemUseOn.subscribe((event) => {
-    try {
-        handleSmithingConversion(event.source, event.block, event.itemStack, event);
-    } catch (e) {
-        console.error(`[Enderite] Error handling smithing table itemUseOn: ${e}`);
-    }
-});
+// 2. Item use before event (cancels right-click equip while targeting smithing table)
+if (world.beforeEvents?.itemUse?.subscribe) {
+    world.beforeEvents.itemUse.subscribe((event) => {
+        try {
+            const player = event.source;
+            if (!player || !player.isSneaking) return;
+            const itemStack = event.itemStack;
+            if (!itemStack) return;
 
-// 3. Item use before event (cancels right-click equip while targeting smithing table)
-world.beforeEvents.itemUse.subscribe((event) => {
-    try {
-        const player = event.source;
-        if (!player || !player.isSneaking) return;
-        const itemStack = event.itemStack;
-        if (!itemStack) return;
+            const target = getConversionTarget(itemStack);
+            if (!target) return;
 
-        const target = getConversionTarget(itemStack);
-        if (!target) return;
-
-        const block = player.getBlockFromViewDirection({ maxDistance: 5 })?.block;
-        if (block?.typeId === "minecraft:smithing_table") {
-            handleSmithingConversion(player, block, itemStack, event);
+            const block = player.getBlockFromViewDirection({ maxDistance: 5 })?.block;
+            if (block?.typeId === "minecraft:smithing_table") {
+                handleSmithingConversion(player, block, itemStack, event);
+            }
+        } catch (e) {
+            console.error(`[Enderite] Error handling smithing table itemUse: ${e}`);
         }
-    } catch (e) {
-        console.error(`[Enderite] Error handling smithing table itemUse: ${e}`);
-    }
-});
+    });
+}
 
 world.afterEvents.playerLeave.subscribe((event) => {
     lastConversionTime.delete(event.playerId);
