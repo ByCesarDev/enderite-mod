@@ -15,7 +15,7 @@ const ARMOR_ITEMS = new Set([
   "elytra:chesplate_broken"
 ]);
 
-function applyTPLore(itemStack) {
+function applyTPLore(itemStack, player = null) {
   if (!itemStack) return false;
 
   const isSword = itemStack.typeId in SWORD_CAPACITIES;
@@ -57,25 +57,23 @@ function applyTPLore(itemStack) {
 
   // Manejo de armaduras
   if (isCombinedProxy) {
+    const locale = player?.clientSystemInfo?.locale?.toLowerCase() ?? "";
+    const protText = locale.startsWith("es") ? "§9+9 Armadura" : "§9+9 Armor";
+
     try {
-      const rawLore = typeof itemStack.getRawLore === "function" ? itemStack.getRawLore() : null;
-      if (rawLore && rawLore.length >= 3) {
-        const hasProtection = rawLore.some(l => l?.translate === "lore.ed:armor_protection" || (typeof l === "string" && l.includes("+9")));
-        if (hasProtection) return false;
-      } else {
-        const currentLore = itemStack.getLore();
-        if (currentLore && currentLore.length >= 3) {
-          const hasProtection = currentLore.some(l => typeof l === "string" && l.includes("+9"));
-          if (hasProtection) return false;
-        }
+      const curLore = itemStack.getLore() ?? [];
+      const hasProt = curLore.some(l => typeof l === "string" && l.includes("+9"));
+      const hasBuggedKey = curLore.some(l => typeof l === "string" && l.includes("armor_protection"));
+      if (hasProt && !hasBuggedKey && curLore.length >= 3) {
+        return false;
       }
     } catch {}
 
     try {
       const existingLore = (typeof itemStack.getRawLore === "function" ? itemStack.getRawLore() : null) ?? itemStack.getLore() ?? [];
-      const filtered = existingLore.filter(l => l?.translate !== "lore.ed:armor_protection" && !(typeof l === "string" && l.includes("+9")));
+      const filtered = existingLore.filter(l => l?.translate !== "lore.ed:armor_protection" && !(typeof l === "string" && (l.includes("+9") || l.includes("armor_protection"))));
       itemStack.setLore([
-        { translate: "lore.ed:armor_protection" },
+        protText,
         ...filtered
       ]);
       return true;
@@ -135,7 +133,7 @@ system.runInterval(() => {
           for (let i = 0; i < inventory.size; i++) {
             const item = inventory.getItem(i);
             if (item && (item.typeId in TP_ITEMS || ARMOR_ITEMS.has(item.typeId))) {
-              if (applyTPLore(item)) {
+              if (applyTPLore(item, player)) {
                 inventory.setItem(i, item);
               }
             }
@@ -152,7 +150,7 @@ system.runInterval(() => {
             const item = equippable.getEquipment(slotName);
             const isCombinedProxy = item?.typeId === "minecraft:elytra" && item?.getDynamicProperty("ed:elytra_variant") === "combined";
             if (item && (item.typeId in TP_ITEMS || ARMOR_ITEMS.has(item.typeId) || isCombinedProxy)) {
-              if (applyTPLore(item)) {
+              if (applyTPLore(item, player)) {
                 equippable.setEquipment(slotName, item);
               }
             }

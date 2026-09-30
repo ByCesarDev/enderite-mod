@@ -12,37 +12,47 @@ const VISUAL_COMBINED = "§6";
 const VISUAL_SEPARATED = "§7";
 const PROP_ORIGINAL_NAMETAG = "ed:elytra_original_nametag";
 
-// Translatable lore matching .lang translations (lore.ed:armor_protection, lore.ed:armor_toughness, lore.ed:knockback_resistance)
-const COMBINED_ARMOR_LORE = [
-    { translate: "lore.ed:armor_protection" },
-    { translate: "lore.ed:armor_toughness" },
-    { translate: "lore.ed:knockback_resistance" }
-];
-
-/**
- * Resolves localized display name formatted with §r§d (reset italics, epic magenta rarity color)
- * matching custom item tooltips and Bedrock UI.
- * @param {boolean} isCombined
- * @param {Player|null} player
- * @returns {string}
- */
-function getElytraProxyDisplayName(isCombined, player = null) {
-    const locale = player?.clientSystemInfo?.locale?.toLowerCase() ?? "";
-    if (isCombined) {
-        if (locale.startsWith("es_mx")) {
-            return "§r§dPechera con Élitros de Enderita";
-        } else if (locale.startsWith("es")) {
-            return "§r§dCoraza con Élitros de Enderita";
-        } else {
-            return "§r§dEnderite Elytra Chestplate";
-        }
-    } else {
-        if (locale.startsWith("es")) {
-            return "§r§dÉlitros de Enderita";
-        } else {
-            return "§r§dEnderite Elytra";
-        }
+const PROXY_TRANSLATIONS = {
+    "es_mx": {
+        nameCombined: "§r§dPechera con Élitros de Enderita",
+        nameSeparated: "§r§dÉlitros de Enderita",
+        armorProtection: "§9+9 Armadura"
+    },
+    "es": {
+        nameCombined: "§r§dCoraza con Élitros de Enderita",
+        nameSeparated: "§r§dÉlitros de Enderita",
+        armorProtection: "§9+9 Armadura"
+    },
+    "default": {
+        nameCombined: "§r§dEnderite Elytra Chestplate",
+        nameSeparated: "§r§dEnderite Elytra",
+        armorProtection: "§9+9 Armor"
     }
+};
+
+function getProxyTranslation(player = null) {
+    const locale = player?.clientSystemInfo?.locale?.toLowerCase() ?? "";
+    if (locale.startsWith("es_mx")) return PROXY_TRANSLATIONS["es_mx"];
+    if (locale.startsWith("es")) return PROXY_TRANSLATIONS["es"];
+    return PROXY_TRANSLATIONS["default"];
+}
+
+function getElytraProxyDisplayName(isCombined, player = null) {
+    const t = getProxyTranslation(player);
+    return isCombined ? t.nameCombined : t.nameSeparated;
+}
+
+function getElytraProxyProtectionLore(player = null) {
+    const t = getProxyTranslation(player);
+    return t.armorProtection;
+}
+
+function getCombinedArmorLore(player = null) {
+    return [
+        getElytraProxyProtectionLore(player),
+        { translate: "lore.ed:armor_toughness" },
+        { translate: "lore.ed:knockback_resistance" }
+    ];
 }
 
 /**
@@ -105,18 +115,15 @@ function createElytraProxy(customItem, player = null) {
 
     // Copy lore (armor protection, toughness, knockback, void floating, custom lines)
     try {
+        const protText = getElytraProxyProtectionLore(player);
         const rawLore = typeof customItem.getRawLore === "function" ? customItem.getRawLore() : null;
         if (rawLore && rawLore.length > 0) {
             if (isCombined) {
-                const hasProtection = rawLore.some(l => l?.translate === "lore.ed:armor_protection" || (typeof l === "string" && l.includes("+9")));
-                if (!hasProtection) {
-                    proxy.setLore([
-                        { translate: "lore.ed:armor_protection" },
-                        ...rawLore
-                    ]);
-                } else {
-                    proxy.setLore(rawLore);
-                }
+                const cleanedLore = rawLore.filter(l => l?.translate !== "lore.ed:armor_protection" && !(typeof l === "string" && (l.includes("+9") || l.includes("armor_protection"))));
+                proxy.setLore([
+                    protText,
+                    ...cleanedLore
+                ]);
             } else {
                 proxy.setLore(rawLore);
             }
@@ -124,26 +131,22 @@ function createElytraProxy(customItem, player = null) {
             const lore = customItem.getLore();
             if (lore && lore.length > 0) {
                 if (isCombined) {
-                    const hasProtection = lore.some(l => typeof l === "string" && l.includes("+9"));
-                    if (!hasProtection) {
-                        proxy.setLore([
-                            { translate: "lore.ed:armor_protection" },
-                            ...lore
-                        ]);
-                    } else {
-                        proxy.setLore(lore);
-                    }
+                    const cleanedLore = lore.filter(l => typeof l === "string" && !l.includes("+9") && !l.includes("armor_protection"));
+                    proxy.setLore([
+                        protText,
+                        ...cleanedLore
+                    ]);
                 } else {
                     proxy.setLore(lore);
                 }
             } else if (isCombined) {
-                proxy.setLore(COMBINED_ARMOR_LORE);
+                proxy.setLore(getCombinedArmorLore(player));
             }
         }
     } catch {
         if (isCombined) {
             try {
-                proxy.setLore(COMBINED_ARMOR_LORE);
+                proxy.setLore(getCombinedArmorLore(player));
             } catch {}
         }
     }
@@ -235,7 +238,7 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
     try {
         const filterProtection = (lines) => lines.filter(l => {
             if (l?.translate === "lore.ed:armor_protection") return false;
-            if (typeof l === "string" && (l.includes("+9 Armadura") || l.includes("+9 Armor"))) return false;
+            if (typeof l === "string" && (l.includes("+9") || l.includes("armor_protection"))) return false;
             return true;
         });
 
@@ -421,13 +424,14 @@ system.runInterval(() => {
                 }
                 if (isCombined) {
                     try {
-                        const rawLore = typeof chest.getRawLore === "function" ? chest.getRawLore() : null;
-                        const hasProt = rawLore
-                            ? rawLore.some(l => l?.translate === "lore.ed:armor_protection" || (typeof l === "string" && l.includes("+9")))
-                            : (chest.getLore()?.some(l => typeof l === "string" && l.includes("+9")) ?? false);
-                        if (!hasProt) {
-                            const curLore = rawLore ?? chest.getLore() ?? [];
-                            chest.setLore([{ translate: "lore.ed:armor_protection" }, ...curLore]);
+                        const curLore = chest.getLore() ?? [];
+                        const hasProt = curLore.some(l => typeof l === "string" && l.includes("+9"));
+                        const hasBuggedKey = curLore.some(l => typeof l === "string" && l.includes("armor_protection"));
+                        if (!hasProt || hasBuggedKey) {
+                            const rawLore = typeof chest.getRawLore === "function" ? chest.getRawLore() : null;
+                            const existing = rawLore ?? curLore;
+                            const cleaned = existing.filter(l => l?.translate !== "lore.ed:armor_protection" && !(typeof l === "string" && (l.includes("+9") || l.includes("armor_protection"))));
+                            chest.setLore([getElytraProxyProtectionLore(player), ...cleaned]);
                             updatedProxy = true;
                         }
                     } catch {}
