@@ -235,7 +235,29 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
         }
     }
 
-    const customItem = new ItemStack(targetId, 1);
+    const trimPattern = proxy.getDynamicProperty("ed:trim_pattern");
+    const trimMaterial = proxy.getDynamicProperty("ed:trim_material");
+
+    let customItem = null;
+    if (trimPattern && trimMaterial && (targetId === "elytra:chesplate" || targetId === "elytra:chesplate_broken")) {
+        try {
+            if (typeof world.getLootTableManager === "function") {
+                const lootMgr = world.getLootTableManager();
+                const table = lootMgr?.getLootTable(`loot_tables/trims/${trimPattern}_${trimMaterial}_combined.json`)
+                    ?? lootMgr?.getLootTable(`trims/${trimPattern}_${trimMaterial}_combined.json`);
+                if (table) {
+                    const generated = lootMgr.generateLootFromTable(table);
+                    if (generated && generated.length > 0) {
+                        customItem = generated[0];
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    if (!customItem) {
+        customItem = new ItemStack(targetId, 1);
+    }
 
     const customDur = customItem.getComponent("durability");
     if (customDur && typeof damage === "number") {

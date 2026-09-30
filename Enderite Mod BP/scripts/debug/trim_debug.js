@@ -83,6 +83,10 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
                     }
                 } catch {}
 
+                // Tag with trim dynamic properties so the proxy cycle can preserve it
+                item.setDynamicProperty("ed:trim_pattern", "silence");
+                item.setDynamicProperty("ed:trim_material", "gold");
+
                 // Deliver to player
                 try {
                     const inv = player.getComponent("inventory");
@@ -90,7 +94,7 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
                     if (leftover) {
                         player.dimension.spawnItem(leftover, player.location);
                     }
-                    player.sendMessage("  §a-> Entregado al inventario (o soltado a tus pies).");
+                    player.sendMessage("  §a-> Entregado al inventario con ed:trim_pattern=silence, ed:trim_material=gold.");
                 } catch (e) {
                     player.sendMessage(`  §cError entregando ítem: ${e}`);
                 }
@@ -98,6 +102,26 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
         } catch (e) {
             player.sendMessage(`§c[Trim Debug] Error generando loot: ${e}`);
         }
+    }
+
+    // 2b. Test generating minecraft:elytra with Silence + Gold trim
+    try {
+        const elytraTable = lootManager.getLootTable("loot_tables/trims/silence_gold_elytra.json") 
+            ?? lootManager.getLootTable("trims/silence_gold_elytra.json");
+        if (elytraTable) {
+            const elytraItems = lootManager.generateLootFromTable(elytraTable) ?? [];
+            player.sendMessage(`§d[Trim Debug] minecraft:elytra con trim generada: ${elytraItems.length} ítem(s).`);
+            for (const elItem of elytraItems) {
+                const inv = player.getComponent("inventory");
+                const leftover = inv?.container?.addItem(elItem);
+                if (leftover) player.dimension.spawnItem(leftover, player.location);
+                player.sendMessage(`  §a-> Entregada elytra vanilla de loot table. Prueba a equiparla para ver si dibuja trim.`);
+            }
+        } else {
+            player.sendMessage("§7[Trim Debug] No se encontró loot_tables/trims/silence_gold_elytra.json.");
+        }
+    } catch (e) {
+        player.sendMessage(`§c[Trim Debug] Error con silence_gold_elytra: ${e}`);
     }
 
     // 3. Test generating Enderite Chestplate with Silence + Gold trim
