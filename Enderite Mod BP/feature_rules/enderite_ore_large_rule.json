@@ -1,46 +1,42 @@
 {
-	"format_version": "1.13.0",
+	"format_version": "1.21.60",
 	"minecraft:feature_rules": {
 		"description": {
-			"identifier": "multimc:enderite_ore_features_rules",
-			"places_feature": "multimc:enderite_ore_feature"
+			"identifier": "ed:enderite_ore_large_rule",
+			"places_feature": "ed:enderite_ore_large"
 		},
 		"conditions": {
 			"placement_pass": "underground_pass",
 			"minecraft:biome_filter": [
 				{
-					"any_of": [
-						{
-							"test": "has_biome_tag",
-							"operator": "==",
-							"value": "the_end"
-						}
-					]
+					"test": "has_biome_tag",
+					"operator": "==",
+					"value": "the_end"
 				}
 			]
 		},
 		"distribution": {
-			"iterations": 14,
+			"iterations": 1,
 			"coordinate_eval_order": "zyx",
 			"x": {
 				"distribution": "uniform",
 				"extent": [
 					0,
-					12
+					15
 				]
 			},
 			"y": {
-				"distribution": "uniform",
+				"distribution": "triangle",
 				"extent": [
-					0,
-					48
+					8,
+					32
 				]
 			},
 			"z": {
 				"distribution": "uniform",
 				"extent": [
 					0,
-					12
+					15
 				]
 			}
 		}
