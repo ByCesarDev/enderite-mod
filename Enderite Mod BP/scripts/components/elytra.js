@@ -30,6 +30,20 @@ const PROXY_TRANSLATIONS = {
     }
 };
 
+const ALL_DEFAULT_PROXY_NAMES = new Set([
+    "§r§dPechera con Élitros de Enderita",
+    "§r§dCoraza con Élitros de Enderita",
+    "§r§dEnderite Elytra Chestplate",
+    "§r§dÉlitros de Enderita",
+    "§r§dEnderite Elytra",
+    "Pechera con Élitros de Enderita",
+    "Coraza con Élitros de Enderita",
+    "Enderite Elytra Chestplate",
+    "Élitros de Enderita",
+    "Enderite Elytra",
+    "Elytra"
+]);
+
 function getProxyTranslation(player = null) {
     const locale = player?.clientSystemInfo?.locale?.toLowerCase() ?? "";
     if (locale.startsWith("es_mx")) return PROXY_TRANSLATIONS["es_mx"];
@@ -320,13 +334,19 @@ function restoreRepairedBrokenItem(brokenItem) {
             if (lore && lore.length > 0) {
                 unbrokenItem.setLore(lore);
             } else if (unbrokenId === "elytra:chesplate") {
-                unbrokenItem.setLore(COMBINED_ARMOR_LORE);
+                unbrokenItem.setLore([
+                    { translate: "lore.ed:armor_toughness" },
+                    { translate: "lore.ed:knockback_resistance" }
+                ]);
             }
         }
     } catch {
         if (unbrokenId === "elytra:chesplate") {
             try {
-                unbrokenItem.setLore(COMBINED_ARMOR_LORE);
+                unbrokenItem.setLore([
+                    { translate: "lore.ed:armor_toughness" },
+                    { translate: "lore.ed:knockback_resistance" }
+                ]);
             } catch {}
         }
     }
@@ -418,10 +438,22 @@ system.runInterval(() => {
                 let updatedProxy = false;
                 const expectedName = getElytraProxyDisplayName(isCombined, player);
                 const hasCustomName = chest.getDynamicProperty(PROP_HAS_CUSTOM_NAME);
-                if (!hasCustomName && chest.nameTag !== expectedName) {
+                if (hasCustomName) {
+                    // Original had custom name, preserve it
+                } else if (!chest.nameTag || chest.nameTag === "Elytra") {
                     chest.nameTag = expectedName;
                     updatedProxy = true;
+                } else if (ALL_DEFAULT_PROXY_NAMES.has(chest.nameTag)) {
+                    if (chest.nameTag !== expectedName) {
+                        chest.nameTag = expectedName;
+                        updatedProxy = true;
+                    }
+                } else {
+                    // Player renamed proxy in an anvil! Mark it so it is never overwritten
+                    chest.setDynamicProperty(PROP_HAS_CUSTOM_NAME, true);
+                    updatedProxy = true;
                 }
+
                 if (isCombined) {
                     try {
                         const curLore = chest.getLore() ?? [];
@@ -436,28 +468,30 @@ system.runInterval(() => {
                         }
                     } catch {}
                 }
-                if (updatedProxy) {
-                    equippable.setEquipment(EquipmentSlot.Chest, chest);
-                }
 
+                let logicalDamage = chest.getDynamicProperty(PROP_DAMAGE) ?? 0;
                 const dur = chest.getComponent("durability");
                 if (dur && dur.damage > 0) {
-                    let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + dur.damage;
+                    logicalDamage += dur.damage;
+                    dur.damage = 0; // Reset physical proxy wear back to 0
+                    chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
+                    updatedProxy = true;
+                }
 
-                    if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
-                        // Broken! Stops gliding, plays break sound, converts to broken custom item
-                        try { player.playSound("random.break"); } catch {}
-                        const brokenId = variant === "combined" ? "elytra:chesplate_broken" : "elytra:enderite_broken";
-                        const brokenItem = restoreCustomElytra(chest, brokenId, BROKEN_LOGICAL_DAMAGE);
-                        equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
-                        playersWearingProxy.delete(player.id);
-                        restoreProxyVisual(player);
-                    } else {
-                        // Safe wear: 1 vanilla point consumed = 1 logical point out of 1024
-                        chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
-                        dur.damage = 0; // Reset physical proxy wear back to 0
-                        equippable.setEquipment(EquipmentSlot.Chest, chest);
-                    }
+                // Check breakage independently of whether physical dur.damage was > 0
+                if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
+                    // Broken! Stops gliding, plays break sound, converts to broken custom item
+                    try { player.playSound("random.break"); } catch {}
+                    const brokenId = variant === "combined" ? "elytra:chesplate_broken" : "elytra:enderite_broken";
+                    const brokenItem = restoreCustomElytra(chest, brokenId, BROKEN_LOGICAL_DAMAGE);
+                    equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
+                    playersWearingProxy.delete(player.id);
+                    restoreProxyVisual(player);
+                    continue;
+                }
+
+                if (updatedProxy) {
+                    equippable.setEquipment(EquipmentSlot.Chest, chest);
                 }
                 continue;
             }
@@ -551,12 +585,19 @@ world.afterEvents.playerSpawn.subscribe((event) => {
     }
 });
 
-// Durability wear on hurt (Java parity: combined takes combat damage like a chestplate; separated has damageOnHurt = false)
-world.afterEvents.entityHurt.subscribe((event) => {
-    const hurtEntity = event.hurtEntity;
-    if (!hurtEntity || hurtEntity.typeId !== "minecraft:player") return;
+/**
+ * Applies combat durability damage to the combined elytra proxy according to Java armor rules:
+ * - Triggered strictly on protectable combat damage (excludes causes that bypass armor).
+ * - Wear = Math.floor(Math.max(1, rawDamage / 4))
+ * - Armor Unbreaking chance: 0.6 + 0.4 / (level + 1)
+ * - If wear >= 1023: breaks immediately into elytra:chesplate_broken
+ * @param {import("@minecraft/server").Player} player
+ * @param {number} rawDamage
+ */
+export function applyCombatDamageToCombinedElytra(player, rawDamage) {
+    if (!player?.isValid || typeof rawDamage !== "number" || rawDamage <= 0) return;
 
-    const equippable = hurtEntity.getComponent("equippable");
+    const equippable = player.getComponent("equippable");
     if (!equippable) return;
 
     const chest = equippable.getEquipment(EquipmentSlot.Chest);
@@ -565,11 +606,11 @@ world.afterEvents.entityHurt.subscribe((event) => {
     const variant = chest.getDynamicProperty(PROP_VARIANT);
     if (variant !== "combined") return;
 
-    // Vanilla armor wear calculation: Math.max(1, Math.floor(damage / 4))
-    const rawDamage = event.damage;
-    let armorWear = Math.max(1, Math.floor(rawDamage / 4));
+    // Java LivingEntity.doHurtEquipment: int durabilityDamage = (int)Math.max(1.0F, damage / 4.0F)
+    let armorWear = Math.floor(Math.max(1, rawDamage / 4));
 
-    // Factor in Unbreaking enchantment if present
+    // Java unbreaking.json for #minecraft:enchantable/armor:
+    // Chance to take damage is 60% + 40% / (level + 1)
     const enchantable = chest.getComponent("enchantable");
     if (enchantable) {
         const unbreaking = enchantable.getEnchantment("unbreaking");
@@ -589,13 +630,13 @@ world.afterEvents.entityHurt.subscribe((event) => {
 
     let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + armorWear;
     if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
-        try { hurtEntity.playSound("random.break"); } catch {}
+        try { player.playSound("random.break"); } catch {}
         const brokenItem = restoreCustomElytra(chest, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
         equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
-        playersWearingProxy.delete(hurtEntity.id);
-        restoreProxyVisual(hurtEntity);
+        playersWearingProxy.delete(player.id);
+        restoreProxyVisual(player);
     } else {
         chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
         equippable.setEquipment(EquipmentSlot.Chest, chest);
     }
-});
+}

@@ -5,6 +5,7 @@ import {
     EntityComponentTypes,
     EntityDamageCause
 } from "@minecraft/server";
+import { applyCombatDamageToCombinedElytra } from "./elytra.js";
 
 const ARMOR_DEBUG = true;
 
@@ -186,6 +187,11 @@ world.beforeEvents.entityHurt.subscribe((event) => {
     }
 
     const rawDamage = event.damage;
+
+    // P8-B2: Desgaste de durabilidad por daño protegido a la Elytra Combinada (Paridad Java)
+    if (entity.typeId === "minecraft:player") {
+        applyCombatDamageToCombinedElytra(entity, rawDamage);
+    }
     
     // Daño objetivo que queremos que el jugador reciba (matemática de Java)
     const targetDamage = calculateArmorDamage(rawDamage, totalArmor, toughness);
