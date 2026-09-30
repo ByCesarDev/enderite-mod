@@ -32,39 +32,12 @@
 					"default_controller"
 				],
 				"pre_animation": [
-					"variable.default = query.get_name == '§f' ? 1 : variable.default;",
-					"variable.chesplate = query.get_name == '§f' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§f' ? 0 : variable.enderite;",
-					"variable.chesplate = query.get_name == '§1' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§1' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§1' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§3' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§3' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§3' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§2' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§2' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§2' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§4' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§4' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§4' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§6' ? 1 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§6' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§6' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§5' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§5' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§5' ? 0 : variable.default;",
-					"variable.enderite = query.get_name == '§7' ? 1 : variable.enderite;",
-					"variable.chesplate = query.get_name == '§7' ? 0 : variable.chesplate;",
-					"variable.default = query.get_name == '§7' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§8' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§8' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§8' ? 0 : variable.default;",
-					"variable.chesplate = query.get_name == '§9' ? 0 : variable.chesplate;",
-					"variable.enderite = query.get_name == '§9' ? 0 : variable.enderite;",
-					"variable.default = query.get_name == '§9' ? 0 : variable.default;"
+					"variable.chesplate = query.get_name == '§6';",
+					"variable.enderite = query.get_name == '§7';",
+					"variable.default = !variable.chesplate && !variable.enderite;"
 				],
 				"initialize": [
-					"variable.default = 0; variable.enderite = 0; variable.chesplate = 0;"
+					"variable.default = 1; variable.enderite = 0; variable.chesplate = 0;"
 				],
 				"parent_setup": "variable.chest_layer_visible = 0.0;"
 			},

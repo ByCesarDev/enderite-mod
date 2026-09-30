@@ -1,4 +1,4 @@
-import { world, system, ItemStack } from "@minecraft/server";
+import { world, system, ItemStack, EnchantmentTypes } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { getVoidFloatingLevel, setVoidFloatingLevel } from "../core/void_floating.js";
 
@@ -181,7 +181,10 @@ export function craftCombinedElytra(chestplateStack, gliderStack) {
     if (resultEnch) {
         for (const [id, level] of merged.entries()) {
             try {
-                resultEnch.addEnchantment({ type: id, level });
+                const enchType = EnchantmentTypes.get(id);
+                if (enchType) {
+                    resultEnch.addEnchantment({ type: enchType, level });
+                }
             } catch (err) {
                 // If native engine rejects, dynamic property guarantees retention
             }

@@ -272,10 +272,11 @@ export function convertHeldItem(player, expectedSlot, expectedTypeId) {
     }
 
     const isClone = VANILLA_TO_CLONE.has(currentItem.typeId);
+    console.warn(`[Enderite Diagnostic] Converted: ${currentItem.typeId} -> ${targetItem.typeId} (slot: ${slot}, fromChest: ${fromChest})`);
     if (isClone) {
-        player.onScreenDisplay?.setActionBar?.("§aObjeto preparado para herrería");
+        player.onScreenDisplay?.setActionBar?.(`§aObjeto preparado para herrería (§f${targetItem.typeId}§a)`);
     } else {
-        player.onScreenDisplay?.setActionBar?.("§aObjeto restaurado a vanilla");
+        player.onScreenDisplay?.setActionBar?.(`§aObjeto restaurado a vanilla (§f${targetItem.typeId}§a)`);
     }
 
     try {

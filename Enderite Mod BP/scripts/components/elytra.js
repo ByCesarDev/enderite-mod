@@ -1,4 +1,4 @@
-import { world, system, EquipmentSlot, ItemStack, GameMode, EntityDamageCause } from "@minecraft/server";
+import { world, system, EquipmentSlot, ItemStack, GameMode, EntityDamageCause, EnchantmentTypes } from "@minecraft/server";
 
 const MAX_LOGICAL_DURABILITY = 1024;
 const BROKEN_LOGICAL_DAMAGE = 1023;
@@ -277,7 +277,10 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
     if (customEnchantable && mergedEnchantsMap.size > 0) {
         for (const [id, level] of mergedEnchantsMap.entries()) {
             try {
-                customEnchantable.addEnchantment({ type: id, level });
+                const enchType = EnchantmentTypes.get(id);
+                if (enchType) {
+                    customEnchantable.addEnchantment({ type: enchType, level });
+                }
             } catch {}
         }
     }
@@ -540,6 +543,7 @@ function restoreProxyVisual(player) {
 
 // Track which players were wearing our proxy on previous tick
 const playersWearingProxy = new Set();
+const lastLoggedChestType = new Map();
 
 /**
  * Main lightweight runtime loop: Only inspects EquipmentSlot.Chest of each player every tick.
@@ -551,6 +555,13 @@ system.runInterval(() => {
         if (!equippable) continue;
 
         const chest = equippable.getEquipment(EquipmentSlot.Chest);
+        const chestTypeId = chest ? chest.typeId : "empty";
+        const prevLoggedChest = lastLoggedChestType.get(player.id);
+        if (chestTypeId !== prevLoggedChest) {
+            lastLoggedChestType.set(player.id, chestTypeId);
+            console.warn(`[Enderite Diagnostic] Player ${player.name} Chest Slot: ${chestTypeId}`);
+        }
+
         const wasWearingProxy = playersWearingProxy.has(player.id);
 
         // Mending repair on ed:elytra_damage / broken state from XP gain
@@ -803,6 +814,7 @@ world.afterEvents.playerLeave.subscribe((event) => {
     playersWearingProxy.delete(event.playerId);
     glidingTicks.delete(event.playerId);
     playerXp.delete(event.playerId);
+    lastLoggedChestType.delete(event.playerId);
 });
 
 // Safeguard on spawn: ensure player nameTag is restored if not wearing proxy
