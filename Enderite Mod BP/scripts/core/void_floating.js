@@ -614,12 +614,16 @@ export function openVoidFloatingAnvilUi(player, block, bookLevel) {
 
     form.body({ translate: "ui.ed:void_anvil_body" });
 
+    const isSpanish = player?.clientSystemInfo?.locale?.toLowerCase()?.startsWith("es");
+    const noVoidText = isSpanish ? "Sin Flotar" : "No Void";
+    const levelText = isSpanish ? "Nivel" : "Level";
+
     for (const cand of candidates) {
         const name = cand.item.nameTag || cand.item.typeId.replace(/^minecraft:/, '').replace(/^ed:/, '').replace(/_/g, ' ');
         const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
         const label = cand.currentLevel > 0
-            ? `${formattedName}\n§8Level ${cand.currentLevel} ➔ §aLevel ${cand.targetLevel}`
-            : `${formattedName}\n§8[No Void] ➔ §aLevel ${cand.targetLevel}`;
+            ? `${formattedName}\n§5${levelText} ${cand.currentLevel} §0-> §2${levelText} ${cand.targetLevel}`
+            : `${formattedName}\n§8[${noVoidText}] §0-> §2${levelText} ${cand.targetLevel}`;
         form.button(label);
     }
 

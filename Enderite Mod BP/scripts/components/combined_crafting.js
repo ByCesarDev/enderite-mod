@@ -230,12 +230,12 @@ function formatEnchantmentsForDisplay(enchants, voidFloatingLevel = 0) {
     for (const e of enchants) {
         const name = e.id.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
         const roman = ROMAN_NUMERALS[e.level] || String(e.level);
-        lines.push(`  §7• §b${name} ${roman}`);
+        lines.push(`  §7- §b${name} ${roman}`);
     }
 
     if (voidFloatingLevel > 0) {
         const roman = ROMAN_NUMERALS[voidFloatingLevel] || String(voidFloatingLevel);
-        lines.push(`  §7• §dFlotar en Vacío ${roman}`);
+        lines.push(`  §7- §dFlotar en Vacío ${roman}`);
     }
 
     if (lines.length === 0) {
@@ -301,7 +301,7 @@ export function executeCombinedCrafting(player, chestSlot, gliderSlot) {
         player.playSound("random.anvil_use", { pitch: 1.0, volume: 1.0 });
     } catch {}
 
-    player.onScreenDisplay?.setActionBar?.("§a✓ ¡Pechera con Élitros de Enderita fabricada!");
+    player.onScreenDisplay?.setActionBar?.("§a¡Pechera con Élitros de Enderita fabricada!");
     return true;
 }
 
@@ -349,16 +349,16 @@ function showConfirmationPreview(player, chestSlot, gliderSlot) {
     body += `${formatEnchantmentsForDisplay(chestEnchants, chestVF)}\n\n`;
     body += `§62. ${gliderName}§r\n`;
     body += `${formatEnchantmentsForDisplay(gliderEnchants, gliderVF)}\n\n`;
-    body += `§a➜ Resultado: Pechera con Élitros de Enderita§r\n`;
+    body += `§2-> Resultado: Pechera con Élitros de Enderita§r\n`;
     body += `  §2+9 Armadura | +4 Dureza | 100% Durabilidad§r\n`;
     body += `${formatEnchantmentsForDisplay(mergedList, resultVF)}\n\n`;
-    body += `§eNota: Sin coste de niveles de experiencia. Los encantamientos del mismo nivel suben +1 nivel.`;
+    body += `§6Nota: Sin coste de niveles de experiencia. Los encantamientos del mismo nivel suben +1 nivel.`;
 
     const form = new ActionFormData();
     form.title("§dFabricar Elytra Combinada");
     form.body(body);
-    form.button("§a✓ Confirmar y Fabricar", "textures/items/enderite_elytra");
-    form.button("§c✕ Cancelar");
+    form.button("§2Confirmar y Fabricar", "textures/items/enderite_elytra");
+    form.button("§4Cancelar");
 
     form.show(player).then((res) => {
         if (res.canceled || res.selection !== 0) {

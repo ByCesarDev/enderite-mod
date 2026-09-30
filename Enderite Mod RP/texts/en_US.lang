@@ -88,7 +88,7 @@ lore.ed:knockback_resistance=§9+1 Knockback Resistance
 itemGroup.name.shield=Enderite Shields
 
 ## Void Floating Anvil UI
-ui.ed:void_anvil_title=Void Floating — Anvil
+ui.ed:void_anvil_title=Void Floating - Anvil
 ui.ed:void_anvil_body=Select an item from your inventory to apply or upgrade Void Floating:
 ui.ed:void_anvil_no_items=§cNo compatible durability items found in your inventory.
 ui.ed:void_anvil_close=Close

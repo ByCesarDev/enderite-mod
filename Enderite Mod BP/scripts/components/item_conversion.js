@@ -273,9 +273,9 @@ export function convertHeldItem(player, expectedSlot, expectedTypeId) {
 
     const isClone = VANILLA_TO_CLONE.has(currentItem.typeId);
     if (isClone) {
-        player.onScreenDisplay?.setActionBar?.("§a✓ Objeto preparado para herrería");
+        player.onScreenDisplay?.setActionBar?.("§aObjeto preparado para herrería");
     } else {
-        player.onScreenDisplay?.setActionBar?.("§a✓ Objeto restaurado a vanilla");
+        player.onScreenDisplay?.setActionBar?.("§aObjeto restaurado a vanilla");
     }
 
     try {

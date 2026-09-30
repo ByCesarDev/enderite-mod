@@ -88,7 +88,7 @@ lore.ed:knockback_resistance=§9+1 Resistencia al derribo
 itemGroup.name.shield=Escudos de Enderita
 
 ## Interfaz de Yunque de Flotar en Vacío
-ui.ed:void_anvil_title=Flotar en vacío — Yunque
+ui.ed:void_anvil_title=Flotar en vacío - Yunque
 ui.ed:void_anvil_body=Selecciona un objeto de tu inventario para aplicar o mejorar Flotar en vacío:
 ui.ed:void_anvil_no_items=§cNo se encontraron objetos compatibles con durabilidad en tu inventario.
 ui.ed:void_anvil_close=Cerrar
