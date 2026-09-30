@@ -1,6 +1,12 @@
 import { world, system, ItemStack, EnchantmentTypes } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
 import { getVoidFloatingLevel, setVoidFloatingLevel } from "../core/void_floating.js";
+import {
+    getLanguage,
+    formatEnchantmentsForDisplay,
+    getItemDisplayName,
+    COMBINED_CRAFTING_STRINGS
+} from "../core/localization.js";
 
 export const ENDERITE_CHESTPLATE_ID = "ed:enderite_chestplate";
 export const COMBINED_RESULT_ID = "elytra:chesplate";
@@ -222,32 +228,6 @@ export function craftCombinedElytra(chestplateStack, gliderStack) {
 }
 
 /**
- * Formats enchantment list into readable string lines for UI forms.
- * @param {Array<{ id: string, level: number }>} enchants
- * @param {number} [voidFloatingLevel=0]
- * @returns {string}
- */
-function formatEnchantmentsForDisplay(enchants, voidFloatingLevel = 0) {
-    const lines = [];
-
-    for (const e of enchants) {
-        const name = e.id.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-        const roman = ROMAN_NUMERALS[e.level] || String(e.level);
-        lines.push(`  §7- §b${name} ${roman}`);
-    }
-
-    if (voidFloatingLevel > 0) {
-        const roman = ROMAN_NUMERALS[voidFloatingLevel] || String(voidFloatingLevel);
-        lines.push(`  §7- §dFlotar en Vacío ${roman}`);
-    }
-
-    if (lines.length === 0) {
-        return "  §8(Sin encantamientos)";
-    }
-    return lines.join("\n");
-}
-
-/**
  * Executes atomic crafting transaction replacing the items in the player's container.
  * @param {import("@minecraft/server").Player} player
  * @param {number} chestSlot
@@ -256,6 +236,9 @@ function formatEnchantmentsForDisplay(enchants, voidFloatingLevel = 0) {
  */
 export function executeCombinedCrafting(player, chestSlot, gliderSlot) {
     if (!player?.isValid) return false;
+
+    const lang = getLanguage(player);
+    const strings = COMBINED_CRAFTING_STRINGS[lang] || COMBINED_CRAFTING_STRINGS.en;
 
     const inv = player.getComponent("inventory");
     const container = inv?.container;
@@ -268,7 +251,7 @@ export function executeCombinedCrafting(player, chestSlot, gliderSlot) {
 
     // Strict revalidation before touching inventory
     if (!isEnderiteChestplate(chestItem) || !isGliderItem(gliderItem)) {
-        player.onScreenDisplay?.setActionBar?.("§c[Enderite] Los objetos fueron movidos o no son válidos.");
+        player.onScreenDisplay?.setActionBar?.(strings.itemsMoved);
         try { player.playSound("note.bass", { pitch: 0.7 }); } catch {}
         return false;
     }
@@ -277,13 +260,13 @@ export function executeCombinedCrafting(player, chestSlot, gliderSlot) {
     try {
         combinedResult = craftCombinedElytra(chestItem, gliderItem);
     } catch (err) {
-        player.onScreenDisplay?.setActionBar?.(`§c[Enderite] Error al fabricar: ${err}`);
+        player.onScreenDisplay?.setActionBar?.(`${strings.craftError}${err?.message || err}`);
         try { player.playSound("note.bass", { pitch: 0.7 }); } catch {}
         return false;
     }
 
     if (!combinedResult) {
-        player.onScreenDisplay?.setActionBar?.("§c[Enderite] No se pudo fabricar la Elytra Combinada.");
+        player.onScreenDisplay?.setActionBar?.(strings.craftFailed);
         try { player.playSound("note.bass", { pitch: 0.7 }); } catch {}
         return false;
     }
@@ -304,7 +287,7 @@ export function executeCombinedCrafting(player, chestSlot, gliderSlot) {
         player.playSound("random.anvil_use", { pitch: 1.0, volume: 1.0 });
     } catch {}
 
-    player.onScreenDisplay?.setActionBar?.("§a¡Pechera con Élitros de Enderita fabricada!");
+    player.onScreenDisplay?.setActionBar?.(strings.craftSuccess);
     return true;
 }
 
@@ -317,6 +300,9 @@ export function executeCombinedCrafting(player, chestSlot, gliderSlot) {
 function showConfirmationPreview(player, chestSlot, gliderSlot) {
     if (!player?.isValid) return;
 
+    const lang = getLanguage(player);
+    const strings = COMBINED_CRAFTING_STRINGS[lang] || COMBINED_CRAFTING_STRINGS.en;
+
     const inv = player.getComponent("inventory");
     const container = inv?.container;
     if (!container) return;
@@ -325,7 +311,7 @@ function showConfirmationPreview(player, chestSlot, gliderSlot) {
     const gliderItem = container.getItem(gliderSlot);
 
     if (!isEnderiteChestplate(chestItem) || !isGliderItem(gliderItem)) {
-        player.onScreenDisplay?.setActionBar?.("§c[Enderite] Uno de los objetos ya no es válido.");
+        player.onScreenDisplay?.setActionBar?.(strings.itemInvalid);
         return;
     }
 
@@ -344,24 +330,24 @@ function showConfirmationPreview(player, chestSlot, gliderSlot) {
         resultVF = Math.max(chestVF, gliderVF);
     }
 
-    const chestName = chestItem.nameTag || "Pechera de Enderita";
-    const gliderName = gliderItem.nameTag || (gliderItem.typeId === "minecraft:elytra" ? "Élitros Vanilla" : "Élitros de Enderita");
+    const chestName = getItemDisplayName(chestItem, lang);
+    const gliderName = getItemDisplayName(gliderItem, lang);
 
-    let body = `§f¿Deseas fusionar estos dos objetos?\n\n`;
+    let body = strings.confirmQuestion;
     body += `§61. ${chestName}§r\n`;
-    body += `${formatEnchantmentsForDisplay(chestEnchants, chestVF)}\n\n`;
+    body += `${formatEnchantmentsForDisplay(chestEnchants, chestVF, lang)}\n\n`;
     body += `§62. ${gliderName}§r\n`;
-    body += `${formatEnchantmentsForDisplay(gliderEnchants, gliderVF)}\n\n`;
-    body += `§2-> Resultado: Pechera con Élitros de Enderita§r\n`;
-    body += `  §2+9 Armadura | +4 Dureza | 100% Durabilidad§r\n`;
-    body += `${formatEnchantmentsForDisplay(mergedList, resultVF)}\n\n`;
-    body += `§6Nota: Sin coste de niveles de experiencia. Los encantamientos del mismo nivel suben +1 nivel.`;
+    body += `${formatEnchantmentsForDisplay(gliderEnchants, gliderVF, lang)}\n\n`;
+    body += strings.resultHeader;
+    body += strings.statsLine;
+    body += `${formatEnchantmentsForDisplay(mergedList, resultVF, lang)}\n\n`;
+    body += strings.noteLine;
 
     const form = new ActionFormData();
-    form.title("§dFabricar Elytra Combinada");
+    form.title(strings.formTitle);
     form.body(body);
-    form.button("§2Confirmar y Fabricar", "textures/items/enderite_elytra");
-    form.button("§4Cancelar");
+    form.button(strings.btnConfirm, "textures/items/enderite_elytra");
+    form.button(strings.btnCancel);
 
     form.show(player).then((res) => {
         if (res.canceled || res.selection !== 0) {
@@ -379,6 +365,9 @@ function showConfirmationPreview(player, chestSlot, gliderSlot) {
  */
 export function openCombinedCraftingUi(player) {
     if (!player?.isValid) return;
+
+    const lang = getLanguage(player);
+    const strings = COMBINED_CRAFTING_STRINGS[lang] || COMBINED_CRAFTING_STRINGS.en;
 
     const inv = player.getComponent("inventory");
     const container = inv?.container;
@@ -399,7 +388,7 @@ export function openCombinedCraftingUi(player) {
     }
 
     if (chestCandidates.length === 0 || gliderCandidates.length === 0) {
-        player.onScreenDisplay?.setActionBar?.("§c[Enderite] Necesitas 1 Pechera de Enderita y 1 Élitros para combinar.");
+        player.onScreenDisplay?.setActionBar?.(strings.needIngredients);
         try { player.playSound("note.bass", { pitch: 0.7 }); } catch {}
         return;
     }
@@ -413,14 +402,14 @@ export function openCombinedCraftingUi(player) {
     // If multiple chestplates, prompt selection first
     if (chestCandidates.length > 1) {
         const form = new ActionFormData();
-        form.title("§dSeleccionar Pechera");
-        form.body("Tienes varias Pecheras de Enderita. Selecciona cuál deseas combinar:");
+        form.title(strings.selectChestTitle);
+        form.body(strings.selectChestBody);
 
         for (const cand of chestCandidates) {
             const enchs = getItemEnchantments(cand.item);
             const enchCount = enchs.length;
-            const name = cand.item.nameTag || "Pechera de Enderita";
-            form.button(`${name} (${enchCount} enc.)`, "textures/items/enderite_chestplate");
+            const name = getItemDisplayName(cand.item, lang);
+            form.button(`${name} (${enchCount} ${strings.enchSuffix})`, "textures/items/enderite_chestplate");
         }
 
         form.show(player).then((res) => {
@@ -450,14 +439,17 @@ function promptGliderSelection(player, chestSlot, gliderCandidates) {
         return;
     }
 
+    const lang = getLanguage(player);
+    const strings = COMBINED_CRAFTING_STRINGS[lang] || COMBINED_CRAFTING_STRINGS.en;
+
     const form = new ActionFormData();
-    form.title("§dSeleccionar Élitros");
-    form.body("Tienes varios Élitros. Selecciona cuáles deseas combinar:");
+    form.title(strings.selectGliderTitle);
+    form.body(strings.selectGliderBody);
 
     for (const cand of gliderCandidates) {
         const enchs = getItemEnchantments(cand.item);
-        const name = cand.item.nameTag || (cand.item.typeId === "minecraft:elytra" ? "Élitros Vanilla" : "Élitros de Enderita");
-        form.button(`${name} (${enchs.length} enc.)`, "textures/items/elytra");
+        const name = getItemDisplayName(cand.item, lang);
+        form.button(`${name} (${enchs.length} ${strings.enchSuffix})`, "textures/items/elytra");
     }
 
     form.show(player).then((res) => {

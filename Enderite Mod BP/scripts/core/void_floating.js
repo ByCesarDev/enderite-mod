@@ -1,5 +1,10 @@
 import { world, system, ItemStack } from "@minecraft/server";
 import { ActionFormData } from "@minecraft/server-ui";
+import {
+    getLanguage,
+    getItemDisplayName,
+    VOID_ANVIL_STRINGS
+} from "./localization.js";
 
 /**
  * Exact set of Enderite items matching Java upstream #enderitemod:enderite_items.
@@ -602,28 +607,26 @@ export function openVoidFloatingAnvilUi(player, block, bookLevel) {
         }
     }
 
+    const lang = getLanguage(player);
+    const strings = VOID_ANVIL_STRINGS[lang] || VOID_ANVIL_STRINGS.en;
+
     const form = new ActionFormData();
-    form.title({ translate: "ui.ed:void_anvil_title" });
+    form.title(strings.formTitle);
 
     if (candidates.length === 0) {
-        form.body({ translate: "ui.ed:void_anvil_no_items" });
-        form.button({ translate: "ui.ed:void_anvil_close" });
+        form.body(strings.noItemsBody);
+        form.button(strings.btnClose);
         form.show(player).catch(() => {});
         return;
     }
 
-    form.body({ translate: "ui.ed:void_anvil_body" });
-
-    const isSpanish = player?.clientSystemInfo?.locale?.toLowerCase()?.startsWith("es");
-    const noVoidText = isSpanish ? "Sin Flotar" : "No Void";
-    const levelText = isSpanish ? "Nivel" : "Level";
+    form.body(strings.formBody);
 
     for (const cand of candidates) {
-        const name = cand.item.nameTag || cand.item.typeId.replace(/^minecraft:/, '').replace(/^ed:/, '').replace(/_/g, ' ');
-        const formattedName = name.charAt(0).toUpperCase() + name.slice(1);
+        const formattedName = getItemDisplayName(cand.item, lang);
         const label = cand.currentLevel > 0
-            ? `${formattedName}\n§5${levelText} ${cand.currentLevel} §0-> §2${levelText} ${cand.targetLevel}`
-            : `${formattedName}\n§8[${noVoidText}] §0-> §2${levelText} ${cand.targetLevel}`;
+            ? `${formattedName}\n§5${strings.levelText} ${cand.currentLevel} §0-> §2${strings.levelText} ${cand.targetLevel}`
+            : `${formattedName}\n§8[${strings.noVoid}] §0-> §2${strings.levelText} ${cand.targetLevel}`;
         form.button(label);
     }
 
@@ -666,6 +669,15 @@ export function openVoidFloatingAnvilUi(player, block, bookLevel) {
                 y: block.location.y + 1.0,
                 z: block.location.z + 0.5
             });
+        } catch {}
+
+        // Feedback in actionbar
+        try {
+            const targetName = getItemDisplayName(currentTarget, lang);
+            const appliedMsg = strings.applied
+                .replace("{level}", String(chosen.targetLevel))
+                .replace("{item}", targetName);
+            player.onScreenDisplay?.setActionBar?.(appliedMsg);
         } catch {}
     }).catch(() => {});
 }
