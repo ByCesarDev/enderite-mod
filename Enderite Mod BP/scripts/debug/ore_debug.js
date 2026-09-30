@@ -135,9 +135,9 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
         const minChunkZ = Math.floor(pz / 16) * 16;
         const maxChunkZ = minChunkZ + 15;
 
-        player.sendMessage(`§d[Enderite Debug] §fEscaneando chunk actual §7[X: ${minChunkX}..${maxChunkX}, Z: ${minChunkZ}..${maxChunkZ}] §fde Y=8 a Y=247...`);
+        player.sendMessage(`§d[Enderite Debug] §fEscaneando chunk actual §7[X: ${minChunkX}..${maxChunkX}, Z: ${minChunkZ}..${maxChunkZ}] §fde Y=8 a Y=128...`);
 
-        runAsyncJob(scanAreaGenerator(player, minChunkX, maxChunkX, minChunkZ, maxChunkZ, 8, 247, (found) => {
+        runAsyncJob(scanAreaGenerator(player, minChunkX, maxChunkX, minChunkZ, maxChunkZ, 8, 128, (found) => {
             const largeClusters = groupIntoVeins(found.large);
             const smallClusters = groupIntoVeins(found.small);
             const unknownClusters = groupIntoVeins(found.unknown);
@@ -157,7 +157,7 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
             }
 
             if (smallClusters.length > 0) {
-                player.sendMessage(`§bSMALL (Y=8..247) [${smallClusters.length} cluster(s) conectado(s), ${found.small.length} blk]:`);
+                player.sendMessage(`§bSMALL (Y=8..96) [${smallClusters.length} cluster(s) conectado(s), ${found.small.length} blk]:`);
                 smallClusters.forEach((c, idx) => {
                     player.sendMessage(`  §3#${idx + 1} §7(${c.blocks.length} blk) centro §f${c.center.x} ${c.center.y} ${c.center.z}§7:`);
                     c.blocks.forEach(b => player.sendMessage(`    §7- §f${b.x}, ${b.y}, ${b.z}`));
@@ -188,7 +188,7 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
         const radius = 128;
         player.sendMessage(`§d[Enderite Debug] §fBuscando clusters más cercanos en radio de ${radius} bloques...`);
 
-        runAsyncJob(scanAreaGenerator(player, px - radius, px + radius, pz - radius, pz + radius, 8, 247, (found) => {
+        runAsyncJob(scanAreaGenerator(player, px - radius, px + radius, pz - radius, pz + radius, 8, 128, (found) => {
             const largeClusters = groupIntoVeins(found.large);
             const smallClusters = groupIntoVeins(found.small);
             const unknownClusters = groupIntoVeins(found.unknown);
@@ -243,7 +243,7 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
 
     player.sendMessage(`§d[Enderite Debug] §fBuscando Enderite en radio de §e${radius} bloques §fdesde §7${px}, ${py}, ${pz}§f...`);
 
-    runAsyncJob(scanAreaGenerator(player, px - radius, px + radius, pz - radius, pz + radius, 8, 247, (found) => {
+    runAsyncJob(scanAreaGenerator(player, px - radius, px + radius, pz - radius, pz + radius, 8, 128, (found) => {
         const largeClusters = groupIntoVeins(found.large);
         const smallClusters = groupIntoVeins(found.small);
         const unknownClusters = groupIntoVeins(found.unknown);
@@ -263,7 +263,7 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
         }
 
         if (smallClusters.length > 0) {
-            player.sendMessage(`§bSMALL (Y=8..247) [${smallClusters.length} cluster(s), ${found.small.length} blk]:`);
+            player.sendMessage(`§bSMALL (Y=8..96) [${smallClusters.length} cluster(s), ${found.small.length} blk]:`);
             smallClusters.slice(0, 5).forEach((c, i) => {
                 const dist = Math.hypot(c.center.x - px, c.center.y - py, c.center.z - pz).toFixed(1);
                 player.sendMessage(`  §3#${i + 1} §7(${c.blocks.length} blk) en §f${c.center.x}, ${c.center.y}, ${c.center.z} §7[${dist}m]`);
