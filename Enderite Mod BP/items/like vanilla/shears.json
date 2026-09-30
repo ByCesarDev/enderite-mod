@@ -12,40 +12,28 @@
 			"minecraft:max_stack_size": 1,
 			"minecraft:hand_equipped": true,
 			"minecraft:durability": {
-				"max_durability": 2031
+				"max_durability": 238
 			},
 			"minecraft:repairable": {
 				"repair_items": [
 					{
 						"items": [
-							"minecraft:shears"
+							"minecraft:shears",
+							"ed:shears",
+							"minecraft:iron_ingot"
 						],
 						"repair_amount": "query.max_durability*0.25"
-					},
-					{
-						"items": [
-							"minecraft:shears"
-						],
-						"repair_amount": "context.other->query.remaining_durability+0.12*context.other->query.max_durability"
 					}
 				]
 			},
 			"minecraft:enchantable": {
-				"value": 14,
-				"slot": "hoe"
-			},
-			"minecraft:use_on": {
-				"blocks": [
-					"grass",
-					"dirt",
-					"grass_path"
-				]
+				"value": 1,
+				"slot": "shears"
 			},
 			"minecraft:tags": {
 				"tags": [
-					"minecraft:is_hoe",
 					"minecraft:is_tool",
-					"minecraft:digger",
+					"minecraft:is_shears",
 					"minecraft:transformable_items"
 				]
 			}

@@ -12,40 +12,27 @@
 			"minecraft:max_stack_size": 1,
 			"minecraft:hand_equipped": true,
 			"minecraft:durability": {
-				"max_durability": 2031
+				"max_durability": 465
 			},
 			"minecraft:repairable": {
 				"repair_items": [
 					{
 						"items": [
-							"minecraft:crossbow"
+							"minecraft:crossbow",
+							"ed:crossbow",
+							"minecraft:string"
 						],
 						"repair_amount": "query.max_durability*0.25"
-					},
-					{
-						"items": [
-							"minecraft:crossbow"
-						],
-						"repair_amount": "context.other->query.remaining_durability+0.12*context.other->query.max_durability"
 					}
 				]
 			},
 			"minecraft:enchantable": {
-				"value": 14,
-				"slot": "hoe"
-			},
-			"minecraft:use_on": {
-				"blocks": [
-					"grass",
-					"dirt",
-					"grass_path"
-				]
+				"value": 1,
+				"slot": "crossbow"
 			},
 			"minecraft:tags": {
 				"tags": [
-					"minecraft:is_hoe",
 					"minecraft:is_tool",
-					"minecraft:digger",
 					"minecraft:transformable_items"
 				]
 			}
