@@ -10,3 +10,4 @@ import './components/void_floating.js';
 import './components/tp_lore.js';
 import './components/armor.js';
 import './components/ore.js';
+import './debug/ore_debug.js';

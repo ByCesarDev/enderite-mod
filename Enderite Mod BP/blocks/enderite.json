@@ -6,6 +6,13 @@
 			"menu_category": {
 				"category": "nature",
 				"group": "itemGroup.name.ore"
+			},
+			"states": {
+				"ed:vein_type": [
+					0,
+					1,
+					2
+				]
 			}
 		},
 		"components": {

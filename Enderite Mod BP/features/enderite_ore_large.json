@@ -8,7 +8,12 @@
 		"discard_chance_on_air_exposure": 1.0,
 		"replace_rules": [
 			{
-				"places_block": "ed:enderite",
+				"places_block": {
+					"name": "ed:enderite",
+					"states": {
+						"ed:vein_type": 2
+					}
+				},
 				"may_replace": [
 					"minecraft:end_stone"
 				]
