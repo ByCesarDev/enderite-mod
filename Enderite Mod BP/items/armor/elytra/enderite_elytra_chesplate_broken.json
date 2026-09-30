@@ -21,8 +21,8 @@
 			"minecraft:icon": "enderite_elytra_broken",
 			"minecraft:use_animation": "camera",
 			"minecraft:enchantable": {
-				"slot": "elytra",
-				"value": 1
+				"slot": "armor_torso",
+				"value": 25
 			},
 			"minecraft:durability": {
 				"max_durability": 1024

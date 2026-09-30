@@ -1,4 +1,4 @@
-import { world, system, EquipmentSlot, ItemStack, GameMode } from "@minecraft/server";
+import { world, system, EquipmentSlot, ItemStack, GameMode, EntityDamageCause } from "@minecraft/server";
 
 const MAX_LOGICAL_DURABILITY = 1024;
 const BROKEN_LOGICAL_DAMAGE = 1023;
@@ -7,6 +7,7 @@ const PROP_VARIANT = "ed:elytra_variant";
 const PROP_DAMAGE = "ed:elytra_damage";
 const PROP_HAS_CUSTOM_NAME = "ed:has_custom_name";
 const PROP_PROXY_ID = "ed:elytra_id";
+const PROP_STORED_ENCHANTS = "ed:elytra_stored_enchants";
 
 function generateElytraId() {
     return `${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
@@ -105,20 +106,44 @@ function createElytraProxy(customItem, player = null) {
         proxyDur.damage = 0;
     }
 
-    // Copy enchantments
+    // Copy and persist enchantments
+    const fullEnchants = [];
     const customEnchantable = customItem.getComponent("enchantable");
     if (customEnchantable) {
         const enchants = customEnchantable.getEnchantments();
         if (enchants && enchants.length > 0) {
             const proxyEnchantable = proxy.getComponent("enchantable");
-            if (proxyEnchantable) {
-                for (const ench of enchants) {
+            for (const ench of enchants) {
+                const id = typeof ench.type === "string" ? ench.type : (ench.type?.id || String(ench.type));
+                fullEnchants.push({ id, level: ench.level });
+                if (proxyEnchantable) {
                     try {
                         proxyEnchantable.addEnchantment(ench);
                     } catch {}
                 }
             }
         }
+    }
+
+    // Also check if customItem had stored enchantments from prior crafting or conversions
+    const prevStoredJson = customItem.getDynamicProperty(PROP_STORED_ENCHANTS);
+    if (prevStoredJson && typeof prevStoredJson === "string") {
+        try {
+            const parsed = JSON.parse(prevStoredJson);
+            if (Array.isArray(parsed)) {
+                for (const p of parsed) {
+                    if (p && p.id && typeof p.level === "number") {
+                        if (!fullEnchants.some(e => e.id.toLowerCase() === p.id.toLowerCase())) {
+                            fullEnchants.push({ id: p.id, level: p.level });
+                        }
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    if (fullEnchants.length > 0) {
+        proxy.setDynamicProperty(PROP_STORED_ENCHANTS, JSON.stringify(fullEnchants));
     }
 
     // Copy custom name if renamed on anvil, or set canonical display name for HUD/tooltip
@@ -217,20 +242,49 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
         customDur.damage = Math.min(Math.max(0, damage), customDur.maxDurability - 1);
     }
 
-    // Copy enchantments
+    // Copy and restore enchantments
+    const mergedEnchantsMap = new Map();
+
+    const storedEnchantsJson = proxy.getDynamicProperty(PROP_STORED_ENCHANTS);
+    if (storedEnchantsJson && typeof storedEnchantsJson === "string") {
+        try {
+            const parsed = JSON.parse(storedEnchantsJson);
+            if (Array.isArray(parsed)) {
+                for (const item of parsed) {
+                    if (item && item.id && typeof item.level === "number") {
+                        const id = item.id.toLowerCase().replace(/^minecraft:/, "");
+                        mergedEnchantsMap.set(id, item.level);
+                    }
+                }
+            }
+        } catch {}
+    }
+
     const proxyEnchantable = proxy.getComponent("enchantable");
     if (proxyEnchantable) {
         const enchants = proxyEnchantable.getEnchantments();
         if (enchants && enchants.length > 0) {
-            const customEnchantable = customItem.getComponent("enchantable");
-            if (customEnchantable) {
-                for (const ench of enchants) {
-                    try {
-                        customEnchantable.addEnchantment(ench);
-                    } catch {}
-                }
+            for (const ench of enchants) {
+                const id = (typeof ench.type === "string" ? ench.type : (ench.type?.id || String(ench.type)))
+                    .toLowerCase().replace(/^minecraft:/, "");
+                const curLvl = mergedEnchantsMap.get(id) || 0;
+                mergedEnchantsMap.set(id, Math.max(curLvl, ench.level));
             }
         }
+    }
+
+    const customEnchantable = customItem.getComponent("enchantable");
+    if (customEnchantable && mergedEnchantsMap.size > 0) {
+        for (const [id, level] of mergedEnchantsMap.entries()) {
+            try {
+                customEnchantable.addEnchantment({ type: id, level });
+            } catch {}
+        }
+    }
+
+    if (mergedEnchantsMap.size > 0) {
+        const list = Array.from(mergedEnchantsMap.entries()).map(([id, level]) => ({ id, level }));
+        customItem.setDynamicProperty(PROP_STORED_ENCHANTS, JSON.stringify(list));
     }
 
     // Restore custom name if original had one, or if player renamed it on anvil while equipped
@@ -1119,3 +1173,66 @@ export function applyCombatDamageToCombinedElytra(player, rawDamage) {
     // Single queue processor scheduled outside restricted beforeEvents context
     scheduleCombatWearFlush();
 }
+
+/**
+ * Computes the Protection Enchantment Protection Factor (EPF) for a Combined Elytra proxy.
+ * Since Bedrock engine cannot natively host armor protection on minecraft:elytra,
+ * this calculates the effective Java EPF (capped at 20) from ed:elytra_stored_enchants.
+ * @param {ItemStack} proxyItem
+ * @param {string} damageCause
+ * @returns {number} EPF (0 to 20)
+ */
+export function getCombinedElytraProtectionEpf(proxyItem, damageCause) {
+    if (!proxyItem) return 0;
+    if (proxyItem.typeId !== "minecraft:elytra") return 0;
+    if (proxyItem.getDynamicProperty(PROP_VARIANT) !== "combined") return 0;
+
+    let storedEnchants = [];
+    const json = proxyItem.getDynamicProperty(PROP_STORED_ENCHANTS);
+    if (json && typeof json === "string") {
+        try {
+            storedEnchants = JSON.parse(json);
+        } catch {}
+    }
+
+    if (!Array.isArray(storedEnchants) || storedEnchants.length === 0) {
+        return 0;
+    }
+
+    let epf = 0;
+    for (const ench of storedEnchants) {
+        if (!ench || !ench.id || typeof ench.level !== "number") continue;
+        const id = ench.id.toLowerCase().replace(/^minecraft:/, "");
+        const level = ench.level;
+
+        if (id === "protection") {
+            epf += level * 1;
+        } else if (id === "fire_protection" && isFireCause(damageCause)) {
+            epf += level * 2;
+        } else if (id === "blast_protection" && isBlastCause(damageCause)) {
+            epf += level * 2;
+        } else if (id === "projectile_protection" && isProjectileCause(damageCause)) {
+            epf += level * 2;
+        }
+    }
+
+    return Math.min(epf, 20);
+}
+
+function isFireCause(cause) {
+    return cause === EntityDamageCause.fire ||
+           cause === EntityDamageCause.fireTick ||
+           cause === EntityDamageCause.lava ||
+           cause === EntityDamageCause.campfire ||
+           cause === EntityDamageCause.magma;
+}
+
+function isBlastCause(cause) {
+    return cause === EntityDamageCause.entityExplosion ||
+           cause === EntityDamageCause.blockExplosion;
+}
+
+function isProjectileCause(cause) {
+    return cause === EntityDamageCause.projectile;
+}
+

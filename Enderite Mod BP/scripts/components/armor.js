@@ -5,7 +5,7 @@ import {
     EntityComponentTypes,
     EntityDamageCause
 } from "@minecraft/server";
-import { applyCombatDamageToCombinedElytra } from "./elytra.js";
+import { applyCombatDamageToCombinedElytra, getCombinedElytraProtectionEpf } from "./elytra.js";
 
 const ARMOR_DEBUG = true;
 
@@ -194,7 +194,17 @@ world.beforeEvents.entityHurt.subscribe((event) => {
     }
     
     // Daño objetivo que queremos que el jugador reciba (matemática de Java)
-    const targetDamage = calculateArmorDamage(rawDamage, totalArmor, toughness);
+    let targetDamage = calculateArmorDamage(rawDamage, totalArmor, toughness);
+
+    // P8-C6: Reducción por encantamiento de Protección en el proxy de Elytra Combinada (Paridad Java)
+    const equippable = entity.getComponent(EntityComponentTypes.Equippable);
+    const chestItem = equippable?.getEquipment(EquipmentSlot.Chest);
+    const combinedProtectionEpf = getCombinedElytraProtectionEpf(chestItem, cause);
+    if (combinedProtectionEpf > 0) {
+        const protectionMultiplier = 1 - (combinedProtectionEpf / 25);
+        targetDamage = targetDamage * protectionMultiplier;
+        debug(`Protection EPF: ${combinedProtectionEpf} | Multiplicador: ${protectionMultiplier.toFixed(2)} | Daño tras Protección: ${targetDamage.toFixed(2)}`);
+    }
 
     // Bedrock Vanilla solo reduce el daño de las armaduras 'minecraft:'.
     const engineReduction = Math.min(nativeArmor * 0.04, 0.80);
