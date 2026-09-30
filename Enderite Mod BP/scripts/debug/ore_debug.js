@@ -4,14 +4,14 @@ const ORE_ID = "ed:enderite";
 const VEIN_STATE = "ed:vein_type";
 
 /**
- * Connected Component Clustering: Groups individual ore blocks into physical veins.
- * Blocks within 1 block distance along any axis (faces, edges, or corners) belong to the same vein.
+ * Connected Component Clustering: Groups individual ore blocks into physical clusters.
+ * Blocks touching faces, edges, or corners (dx<=1, dy<=1, dz<=1) belong to the same connected cluster.
  * @param {Array<{x: number, y: number, z: number, veinType: number}>} blocks
  * @returns {Array<{type: number, blocks: Array<{x: number, y: number, z: number}>, center: {x: number, y: number, z: number}}>}
  */
 function groupIntoVeins(blocks) {
     const visited = new Set();
-    const veins = [];
+    const clusters = [];
 
     for (let i = 0; i < blocks.length; i++) {
         if (visited.has(i)) continue;
@@ -41,14 +41,14 @@ function groupIntoVeins(blocks) {
         const avgY = Math.round(cluster.reduce((s, b) => s + b.y, 0) / cluster.length);
         const avgZ = Math.round(cluster.reduce((s, b) => s + b.z, 0) / cluster.length);
 
-        veins.push({
+        clusters.push({
             type: blocks[i].veinType,
             blocks: cluster.map(b => ({ x: b.x, y: b.y, z: b.z })),
             center: { x: avgX, y: avgY, z: avgZ }
         });
     }
 
-    return veins;
+    return clusters;
 }
 
 /**
@@ -101,8 +101,8 @@ function* scanAreaGenerator(player, minX, maxX, minZ, maxZ, minY, maxY, onComple
             }
 
             checkedColumns++;
-            // Yield every 32 columns (~7,680 block queries) to maintain smooth 60 FPS
-            if (checkedColumns % 32 === 0) {
+            // Yield every 64 columns (~15,360 block queries) for optimal performance at 60 FPS
+            if (checkedColumns % 64 === 0) {
                 yield;
             }
         }
@@ -138,32 +138,46 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
         player.sendMessage(`§d[Enderite Debug] §fEscaneando chunk actual §7[X: ${minChunkX}..${maxChunkX}, Z: ${minChunkZ}..${maxChunkZ}] §fde Y=8 a Y=247...`);
 
         runAsyncJob(scanAreaGenerator(player, minChunkX, maxChunkX, minChunkZ, maxChunkZ, 8, 247, (found) => {
-            const largeVeins = groupIntoVeins(found.large);
-            const smallVeins = groupIntoVeins(found.small);
-            const unknownVeins = groupIntoVeins(found.unknown);
+            const largeClusters = groupIntoVeins(found.large);
+            const smallClusters = groupIntoVeins(found.small);
+            const unknownClusters = groupIntoVeins(found.unknown);
+            const totalClusters = largeClusters.length + smallClusters.length + unknownClusters.length;
 
-            if (largeVeins.length === 0 && smallVeins.length === 0 && unknownVeins.length === 0) {
-                player.sendMessage("§7[Enderite Debug] No se encontraron vetas de Enderite en este chunk.");
+            if (totalClusters === 0) {
+                player.sendMessage("§7[Enderite Debug] No se encontraron bloques de Enderite en este chunk.");
                 return;
             }
 
-            if (largeVeins.length > 0) {
-                player.sendMessage(`§6LARGE VEINS (0..32) [Total: ${largeVeins.length}]:`);
-                largeVeins.forEach((vein, idx) => {
-                    player.sendMessage(`  §e#${idx + 1} §7(${vein.blocks.length} blk) centro §f${vein.center.x} ${vein.center.y} ${vein.center.z}§7:`);
-                    vein.blocks.forEach(b => player.sendMessage(`    §7- §f${b.x}, ${b.y}, ${b.z}`));
+            if (largeClusters.length > 0) {
+                player.sendMessage(`§6LARGE (Y=8..32) [${largeClusters.length} cluster(s) conectado(s), ${found.large.length} blk]:`);
+                largeClusters.forEach((c, idx) => {
+                    player.sendMessage(`  §e#${idx + 1} §7(${c.blocks.length} blk) centro §f${c.center.x} ${c.center.y} ${c.center.z}§7:`);
+                    c.blocks.forEach(b => player.sendMessage(`    §7- §f${b.x}, ${b.y}, ${b.z}`));
                 });
             }
 
-            if (smallVeins.length > 0) {
-                player.sendMessage(`§bSMALL VEINS (8..247) [Total: ${smallVeins.length}]:`);
-                smallVeins.forEach((vein, idx) => {
-                    player.sendMessage(`  §3#${idx + 1} §7(${vein.blocks.length} blk) centro §f${vein.center.x} ${vein.center.y} ${vein.center.z}§7:`);
-                    vein.blocks.forEach(b => player.sendMessage(`    §7- §f${b.x}, ${b.y}, ${b.z}`));
+            if (smallClusters.length > 0) {
+                player.sendMessage(`§bSMALL (Y=8..247) [${smallClusters.length} cluster(s) conectado(s), ${found.small.length} blk]:`);
+                smallClusters.forEach((c, idx) => {
+                    player.sendMessage(`  §3#${idx + 1} §7(${c.blocks.length} blk) centro §f${c.center.x} ${c.center.y} ${c.center.z}§7:`);
+                    c.blocks.forEach(b => player.sendMessage(`    §7- §f${b.x}, ${b.y}, ${b.z}`));
                 });
             }
 
-            player.sendMessage(`§aTotal Chunk: §6Large: ${largeVeins.length} veta(s) (${found.large.length} blk) §f| §bSmall: ${smallVeins.length} veta(s) (${found.small.length} blk)`);
+            if (unknownClusters.length > 0) {
+                player.sendMessage(`§7UNKNOWN/MANUAL [${unknownClusters.length} cluster(s), ${found.unknown.length} blk]:`);
+                unknownClusters.forEach((c, idx) => {
+                    player.sendMessage(`  §8#${idx + 1} §7(${c.blocks.length} blk) centro §f${c.center.x} ${c.center.y} ${c.center.z}§7:`);
+                    c.blocks.forEach(b => player.sendMessage(`    §7- §f${b.x}, ${b.y}, ${b.z}`));
+                });
+            }
+
+            let summary = `§aTotal Chunk: §6Large: ${largeClusters.length} cluster(s) (${found.large.length} blk) §f| §bSmall: ${smallClusters.length} cluster(s) (${found.small.length} blk)`;
+            if (unknownClusters.length > 0) {
+                summary += ` §f| §7Manual: ${unknownClusters.length} cluster(s) (${found.unknown.length} blk)`;
+            }
+            player.sendMessage(summary);
+
             try { player.playSound("random.orb", player.location, { volume: 0.8, pitch: 1.2 }); } catch {}
         }));
         return;
@@ -172,38 +186,50 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
     // MODE 2: /scriptevent ed:find_ore nearest
     if (message === "nearest") {
         const radius = 128;
-        player.sendMessage(`§d[Enderite Debug] §fBuscando vetas más cercanas en radio de ${radius} bloques...`);
+        player.sendMessage(`§d[Enderite Debug] §fBuscando clusters más cercanos en radio de ${radius} bloques...`);
 
         runAsyncJob(scanAreaGenerator(player, px - radius, px + radius, pz - radius, pz + radius, 8, 247, (found) => {
-            const largeVeins = groupIntoVeins(found.large);
-            const smallVeins = groupIntoVeins(found.small);
+            const largeClusters = groupIntoVeins(found.large);
+            const smallClusters = groupIntoVeins(found.small);
+            const unknownClusters = groupIntoVeins(found.unknown);
 
             player.sendMessage(`§d[Enderite Debug] §fResultados más cercanos desde §e${px}, ${py}, ${pz}§f:`);
 
-            if (largeVeins.length > 0) {
-                largeVeins.sort((a, b) => {
+            if (largeClusters.length > 0) {
+                largeClusters.sort((a, b) => {
                     const distA = Math.hypot(a.center.x - px, a.center.y - py, a.center.z - pz);
                     const distB = Math.hypot(b.center.x - px, b.center.y - py, b.center.z - pz);
                     return distA - distB;
                 });
-                const closest = largeVeins[0];
+                const closest = largeClusters[0];
                 const dist = Math.hypot(closest.center.x - px, closest.center.y - py, closest.center.z - pz).toFixed(1);
                 player.sendMessage(`§6Nearest LARGE: §fX=${closest.center.x} Y=${closest.center.y} Z=${closest.center.z} §7(${closest.blocks.length} blk, dist: ${dist}m)`);
             } else {
-                player.sendMessage(`§6Nearest LARGE: §7Ninguna encontrada en radio de ${radius}m`);
+                player.sendMessage(`§6Nearest LARGE: §7Ninguna encontrada en radio inspeccionado de ${radius}m`);
             }
 
-            if (smallVeins.length > 0) {
-                smallVeins.sort((a, b) => {
+            if (smallClusters.length > 0) {
+                smallClusters.sort((a, b) => {
                     const distA = Math.hypot(a.center.x - px, a.center.y - py, a.center.z - pz);
                     const distB = Math.hypot(b.center.x - px, b.center.y - py, b.center.z - pz);
                     return distA - distB;
                 });
-                const closest = smallVeins[0];
+                const closest = smallClusters[0];
                 const dist = Math.hypot(closest.center.x - px, closest.center.y - py, closest.center.z - pz).toFixed(1);
                 player.sendMessage(`§bNearest SMALL: §fX=${closest.center.x} Y=${closest.center.y} Z=${closest.center.z} §7(${closest.blocks.length} blk, dist: ${dist}m)`);
             } else {
-                player.sendMessage(`§bNearest SMALL: §7Ninguna encontrada en radio de ${radius}m`);
+                player.sendMessage(`§bNearest SMALL: §7Ninguna encontrada en radio inspeccionado de ${radius}m`);
+            }
+
+            if (unknownClusters.length > 0) {
+                unknownClusters.sort((a, b) => {
+                    const distA = Math.hypot(a.center.x - px, a.center.y - py, a.center.z - pz);
+                    const distB = Math.hypot(b.center.x - px, b.center.y - py, b.center.z - pz);
+                    return distA - distB;
+                });
+                const closest = unknownClusters[0];
+                const dist = Math.hypot(closest.center.x - px, closest.center.y - py, closest.center.z - pz).toFixed(1);
+                player.sendMessage(`§7Nearest MANUAL: §fX=${closest.center.x} Y=${closest.center.y} Z=${closest.center.z} §7(${closest.blocks.length} blk, dist: ${dist}m)`);
             }
 
             try { player.playSound("random.orb", player.location, { volume: 0.8, pitch: 1.2 }); } catch {}
@@ -218,39 +244,51 @@ system.afterEvents.scriptEventReceive.subscribe((event) => {
     player.sendMessage(`§d[Enderite Debug] §fBuscando Enderite en radio de §e${radius} bloques §fdesde §7${px}, ${py}, ${pz}§f...`);
 
     runAsyncJob(scanAreaGenerator(player, px - radius, px + radius, pz - radius, pz + radius, 8, 247, (found) => {
-        const largeVeins = groupIntoVeins(found.large);
-        const smallVeins = groupIntoVeins(found.small);
-        const unknownVeins = groupIntoVeins(found.unknown);
-        const totalVeins = largeVeins.length + smallVeins.length + unknownVeins.length;
+        const largeClusters = groupIntoVeins(found.large);
+        const smallClusters = groupIntoVeins(found.small);
+        const unknownClusters = groupIntoVeins(found.unknown);
+        const totalClusters = largeClusters.length + smallClusters.length + unknownClusters.length;
 
         player.sendMessage(`§d[Enderite Debug] §aEscaneo completado (radio ${radius}m):`);
 
-        if (largeVeins.length > 0) {
-            player.sendMessage(`§6LARGE VEINS [${largeVeins.length} veta(s), ${found.large.length} blk]:`);
-            largeVeins.slice(0, 5).forEach((v, i) => {
-                const dist = Math.hypot(v.center.x - px, v.center.y - py, v.center.z - pz).toFixed(1);
-                player.sendMessage(`  §e#${i + 1} §7(${v.blocks.length} blk) en §f${v.center.x}, ${v.center.y}, ${v.center.z} §7[${dist}m]`);
+        if (largeClusters.length > 0) {
+            player.sendMessage(`§6LARGE (Y=8..32) [${largeClusters.length} cluster(s), ${found.large.length} blk]:`);
+            largeClusters.slice(0, 5).forEach((c, i) => {
+                const dist = Math.hypot(c.center.x - px, c.center.y - py, c.center.z - pz).toFixed(1);
+                player.sendMessage(`  §e#${i + 1} §7(${c.blocks.length} blk) en §f${c.center.x}, ${c.center.y}, ${c.center.z} §7[${dist}m]`);
             });
-            if (largeVeins.length > 5) {
-                player.sendMessage(`  §7...y ${largeVeins.length - 5} veta(s) Large más.`);
+            if (largeClusters.length > 5) {
+                player.sendMessage(`  §7...y ${largeClusters.length - 5} cluster(s) Large más.`);
             }
         }
 
-        if (smallVeins.length > 0) {
-            player.sendMessage(`§bSMALL VEINS [${smallVeins.length} veta(s), ${found.small.length} blk]:`);
-            smallVeins.slice(0, 5).forEach((v, i) => {
-                const dist = Math.hypot(v.center.x - px, v.center.y - py, v.center.z - pz).toFixed(1);
-                player.sendMessage(`  §3#${i + 1} §7(${v.blocks.length} blk) en §f${v.center.x}, ${v.center.y}, ${v.center.z} §7[${dist}m]`);
+        if (smallClusters.length > 0) {
+            player.sendMessage(`§bSMALL (Y=8..247) [${smallClusters.length} cluster(s), ${found.small.length} blk]:`);
+            smallClusters.slice(0, 5).forEach((c, i) => {
+                const dist = Math.hypot(c.center.x - px, c.center.y - py, c.center.z - pz).toFixed(1);
+                player.sendMessage(`  §3#${i + 1} §7(${c.blocks.length} blk) en §f${c.center.x}, ${c.center.y}, ${c.center.z} §7[${dist}m]`);
             });
-            if (smallVeins.length > 5) {
-                player.sendMessage(`  §7...y ${smallVeins.length - 5} veta(s) Small más.`);
+            if (smallClusters.length > 5) {
+                player.sendMessage(`  §7...y ${smallClusters.length - 5} cluster(s) Small más.`);
             }
         }
 
-        if (totalVeins === 0) {
-            player.sendMessage(`§7No se encontraron vetas de Enderite en este radio de ${radius} bloques.`);
+        if (unknownClusters.length > 0) {
+            player.sendMessage(`§7UNKNOWN/MANUAL [${unknownClusters.length} cluster(s), ${found.unknown.length} blk]:`);
+            unknownClusters.slice(0, 3).forEach((c, i) => {
+                const dist = Math.hypot(c.center.x - px, c.center.y - py, c.center.z - pz).toFixed(1);
+                player.sendMessage(`  §8#${i + 1} §7(${c.blocks.length} blk) en §f${c.center.x}, ${c.center.y}, ${c.center.z} §7[${dist}m]`);
+            });
+        }
+
+        if (totalClusters === 0) {
+            player.sendMessage(`§7No se encontraron bloques de Enderite en este radio de ${radius} bloques.`);
         } else {
-            player.sendMessage(`§aTotal: §6Large: ${found.large.length} blk (${largeVeins.length} veta(s)) §f| §bSmall: ${found.small.length} blk (${smallVeins.length} veta(s))`);
+            let totalMsg = `§aTotal: §6Large: ${found.large.length} blk (${largeClusters.length} cluster(s)) §f| §bSmall: ${found.small.length} blk (${smallClusters.length} cluster(s))`;
+            if (found.unknown.length > 0) {
+                totalMsg += ` §f| §7Manual: ${found.unknown.length} blk (${unknownClusters.length} cluster(s))`;
+            }
+            player.sendMessage(totalMsg);
         }
 
         try { player.playSound("random.orb", player.location, { volume: 0.8, pitch: 1.2 }); } catch {}
