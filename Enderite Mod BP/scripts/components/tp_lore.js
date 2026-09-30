@@ -11,8 +11,6 @@ const ARMOR_ITEMS = new Set([
   "ed:enderite_chestplate",
   "ed:enderite_leggings",
   "ed:enderite_boots",
-  "ed:enderite_elytra_chesplate",
-  "ed:enderite_elytra_chesplate_broken",
   "elytra:chesplate",
   "elytra:chesplate_broken"
 ]);

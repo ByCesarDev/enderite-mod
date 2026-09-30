@@ -59,8 +59,8 @@ const VANILLA_ARMOR_MAP = {
     "ed:enderite_chestplate": 9,
     "ed:enderite_leggings": 7,
     "ed:enderite_boots": 4,
-    "ed:enderite_elytra_chesplate": 9,
-    "ed:enderite_elytra_chesplate_broken": 9
+    "elytra:chesplate": 9,
+    "elytra:chesplate_broken": 9
 };
 
 function getNumberFromTag(item, prefix) {
@@ -102,6 +102,17 @@ function readArmorStats(entity) {
         if (item.hasTag(CUSTOM_ARMOR_TAG)) {
             customPieces++;
             toughness += getNumberFromTag(item, TOUGHNESS_PREFIX);
+        }
+
+        // Combined Elytra Proxy (minecraft:elytra con ed:elytra_variant === "combined")
+        const isCombinedElytraProxy =
+            item.typeId === "minecraft:elytra" &&
+            item.getDynamicProperty("ed:elytra_variant") === "combined";
+
+        if (isCombinedElytraProxy) {
+            totalArmor += 9;
+            toughness += 4;
+            customPieces++;
         }
     }
 
@@ -202,10 +213,22 @@ function getKnockbackResistance(entity) {
 
     for (const slot of ARMOR_SLOTS) {
         const item = equippable.getEquipment(slot);
-        if (!item || !item.hasTag(CUSTOM_ARMOR_TAG)) continue;
+        if (!item) continue;
 
-        customPieces++;
-        total += getNumberFromTag(item, KNOCKBACK_PREFIX);
+        if (item.hasTag(CUSTOM_ARMOR_TAG)) {
+            customPieces++;
+            total += getNumberFromTag(item, KNOCKBACK_PREFIX);
+            continue;
+        }
+
+        const isCombinedElytraProxy =
+            item.typeId === "minecraft:elytra" &&
+            item.getDynamicProperty("ed:elytra_variant") === "combined";
+
+        if (isCombinedElytraProxy) {
+            total += 1;
+            customPieces++;
+        }
     }
     
     if (customPieces === 0) return 0;
