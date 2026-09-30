@@ -588,6 +588,11 @@ system.runInterval(() => {
             cleanupInventoryProxies(player);
         }
     }
+
+    // Ensure pending combat wear is flushed if items were temporarily in transit
+    if (pendingCombatWear.size > 0) {
+        scheduleCombatWearFlush();
+    }
 }, 1);
 
 // Reactive inventory handling: Converts proxy back to custom item when placed into inventory slots,
@@ -654,11 +659,6 @@ world.afterEvents.entitySpawn.subscribe((event) => {
 // Clean up disconnected players
 world.afterEvents.playerLeave.subscribe((event) => {
     playersWearingProxy.delete(event.playerId);
-    for (const [proxyId, entry] of pendingCombatWear.entries()) {
-        if (entry.playerId === event.playerId) {
-            pendingCombatWear.delete(proxyId);
-        }
-    }
 });
 
 // Safeguard on spawn: ensure player nameTag is restored if not wearing proxy
@@ -673,8 +673,9 @@ world.afterEvents.playerSpawn.subscribe((event) => {
     }
 });
 
-// Queue of pending combat wear from beforeEvents: Map<proxyId, { playerId: string, wear: number }>
+// Queue of pending combat wear: Map<proxyId, { playerId: string, wear: number, attempts: number }>
 const pendingCombatWear = new Map();
+const MAX_WEAR_RETRIES = 100; // 5 seconds of tick retries before giving up on destroyed/despawned items
 let isFlushScheduled = false;
 
 function scheduleCombatWearFlush() {
@@ -686,94 +687,280 @@ function scheduleCombatWearFlush() {
     });
 }
 
+/**
+ * Applies combat wear to a matching combined elytra item (either runtime proxy or custom item).
+ * Returns the modified or broken ItemStack, or null if invalid.
+ * @param {ItemStack} item
+ * @param {number} wear
+ * @returns {{ updatedItem: ItemStack, didBreak: boolean } | null}
+ */
+function applyWearToCombinedItem(item, wear) {
+    if (!item) return null;
+
+    // Type A: Runtime proxy (minecraft:elytra)
+    if (item.typeId === "minecraft:elytra") {
+        if (item.getDynamicProperty(PROP_VARIANT) !== "combined") return null;
+        let logicalDamage = (item.getDynamicProperty(PROP_DAMAGE) ?? 0) + wear;
+        if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
+            const brokenItem = restoreCustomElytra(item, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
+            return { updatedItem: brokenItem, didBreak: true };
+        } else {
+            item.setDynamicProperty(PROP_DAMAGE, logicalDamage);
+            return { updatedItem: item, didBreak: false };
+        }
+    }
+
+    // Type B: Custom item (elytra:chesplate)
+    if (item.typeId === "elytra:chesplate") {
+        const dur = item.getComponent("durability");
+        if (!dur) return null;
+        const newDamage = dur.damage + wear;
+        if (newDamage >= BROKEN_LOGICAL_DAMAGE) {
+            const brokenItem = breakCustomItem(item, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
+            return { updatedItem: brokenItem, didBreak: true };
+        } else {
+            dur.damage = newDamage;
+            return { updatedItem: item, didBreak: false };
+        }
+    }
+
+    // Type C: Already broken custom item
+    if (item.typeId === "elytra:chesplate_broken") {
+        return { updatedItem: item, didBreak: false };
+    }
+
+    return null;
+}
+
+/**
+ * Searches and applies combat wear to the matching proxyId across:
+ * 1. Equipped chest slot of original player
+ * 2. Inventory container of original player
+ * 3. Dropped item entities in the world
+ * 4. Block containers (looked at or nearby)
+ * 5. Other players in the server (chest or inventory)
+ * 6. Container entities (chest boat, minecart, etc.)
+ *
+ * Returns true if successfully located and applied.
+ * @param {string} proxyId
+ * @param {number} wear
+ * @param {string} playerId
+ * @returns {boolean}
+ */
+function locateAndApplyWear(proxyId, wear, playerId) {
+    const originalPlayer = world.getAllPlayers().find(p => p.id === playerId);
+
+    // 1. Check original player's chest slot
+    if (originalPlayer?.isValid) {
+        const eq = originalPlayer.getComponent("equippable");
+        if (eq) {
+            const chest = eq.getEquipment(EquipmentSlot.Chest);
+            if (chest && chest.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                const res = applyWearToCombinedItem(chest, wear);
+                if (res) {
+                    eq.setEquipment(EquipmentSlot.Chest, res.updatedItem);
+                    if (res.didBreak) {
+                        try { originalPlayer.playSound("random.break"); } catch {}
+                        playersWearingProxy.delete(originalPlayer.id);
+                        restoreProxyVisual(originalPlayer);
+                    }
+                    return true;
+                }
+            }
+        }
+
+        // 2. Check original player's inventory
+        const inv = originalPlayer.getComponent("inventory");
+        if (inv?.container) {
+            for (let i = 0; i < inv.container.size; i++) {
+                const item = inv.container.getItem(i);
+                if (item && item.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                    const res = applyWearToCombinedItem(item, wear);
+                    if (res) {
+                        inv.container.setItem(i, res.updatedItem);
+                        if (res.didBreak) {
+                            try { originalPlayer.playSound("random.break"); } catch {}
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Check dropped item entities in the dimension
+    const referencePlayer = originalPlayer?.isValid ? originalPlayer : world.getAllPlayers()[0];
+    if (referencePlayer) {
+        try {
+            const dim = referencePlayer.dimension;
+            const itemsNearby = dim.getEntities({
+                type: "minecraft:item",
+                location: referencePlayer.location,
+                maxDistance: 24
+            });
+            for (const ent of itemsNearby) {
+                if (!ent.isValid()) continue;
+                const itemComp = ent.getComponent("item");
+                const stack = itemComp?.itemStack;
+                if (stack && stack.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                    const res = applyWearToCombinedItem(stack, wear);
+                    if (res) {
+                        itemComp.itemStack = res.updatedItem;
+                        if (res.didBreak) {
+                            try { dim.playSound("random.break", ent.location); } catch {}
+                        }
+                        return true;
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    // 4. Check block containers (first target block in view, then nearby radius 3)
+    if (originalPlayer?.isValid) {
+        try {
+            const viewBlock = originalPlayer.getBlockFromViewDirection({ maxDistance: 6 })?.block;
+            if (viewBlock) {
+                const c = viewBlock.getComponent("inventory")?.container;
+                if (c) {
+                    for (let i = 0; i < c.size; i++) {
+                        const item = c.getItem(i);
+                        if (item && item.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                            const res = applyWearToCombinedItem(item, wear);
+                            if (res) {
+                                c.setItem(i, res.updatedItem);
+                                if (res.didBreak) {
+                                    try { originalPlayer.dimension.playSound("random.break", viewBlock.location); } catch {}
+                                }
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+
+            const pLoc = originalPlayer.location;
+            const px = Math.floor(pLoc.x);
+            const py = Math.floor(pLoc.y);
+            const pz = Math.floor(pLoc.z);
+            const dim = originalPlayer.dimension;
+            for (let x = px - 3; x <= px + 3; x++) {
+                for (let y = py - 2; y <= py + 2; y++) {
+                    for (let z = pz - 3; z <= pz + 3; z++) {
+                        const b = dim.getBlock({ x, y, z });
+                        const c = b?.getComponent("inventory")?.container;
+                        if (c) {
+                            for (let i = 0; i < c.size; i++) {
+                                const item = c.getItem(i);
+                                if (item && item.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                                    const res = applyWearToCombinedItem(item, wear);
+                                    if (res) {
+                                        c.setItem(i, res.updatedItem);
+                                        if (res.didBreak) {
+                                            try { dim.playSound("random.break", { x, y, z }); } catch {}
+                                        }
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {}
+
+        // Check container entities nearby (chest minecart, mule, donkey, chest boat)
+        try {
+            const nearbyEntities = originalPlayer.dimension.getEntities({
+                location: originalPlayer.location,
+                maxDistance: 8
+            });
+            for (const ent of nearbyEntities) {
+                if (!ent.isValid() || ent.typeId === "minecraft:player" || ent.typeId === "minecraft:item") continue;
+                const c = ent.getComponent("inventory")?.container;
+                if (c) {
+                    for (let i = 0; i < c.size; i++) {
+                        const item = c.getItem(i);
+                        if (item && item.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                            const res = applyWearToCombinedItem(item, wear);
+                            if (res) {
+                                c.setItem(i, res.updatedItem);
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+        } catch {}
+    }
+
+    // 5. Check all other players (if item was transferred or picked up)
+    for (const otherPlayer of world.getAllPlayers()) {
+        if (originalPlayer && otherPlayer.id === originalPlayer.id) continue;
+        const eq = otherPlayer.getComponent("equippable");
+        if (eq) {
+            const chest = eq.getEquipment(EquipmentSlot.Chest);
+            if (chest && chest.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                const res = applyWearToCombinedItem(chest, wear);
+                if (res) {
+                    eq.setEquipment(EquipmentSlot.Chest, res.updatedItem);
+                    if (res.didBreak) {
+                        try { otherPlayer.playSound("random.break"); } catch {}
+                        playersWearingProxy.delete(otherPlayer.id);
+                        restoreProxyVisual(otherPlayer);
+                    }
+                    return true;
+                }
+            }
+        }
+        const otherInv = otherPlayer.getComponent("inventory");
+        if (otherInv?.container) {
+            for (let i = 0; i < otherInv.container.size; i++) {
+                const item = otherInv.container.getItem(i);
+                if (item && item.getDynamicProperty(PROP_PROXY_ID) === proxyId) {
+                    const res = applyWearToCombinedItem(item, wear);
+                    if (res) {
+                        otherInv.container.setItem(i, res.updatedItem);
+                        if (res.didBreak) {
+                            try { otherPlayer.playSound("random.break"); } catch {}
+                        }
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
 function flushPendingCombatWear() {
     if (pendingCombatWear.size === 0) return;
 
+    let hasUnapplied = false;
+
     for (const [proxyId, entry] of Array.from(pendingCombatWear.entries())) {
-        pendingCombatWear.delete(proxyId);
         const { playerId, wear } = entry;
-        if (!wear || wear <= 0) continue;
-
-        const player = world.getAllPlayers().find(p => p.id === playerId);
-        if (!player || !player.isValid) continue;
-
-        let applied = false;
-
-        // Check 1: Is the targeted item currently in EquipmentSlot.Chest?
-        const equippable = player.getComponent("equippable");
-        if (equippable) {
-            const chest = equippable.getEquipment(EquipmentSlot.Chest);
-            if (chest && chest.typeId === "minecraft:elytra") {
-                const chestVariant = chest.getDynamicProperty(PROP_VARIANT);
-                const chestProxyId = chest.getDynamicProperty(PROP_PROXY_ID);
-                const matches = (chestProxyId && chestProxyId === proxyId) || (!chestProxyId && proxyId === `fallback_${playerId}`);
-
-                if (matches && chestVariant === "combined") {
-                    if (!chestProxyId) {
-                        chest.setDynamicProperty(PROP_PROXY_ID, generateElytraId());
-                    }
-                    let logicalDamage = (chest.getDynamicProperty(PROP_DAMAGE) ?? 0) + wear;
-                    if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
-                        try { player.playSound("random.break"); } catch {}
-                        const brokenItem = restoreCustomElytra(chest, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
-                        equippable.setEquipment(EquipmentSlot.Chest, brokenItem);
-                        playersWearingProxy.delete(player.id);
-                        restoreProxyVisual(player);
-                    } else {
-                        chest.setDynamicProperty(PROP_DAMAGE, logicalDamage);
-                        equippable.setEquipment(EquipmentSlot.Chest, chest);
-                    }
-                    applied = true;
-                }
-            }
+        if (!wear || wear <= 0) {
+            pendingCombatWear.delete(proxyId);
+            continue;
         }
 
-        // Check 2: If not found in chest (player swapped or unequipped), locate original item in inventory
-        if (!applied) {
-            const inv = player.getComponent("inventory");
-            if (inv && inv.container) {
-                for (let i = 0; i < inv.container.size; i++) {
-                    const item = inv.container.getItem(i);
-                    if (!item) continue;
-
-                    const itemProxyId = item.getDynamicProperty(PROP_PROXY_ID);
-                    if (itemProxyId && itemProxyId === proxyId) {
-                        // Subcase A: Item in inventory is still runtime proxy (minecraft:elytra)
-                        if (item.typeId === "minecraft:elytra" && item.getDynamicProperty(PROP_VARIANT) === "combined") {
-                            let logicalDamage = (item.getDynamicProperty(PROP_DAMAGE) ?? 0) + wear;
-                            if (logicalDamage >= BROKEN_LOGICAL_DAMAGE) {
-                                try { player.playSound("random.break"); } catch {}
-                                const brokenItem = restoreCustomElytra(item, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
-                                inv.container.setItem(i, brokenItem);
-                            } else {
-                                item.setDynamicProperty(PROP_DAMAGE, logicalDamage);
-                                inv.container.setItem(i, item);
-                            }
-                            applied = true;
-                            break;
-                        }
-
-                        // Subcase B: Item was already restored to custom item (elytra:chesplate)
-                        if (item.typeId === "elytra:chesplate") {
-                            const dur = item.getComponent("durability");
-                            if (dur) {
-                                const newDamage = dur.damage + wear;
-                                if (newDamage >= BROKEN_LOGICAL_DAMAGE) {
-                                    try { player.playSound("random.break"); } catch {}
-                                    const brokenItem = breakCustomItem(item, "elytra:chesplate_broken", BROKEN_LOGICAL_DAMAGE);
-                                    inv.container.setItem(i, brokenItem);
-                                } else {
-                                    dur.damage = newDamage;
-                                    inv.container.setItem(i, item);
-                                }
-                            }
-                            applied = true;
-                            break;
-                        }
-                    }
-                }
+        const applied = locateAndApplyWear(proxyId, wear, playerId);
+        if (applied) {
+            pendingCombatWear.delete(proxyId);
+        } else {
+            entry.attempts = (entry.attempts ?? 0) + 1;
+            if (entry.attempts >= MAX_WEAR_RETRIES) {
+                pendingCombatWear.delete(proxyId);
+            } else {
+                hasUnapplied = true;
             }
         }
+    }
+
+    if (hasUnapplied && pendingCombatWear.size > 0) {
+        system.runTimeout(() => scheduleCombatWearFlush(), 1);
     }
 }
 
@@ -781,8 +968,8 @@ function flushPendingCombatWear() {
  * Enqueues combat durability damage to the combined elytra proxy according to Java armor rules:
  * - Triggered strictly on protectable combat damage (excludes causes that bypass armor).
  * - Safe for restricted beforeEvents context (no mutations or setEquipment inside event handler).
- * - Tracks wear by persistent item proxy identity (PROP_PROXY_ID), preventing wear transfer on item swap.
- * - Single queue processor (flushPendingCombatWear) guarantees wear is applied exclusively to the damaged item.
+ * - Strictly requires confirmed proxy identity (PROP_PROXY_ID); never falls back to player IDs.
+ * - Single queue processor (flushPendingCombatWear) retains entries until applied across all movement locations.
  * - Wear = Math.floor(Math.max(1, rawDamage / 4))
  * - Armor Unbreaking chance: 0.6 + 0.4 / (level + 1)
  * - If wear >= 1023: breaks immediately into elytra:chesplate_broken
@@ -800,6 +987,10 @@ export function applyCombatDamageToCombinedElytra(player, rawDamage) {
 
     const variant = chest.getDynamicProperty(PROP_VARIANT);
     if (variant !== "combined") return;
+
+    // Strictly require confirmed proxy identity; do not admit wear through player fallback
+    const proxyId = chest.getDynamicProperty(PROP_PROXY_ID);
+    if (!proxyId || typeof proxyId !== "string") return;
 
     // Java LivingEntity.doHurtEquipment: int durabilityDamage = (int)Math.max(1.0F, damage / 4.0F)
     let armorWear = Math.floor(Math.max(1, rawDamage / 4));
@@ -823,10 +1014,9 @@ export function applyCombatDamageToCombinedElytra(player, rawDamage) {
 
     if (armorWear <= 0) return;
 
-    const proxyId = chest.getDynamicProperty(PROP_PROXY_ID) ?? `fallback_${player.id}`;
     const prev = pendingCombatWear.get(proxyId);
     const prevWear = prev ? prev.wear : 0;
-    pendingCombatWear.set(proxyId, { playerId: player.id, wear: prevWear + armorWear });
+    pendingCombatWear.set(proxyId, { playerId: player.id, wear: prevWear + armorWear, attempts: 0 });
 
     // Single queue processor scheduled outside restricted beforeEvents context
     scheduleCombatWearFlush();

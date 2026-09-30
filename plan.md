@@ -37,11 +37,19 @@ La hoja de ruta completa:
 | --------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------- |
 | **P8-A**  | Proxy`minecraft:elytra`, estado de durabilidad y puente visual                   | Implementado; los ajustes de durabilidad continúan en B |
 | **P8-B1** | Protección de Combined:**9 Armor + 4 Toughness + 0.1 KB**                   | **Aprobado** , commit`1321279`                   |
-| **P8-B2** | Desgaste por golpes protegibles, Unbreaking de armadura para esos golpes y ruptura | **En revisión**                                   |
+| **P8-B2** | Desgaste por golpes protegibles, Unbreaking de armadura para esos golpes y ruptura | **En revisión (aprobación parcial del código, pendiente de pruebas in-game)** |
 | **P8-B3** | Unbreaking de armadura durante el vuelo y Mending sobre el daño lógico           | Pendiente                                                |
 | **P8-C**  | Upgrade, fabricación de Combined y combinación de encantamientos                 | Pendiente                                                |
 | **P8-D**  | Estado roto, validación visual y limpieza del sistema antiguo                     | Pendiente                                                |
 
-**El bloqueo actual de P8-B2** está en `9f848eb`: ya difiere las escrituras fuera de `beforeEvents`, pero la cola vincula el desgaste al jugador, no al objeto golpeado. Hay que impedir que cambiar de Elytra transfiera el desgaste a otra Combined o a una Separated.
+**Revisión en curso de P8-B2**:
+- `aad9bc8`: desgastes por golpes protegibles según fórmula Java `Math.floor(Math.max(1, damage / 4))` y Unbreaking de armadura.
+- `9f848eb`: diferir escrituras fuera de `beforeEvents` mediante `system.run` para evitar errores de privilegio de ejecución.
+- `a59b10d`: identidad persistente del proxy (`ed:elytra_id`), eliminación del consumo de desgaste en el tick loop y procesador único.
+- Ajuste actual:
+  - Eliminación de fallbacks por jugador: se exige identidad confirmada antes de admitir desgaste, impidiendo cualquier contaminación entre objetos.
+  - Conservación de entradas en la cola hasta su aplicación efectiva (no se eliminan antes de encontrar el ítem; retries con expiración de seguridad).
+  - Búsqueda y aplicación multientorno: pechera, inventario, objetos tirados en el suelo (`minecraft:item`), contenedores cercanos de bloques/entidades y transferencias a otros jugadores.
+- Estado: P8-B2 queda en revisión técnica a la espera de validación funcional en Minecraft antes de avanzar a P8-B3.
 
-Del seguimiento recuperado,  **P5 figura cerrado y congelado** . Hemos avanzado por P6 y P7 hasta P8, pero no te marcaría esos bloques como “100 % cerrados” sin recuperar sus revisiones finales. La ubicación actual sí está clara:  **terminar P8-B2 → P8-B3 → P8-C → P8-D → P9** .
+Del seguimiento recuperado, **P5 figura cerrado y congelado**. Hemos avanzado por P6 y P7 hasta P8, pero no te marcaría esos bloques como “100 % cerrados” sin recuperar sus revisiones finales. La ubicación actual sí está clara: **validar P8-B2 → P8-B3 → P8-C → P8-D → P9**.
