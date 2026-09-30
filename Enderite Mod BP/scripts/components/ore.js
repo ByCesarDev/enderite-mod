@@ -11,11 +11,7 @@ import { world, system } from "@minecraft/server";
  */
 world.beforeEvents.explosion.subscribe((event) => {
     try {
-        const getBlocks = typeof event.getImpactedBlocks === "function"
-            ? () => event.getImpactedBlocks()
-            : (typeof event.getUpdatedBlocks === "function" ? () => event.getUpdatedBlocks() : null);
-
-        const impacted = getBlocks ? getBlocks() : [];
+        const impacted = event.getImpactedBlocks();
         if (!impacted || impacted.length === 0) return;
 
         const enderitePositions = [];
@@ -36,11 +32,7 @@ world.beforeEvents.explosion.subscribe((event) => {
         if (enderitePositions.length === 0) return;
 
         // Prevent vanilla from destroying the Enderite Ore blocks
-        if (typeof event.setImpactedBlocks === "function") {
-            event.setImpactedBlocks(remaining);
-        } else if (typeof event.setUpdatesBlocks === "function") {
-            event.setUpdatesBlocks(remaining);
-        }
+        event.setImpactedBlocks(remaining);
 
         const dimension = event.dimension;
         system.run(() => {
