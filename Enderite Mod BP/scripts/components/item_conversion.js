@@ -1,4 +1,4 @@
-import { world, system, ItemStack } from "@minecraft/server";
+import { world, system, ItemStack, EquipmentSlot } from "@minecraft/server";
 
 /**
  * Registry of Vanilla items and their corresponding clone items used as bases in smithing recipes.
@@ -216,14 +216,22 @@ export function convertHeldItem(player, expectedSlot, expectedTypeId) {
     const container = inv?.container;
     if (!container) return false;
 
+    const equippable = player.getComponent("equippable");
     const slot = typeof expectedSlot === "number" ? expectedSlot : player.selectedSlotIndex;
-    const currentItem = container.getItem(slot);
 
-    if (!currentItem) return false;
+    let currentItem = container.getItem(slot);
+    let fromChest = false;
 
-    if (expectedTypeId && currentItem.typeId !== expectedTypeId) {
-        // Player swapped item or switched slot before execution
-        return false;
+    // 1. Check if the item is still in hand
+    if (!currentItem || (expectedTypeId && currentItem.typeId !== expectedTypeId)) {
+        // 2. If not in hand, check if it was auto-equipped to the chest slot (common for Elytra on right-click)
+        const chestItem = equippable?.getEquipment(EquipmentSlot.Chest);
+        if (chestItem && (!expectedTypeId || chestItem.typeId === expectedTypeId) && getConversionTarget(chestItem)) {
+            currentItem = chestItem;
+            fromChest = true;
+        } else {
+            return false;
+        }
     }
 
     const targetTypeId = getConversionTarget(currentItem);
@@ -245,8 +253,23 @@ export function convertHeldItem(player, expectedSlot, expectedTypeId) {
         return false;
     }
 
-    // In-place replacement
-    container.setItem(slot, targetItem);
+    if (fromChest) {
+        // The item was auto-equipped to chest by Bedrock's right-click equip logic.
+        // What was in container.getItem(slot) is what was previously on the chest (or empty).
+        const prevChestPiece = container.getItem(slot);
+
+        // Put the previous chest piece back on the chest (or clear it if empty)
+        equippable.setEquipment(EquipmentSlot.Chest, prevChestPiece || undefined);
+
+        // Put the converted item into the player's selected hotbar slot
+        container.setItem(slot, targetItem);
+        try {
+            equippable.setEquipment(EquipmentSlot.Mainhand, targetItem);
+        } catch {}
+    } else {
+        // Normal in-place hotbar slot replacement
+        container.setItem(slot, targetItem);
+    }
 
     const isClone = VANILLA_TO_CLONE.has(currentItem.typeId);
     if (isClone) {
@@ -266,34 +289,71 @@ export function convertHeldItem(player, expectedSlot, expectedTypeId) {
 const lastConversionTime = new Map();
 const CONVERSION_COOLDOWN_MS = 400;
 
+function handleSmithingConversion(player, block, itemStack, event) {
+    if (!block || block.typeId !== "minecraft:smithing_table") return false;
+    if (!player || !player.isSneaking) return false;
+    if (!itemStack) return false;
+
+    const targetTypeId = getConversionTarget(itemStack);
+    if (!targetTypeId) return false;
+
+    // Cancel event to prevent opening smithing table UI or equipping equippable items
+    if (event) {
+        event.cancel = true;
+    }
+
+    const now = Date.now();
+    const last = lastConversionTime.get(player.id) || 0;
+    if (now - last < CONVERSION_COOLDOWN_MS) {
+        return true;
+    }
+    lastConversionTime.set(player.id, now);
+
+    const slot = player.selectedSlotIndex;
+    const currentTypeId = itemStack.typeId;
+
+    system.run(() => {
+        convertHeldItem(player, slot, currentTypeId);
+    });
+
+    return true;
+}
+
+// 1. Block interaction before event (cancels opening smithing table UI)
 world.beforeEvents.playerInteractWithBlock.subscribe((event) => {
     try {
-        const { player, block, itemStack } = event;
-        if (!block || block.typeId !== "minecraft:smithing_table") return;
+        handleSmithingConversion(event.player, event.block, event.itemStack, event);
+    } catch (e) {
+        console.error(`[Enderite] Error handling smithing table interact: ${e}`);
+    }
+});
+
+// 2. Item use on block before event (cancels using/equipping item on smithing table)
+world.beforeEvents.itemUseOn.subscribe((event) => {
+    try {
+        handleSmithingConversion(event.source, event.block, event.itemStack, event);
+    } catch (e) {
+        console.error(`[Enderite] Error handling smithing table itemUseOn: ${e}`);
+    }
+});
+
+// 3. Item use before event (cancels right-click equip while targeting smithing table)
+world.beforeEvents.itemUse.subscribe((event) => {
+    try {
+        const player = event.source;
         if (!player || !player.isSneaking) return;
+        const itemStack = event.itemStack;
         if (!itemStack) return;
 
-        const targetTypeId = getConversionTarget(itemStack);
-        if (!targetTypeId) return;
+        const target = getConversionTarget(itemStack);
+        if (!target) return;
 
-        // Cancel default event to prevent opening smithing table UI
-        event.cancel = true;
-
-        const now = Date.now();
-        const last = lastConversionTime.get(player.id) || 0;
-        if (now - last < CONVERSION_COOLDOWN_MS) {
-            return;
+        const block = player.getBlockFromViewDirection({ maxDistance: 5 })?.block;
+        if (block?.typeId === "minecraft:smithing_table") {
+            handleSmithingConversion(player, block, itemStack, event);
         }
-        lastConversionTime.set(player.id, now);
-
-        const slot = player.selectedSlotIndex;
-        const currentTypeId = itemStack.typeId;
-
-        system.run(() => {
-            convertHeldItem(player, slot, currentTypeId);
-        });
     } catch (e) {
-        console.error(`[Enderite] Error handling smithing table interaction: ${e}`);
+        console.error(`[Enderite] Error handling smithing table itemUse: ${e}`);
     }
 });
 
