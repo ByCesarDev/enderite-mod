@@ -12,6 +12,12 @@ const VISUAL_COMBINED = "§6";
 const VISUAL_SEPARATED = "§7";
 const PROP_ORIGINAL_NAMETAG = "ed:elytra_original_nametag";
 
+// Translatable lore matching .lang translations (lore.ed:armor_toughness, lore.ed:knockback_resistance)
+const COMBINED_ARMOR_LORE = [
+    { translate: "lore.ed:armor_toughness" },
+    { translate: "lore.ed:knockback_resistance" }
+];
+
 /**
  * Creates a runtime proxy ItemStack (minecraft:elytra) from a custom Enderite Elytra.
  * Preserves variant, logical damage (0..1023), enchantments, custom name, and custom properties.
@@ -76,19 +82,13 @@ function createElytraProxy(customItem) {
             if (lore && lore.length > 0) {
                 proxy.setLore(lore);
             } else if (isCombined) {
-                proxy.setLore([
-                    { translate: "lore.ed:armor_toughness" },
-                    { translate: "lore.ed:knockback_resistance" }
-                ]);
+                proxy.setLore(COMBINED_ARMOR_LORE);
             }
         }
     } catch {
         if (isCombined) {
             try {
-                proxy.setLore([
-                    "§9+4 Armor Toughness",
-                    "§9+1 Knockback Resistance"
-                ]);
+                proxy.setLore(COMBINED_ARMOR_LORE);
             } catch {}
         }
     }
@@ -172,9 +172,17 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
             const lore = proxy.getLore();
             if (lore && lore.length > 0) {
                 customItem.setLore(lore);
+            } else if (targetId === "elytra:chesplate" || targetId === "elytra:chesplate_broken") {
+                customItem.setLore(COMBINED_ARMOR_LORE);
             }
         }
-    } catch {}
+    } catch {
+        if (targetId === "elytra:chesplate" || targetId === "elytra:chesplate_broken") {
+            try {
+                customItem.setLore(COMBINED_ARMOR_LORE);
+            } catch {}
+        }
+    }
 
     return customItem;
 }
@@ -228,9 +236,17 @@ function restoreRepairedBrokenItem(brokenItem) {
             const lore = brokenItem.getLore();
             if (lore && lore.length > 0) {
                 unbrokenItem.setLore(lore);
+            } else if (unbrokenId === "elytra:chesplate") {
+                unbrokenItem.setLore(COMBINED_ARMOR_LORE);
             }
         }
-    } catch {}
+    } catch {
+        if (unbrokenId === "elytra:chesplate") {
+            try {
+                unbrokenItem.setLore(COMBINED_ARMOR_LORE);
+            } catch {}
+        }
+    }
 
     return unbrokenItem;
 }

@@ -72,13 +72,7 @@ function applyTPLore(itemStack) {
     itemStack.setLore(lore);
     return true;
   } catch (e) {
-    try {
-      itemStack.setLore([
-        "§9+4 Armor Toughness",
-        "§9+1 Knockback Resistance"
-      ]);
-      return true;
-    } catch {}
+    return false;
   }
   return false;
 }
