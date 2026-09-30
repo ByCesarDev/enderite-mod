@@ -66,6 +66,33 @@ function createElytraProxy(customItem) {
         }
     } catch {}
 
+    // Copy lore (armor toughness, knockback resistance, void floating, custom lines)
+    try {
+        const rawLore = typeof customItem.getRawLore === "function" ? customItem.getRawLore() : null;
+        if (rawLore && rawLore.length > 0) {
+            proxy.setLore(rawLore);
+        } else {
+            const lore = customItem.getLore();
+            if (lore && lore.length > 0) {
+                proxy.setLore(lore);
+            } else if (isCombined) {
+                proxy.setLore([
+                    { translate: "lore.ed:armor_toughness" },
+                    { translate: "lore.ed:knockback_resistance" }
+                ]);
+            }
+        }
+    } catch {
+        if (isCombined) {
+            try {
+                proxy.setLore([
+                    "§9+4 Armor Toughness",
+                    "§9+1 Knockback Resistance"
+                ]);
+            } catch {}
+        }
+    }
+
     return proxy;
 }
 
@@ -136,6 +163,19 @@ function restoreCustomElytra(proxy, forcedTargetId = null, forcedDamage = null) 
         }
     } catch {}
 
+    // Restore lore
+    try {
+        const rawLore = typeof proxy.getRawLore === "function" ? proxy.getRawLore() : null;
+        if (rawLore && rawLore.length > 0) {
+            customItem.setLore(rawLore);
+        } else {
+            const lore = proxy.getLore();
+            if (lore && lore.length > 0) {
+                customItem.setLore(lore);
+            }
+        }
+    } catch {}
+
     return customItem;
 }
 
@@ -176,6 +216,19 @@ function restoreRepairedBrokenItem(brokenItem) {
     try {
         for (const propId of brokenItem.getDynamicPropertyIds()) {
             unbrokenItem.setDynamicProperty(propId, brokenItem.getDynamicProperty(propId));
+        }
+    } catch {}
+
+    // Copy lore
+    try {
+        const rawLore = typeof brokenItem.getRawLore === "function" ? brokenItem.getRawLore() : null;
+        if (rawLore && rawLore.length > 0) {
+            unbrokenItem.setLore(rawLore);
+        } else {
+            const lore = brokenItem.getLore();
+            if (lore && lore.length > 0) {
+                unbrokenItem.setLore(lore);
+            }
         }
     } catch {}
 

@@ -20,7 +20,8 @@ function applyTPLore(itemStack) {
 
   const isSword = itemStack.typeId in SWORD_CAPACITIES;
   const isShield = itemStack.typeId in SHIELD_CAPACITIES;
-  const isArmor = ARMOR_ITEMS.has(itemStack.typeId);
+  const isCombinedProxy = itemStack.typeId === "minecraft:elytra" && itemStack.getDynamicProperty("ed:elytra_variant") === "combined";
+  const isArmor = ARMOR_ITEMS.has(itemStack.typeId) || isCombinedProxy;
 
   if (!isSword && !isShield && !isArmor) return false;
 
@@ -126,7 +127,8 @@ system.runInterval(() => {
           const slots = ["Mainhand", "Offhand", "Head", "Chest", "Legs", "Feet"];
           for (const slotName of slots) {
             const item = equippable.getEquipment(slotName);
-            if (item && (item.typeId in TP_ITEMS || ARMOR_ITEMS.has(item.typeId))) {
+            const isCombinedProxy = item?.typeId === "minecraft:elytra" && item?.getDynamicProperty("ed:elytra_variant") === "combined";
+            if (item && (item.typeId in TP_ITEMS || ARMOR_ITEMS.has(item.typeId) || isCombinedProxy)) {
               if (applyTPLore(item)) {
                 equippable.setEquipment(slotName, item);
               }
